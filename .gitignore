@@ -1,0 +1,15 @@
+# Salidas de compilación regenerables
+**/out/
+**/out-test/
+**/target/
+*.class
+
+# Estado local del editor; conservar módulos y configuraciones de ejecución
+**/.idea/workspace.xml
+**/.idea/tasks.xml
+**/.idea/shelf/
+
+# Temporales del sistema
+Thumbs.db
+.DS_Store
+hs_err_pid*.log
