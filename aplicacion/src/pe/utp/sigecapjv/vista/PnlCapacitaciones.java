@@ -190,19 +190,12 @@ public class PnlCapacitaciones extends JPanel {
         JPanel filtros = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         filtros.setOpaque(false);
         filtros.add(new JLabel("Capacitación:"));
-        JComboBox<String> cap = new JComboBox<>(new String[]{
-                "Formación Básica - 28/09/2026",
-                "Protección Portuaria - 02/10/2026"
-        });
+        JComboBox<String> cap = new JComboBox<>();
         cap.setPreferredSize(new Dimension(300, 36));
         filtros.add(cap);
 
         String[] columnas = {"Trabajador", "Asistencia", "Fecha de registro"};
-        Object[][] datos = {
-                {"Juan Carlos Pérez Soto", "Presente", "28/09/2026"},
-                {"María Elena Torres Ruiz", "Presente", "28/09/2026"},
-                {"Ana Lucía Vásquez León", "Ausente", "28/09/2026"}
-        };
+        Object[][] datos = new Object[0][columnas.length];
 
         panel.add(filtros, BorderLayout.NORTH);
         panel.add(scrollTabla(datos, columnas), BorderLayout.CENTER);
@@ -215,19 +208,12 @@ public class PnlCapacitaciones extends JPanel {
         JPanel filtros = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         filtros.setOpaque(false);
         filtros.add(new JLabel("Capacitación:"));
-        JComboBox<String> cap = new JComboBox<>(new String[]{
-                "Formación Básica - 28/09/2026",
-                "Protección Portuaria - 02/10/2026"
-        });
+        JComboBox<String> cap = new JComboBox<>();
         cap.setPreferredSize(new Dimension(300, 36));
         filtros.add(cap);
 
         String[] columnas = {"Trabajador", "Resultado", "Calificación"};
-        Object[][] datos = {
-                {"Juan Carlos Pérez Soto", "Aprobado", "17"},
-                {"María Elena Torres Ruiz", "Aprobado", "18"},
-                {"Ana Lucía Vásquez León", "Pendiente", "-"}
-        };
+        Object[][] datos = new Object[0][columnas.length];
 
         panel.add(filtros, BorderLayout.NORTH);
         panel.add(scrollTabla(datos, columnas), BorderLayout.CENTER);
@@ -240,20 +226,13 @@ public class PnlCapacitaciones extends JPanel {
         JPanel filtros = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         filtros.setOpaque(false);
         filtros.add(new JLabel("Trabajador:"));
-        JComboBox<String> trabajador = new JComboBox<>(new String[]{
-                "Juan Carlos Pérez Soto",
-                "María Elena Torres Ruiz",
-                "Ana Lucía Vásquez León"
-        });
+        JComboBox<String> trabajador = new JComboBox<>();
         trabajador.setPreferredSize(new Dimension(280, 36));
         filtros.add(trabajador);
         filtros.add(botonPrimario("Registrar certificado"));
 
         String[] columnas = {"Curso", "N.° certificado", "Emisión", "Vencimiento", "Estado"};
-        Object[][] datos = {
-                {"Formación Básica", "FB-2026-0158", "12/04/2026", "12/04/2029", "Vigente"},
-                {"Protección Portuaria", "PP-2026-0084", "20/06/2026", "20/06/2028", "Vigente"}
-        };
+        Object[][] datos = new Object[0][columnas.length];
 
         panel.add(filtros, BorderLayout.NORTH);
         panel.add(scrollTabla(datos, columnas), BorderLayout.CENTER);

@@ -116,6 +116,25 @@ public class PruebaFlujo {
         Capacitacion nueva = capacitacion(c); nueva.programar(); directa.setCapacitacion(nueva); directa.asignarTrabajador();
         directa.setEstado("CANCELADA"); directa.actualizarEstado(); comprobar("CANCELADA".equals(directa.getEstado()), "Estado de participación");
         directa.setEstado("COMPLETADA"); rechazar(directa::actualizarEstado, "No simular cumplimiento sin resultado");
+        Curso cursoSinRegistro = new Curso(1, "PRUEBA", "Curso", "Interno", null, "ACTIVO") {
+            @Override
+            public void registrar() {
+                throw new AssertionError("Capacitacion no debe registrar el curso.");
+            }
+        };
+        Capacitacion sesionSinRegistro = capacitacion(cursoSinRegistro);
+        sesionSinRegistro.programar();
+        sesionSinRegistro.actualizar();
+        comprobar("PROGRAMADA".equals(sesionSinRegistro.getEstado()), "Programar y actualizar no registran el curso");
+        Trabajador trabajadorSinRegistro = new Trabajador(1, "00000006", "Persona", "Prueba", "Agente", "ACTIVO") {
+            @Override
+            public void registrar() {
+                throw new AssertionError("Participacion no debe registrar al trabajador.");
+            }
+        };
+        Participacion asignacionSinRegistro = new Participacion(0, null, null, trabajadorSinRegistro, sesionSinRegistro);
+        asignacionSinRegistro.asignarTrabajador();
+        comprobar("PENDIENTE".equals(asignacionSinRegistro.getEstado()), "Asignar no registra al trabajador");
         SwingUtilities.invokeAndWait(() -> { verificarVistas(personal, gestion); verificarEventos(); });
         gestion.cerrarCapacitacion(cap.getIdCapacitacion()); rechazar(() -> gestion.asignarTrabajador(t, cap), "Sesión cerrada");
         rechazar(() -> gestion.actualizarCapacitacion(edicion), "Editar sesión cerrada");
@@ -127,6 +146,15 @@ public class PruebaFlujo {
         PnlPersonal p = new PnlPersonal(personal); PnlCapacitaciones c = new PnlCapacitaciones(gestion, personal);
         JTabbedPane tp = encontrar(p, JTabbedPane.class), tc = encontrar(c, JTabbedPane.class);
         comprobar(!tp.isEnabledAt(2) && !tc.isEnabledAt(3), "Funciones futuras deshabilitadas");
+        comprobar(encontrar(tp.getComponentAt(2), JTable.class).getRowCount() == 0, "Historial pendiente sin datos simulados");
+        comprobar(encontrar(tp.getComponentAt(2), JComboBox.class).getItemCount() == 0, "Historial sin trabajadores simulados");
+        for (int i = 3; i < 6; i++) {
+            comprobar(!tc.isEnabledAt(i), "Pestaña futura deshabilitada");
+            comprobar(encontrar(tc.getComponentAt(i), JTable.class).getRowCount() == 0, "Pestaña futura sin datos simulados");
+            comprobar(encontrar(tc.getComponentAt(i), JComboBox.class).getItemCount() == 0, "Filtro futuro sin datos simulados");
+            comprobar("Funcionalidad pendiente de implementación".equals(tc.getToolTipTextAt(i)), "Tooltip de funcionalidad pendiente");
+        }
+
         comprobar(encontrar(tp.getComponentAt(0), JTable.class).getRowCount() == 2, "Personal usa registros reales");
         comprobar(encontrar(tc.getComponentAt(0), JTable.class).getRowCount() == 1, "Cursos usan controlador");
         comprobar(encontrar(tc.getComponentAt(1), JTable.class).getRowCount() == 1, "Programación usa controlador");

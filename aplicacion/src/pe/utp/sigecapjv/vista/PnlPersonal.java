@@ -181,11 +181,7 @@ public class PnlPersonal extends JPanel {
         lblTrabajador.setForeground(TEXTO);
         lblTrabajador.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        JComboBox<String> trabajador = new JComboBox<>(new String[]{
-                "Juan Carlos Pérez Soto",
-                "María Elena Torres Ruiz",
-                "Carlos Alberto Rojas Díaz"
-        });
+        JComboBox<String> trabajador = new JComboBox<>();
         trabajador.setPreferredSize(new Dimension(280, 36));
 
         superior.add(lblTrabajador);
@@ -193,11 +189,7 @@ public class PnlPersonal extends JPanel {
         superior.add(crearBotonSecundario("Consultar"));
 
         String[] columnas = {"Curso", "Fecha", "Resultado", "Vigencia"};
-        Object[][] datos = {
-                {"Formación Básica", "12/04/2026", "Aprobado", "Vigente"},
-                {"Protección Portuaria", "20/06/2026", "Apto", "Vigente"},
-                {"Perfeccionamiento", "10/08/2026", "Aprobado", "Próximo a vencer"}
-        };
+        Object[][] datos = new Object[0][columnas.length];
 
         JTable tabla = crearTabla(datos, columnas);
         JScrollPane scroll = new JScrollPane(tabla);
