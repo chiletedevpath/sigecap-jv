@@ -1,4 +1,4 @@
-# SIGECAP J&V
+# SIGECAP J&V — primer avance funcional
 
 Proyecto académico de gestión de capacitaciones para el personal del área de Operaciones de J&V Resguardo, desarrollado en Java 17 y Swing.
 

@@ -7,7 +7,7 @@ import pe.utp.sigecapjv.controlador.*;
 
 public class FrmPrincipal extends JFrame {
     public FrmPrincipal() {
-        super("SIGECAP J&V - Primera versión funcional");
+        super("SIGECAP J&V");
         PersonalControlador personal = new PersonalControlador();
         CapacitacionControlador capacitaciones = new CapacitacionControlador(personal);
         PnlPersonal pnlPersonal = new PnlPersonal(personal);
