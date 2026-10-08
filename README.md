@@ -1,77 +1,45 @@
-# SIGECAP J&V
+# SIGECAP J&V — primer avance funcional
 
-Sistema académico de gestión de cursos de capacitación para el personal del área de Operaciones de J&V Resguardo. Aplicación de escritorio en Java 17 y Swing, sin dependencias externas.
+Proyecto académico de gestión de capacitaciones para el personal del área de Operaciones de J&V Resguardo, desarrollado en Java 17 y Swing.
+
+## Alcance implementado
+
+El primer avance cubre el flujo **registrar personal → registrar curso → programar capacitación → asignar trabajador**. Los registros se mantienen en memoria durante la sesión.
+
+| Clase del modelo | Funcionalidad implementada | Requerimiento |
+| --- | --- | --- |
+| `Trabajador` | Registro y actualización de personal; validación de DNI de ocho dígitos, nombres, apellidos, cargo y estado. | HU-JVR-001 |
+| `Curso` | Registro y actualización; validación de código, nombre, tipo y vigencia; activación y desactivación. | HU-JVR-002 |
+| `Capacitacion` | Programación y actualización con curso activo, fecha futura, horario y modalidad válidos; cancelación y cierre. | HU-JVR-003 |
+| `Participacion` | Asignación de un trabajador activo a una capacitación programada; fecha de asignación, estado y control de duplicados. | HU-JVR-004 |
+
+Los atributos, tipos y métodos principales conservan el diseño del diagrama de clases del apartado 3.1. Cada capacitación pertenece a un curso y contiene participaciones; cada participación vincula un trabajador con una capacitación.
+
+## Separación de responsabilidades
+
+- **Modelo:** valida los datos y aplica las reglas de negocio.
+- **Controladores:** `PersonalControlador` y `CapacitacionControlador` coordinan los registros en memoria, identificadores y controles de duplicidad.
+- **Vistas:** `FrmPrincipal`, `PnlPersonal` y `PnlCapacitaciones` capturan datos y llaman a los controladores. Permiten registrar, editar, buscar, programar y asignar participantes.
+- **Utilidades:** `Validador` concentra validaciones reutilizables.
 
 ## Organización
 
-Todo el proyecto está en una sola carpeta, `aplicacion`, con el paquete base `pe.utp.sigecapjv`:
+El código funcional está en `aplicacion/src/pe/utp/sigecapjv`, organizado en `modelo`, `vista`, `controlador`, `dao`, `conexion` y `util`. DAO y conexión conservan sus esqueletos para una etapa posterior.
 
-```text
-aplicacion/
-├── src/pe/utp/sigecapjv/
-│   ├── modelo/
-│   ├── vista/
-│   ├── controlador/
-│   ├── dao/
-│   ├── conexion/
-│   └── util/
-├── test/pe/utp/sigecapjv/PruebaFlujo.java
-└── ejecutar.ps1
-```
+Los mockups de referencia están en una carpeta hermana independiente. Las vistas adaptadas se conservan en la aplicación; los módulos futuros permanecen deshabilitados en el flujo funcional.
 
-Los mockups de referencia están fuera de este proyecto, en la carpeta hermana `sigecap-jv-mockups`. Las vistas adaptadas al paquete `vista` se conservan junto al código de la aplicación. `.idea` contiene la configuración de IntelliJ para el único módulo `aplicacion`.
+## Validación del avance
 
-## Ejecutar
+Se verificó la compilación con Java 17 y se completaron **104 comprobaciones** del flujo, relaciones UML, encapsulamiento, estados, datos inválidos, duplicados, protección de registros y eventos Swing. Los eventos se verificaron sin pantalla; los diálogos nativos requieren revisión manual.
 
-En IntelliJ, seleccionar **SIGECAP J&V**. La clase principal es `pe.utp.sigecapjv.vista.FrmPrincipal`; el módulo `aplicacion` usa lenguaje y bytecode Java 17 y hereda el SDK del proyecto. Recargar el proyecto si todavía aparecen las antiguas ejecuciones.
+## Pendientes
 
-Desde PowerShell, con un JDK 17 o superior:
+- Persistencia en base de datos: los datos actuales se pierden al cerrar la aplicación.
+- Desarrollo funcional de `Asistencia`, `Resultado`, `Certificado`, `Usuario`, `Rol`, `Permiso`, `Notificacion` y `Reporte`.
+- Autenticación, historial del trabajador, asistencia, resultados, certificados, notificaciones y reportes.
+- Consolidación de resultados al cerrar una capacitación. Actualmente el cierre bloquea edición y nuevas asignaciones.
 
-```powershell
-.\aplicacion\ejecutar.ps1 -JavaHome 'C:\Users\Adria\.jdks\ms-17.0.18'
-```
 
-Puede omitirse `-JavaHome` si `JAVA_HOME` o los comandos `java`/`javac` ya apuntan a un JDK compatible. El script compila con `--release 17` y genera `aplicacion/out`, una salida regenerable excluida de Git.
+`Trabajador.consultarHistorial()` y `consultarCapacitaciones()` conservan las firmas del UML y señalan que están pendientes mediante `UnsupportedOperationException`. `Participacion.actualizarEstado()` admite `PENDIENTE` y `CANCELADA`; el cumplimiento dependerá de asistencia y resultados.
 
-## Primera etapa funcional
-
-| Clase o vista | Funcionalidad | Historia |
-| --- | --- | --- |
-| `Trabajador` y `PersonalControlador` | Registrar, actualizar y consultar personal en memoria; validar datos y evitar DNI duplicados. | HU-JVR-001 |
-| `Curso` | Validar código, nombre, tipo y vigencia; activar/desactivar. El controlador evita códigos duplicados. | HU-JVR-002 |
-| `Capacitacion` | Validar curso activo, fecha futura, horario y modalidad; programar, actualizar, cancelar y cerrar. Contiene sus participaciones. | HU-JVR-003 |
-| `Participacion` | Relacionar trabajador activo y capacitación programada; asignar fecha y estado pendiente; evitar asignaciones duplicadas. | HU-JVR-004 |
-| `CapacitacionControlador` | Coordinar cursos, programaciones y asignaciones, con registros existentes e IDs temporales. | HU-JVR-002 a 004 |
-| `FrmPrincipal`, `PnlPersonal` y `PnlCapacitaciones` | Navegación, captura de datos y tablas conectadas a controladores compartidos. | Flujo funcional |
-| `Validador` | Validaciones reutilizables invocadas por el modelo. | Apoyo al modelo |
-
-Para probar el flujo desde la interfaz:
-
-1. Personal → Registrar trabajador: completar DNI de ocho dígitos, nombres, apellidos, cargo y estado.
-2. Capacitaciones → Cursos → Nuevo curso: registrar un curso activo. Vigencia vacía significa «no aplica»; cualquier periodo informado debe ser positivo, en meses.
-3. Programación: seleccionar curso, fecha `AAAA-MM-DD`, horario `HH:mm - HH:mm` y modalidad. Guardar una sesión futura.
-4. Participantes: seleccionar la capacitación y asignar el trabajador registrado.
-
-Los formularios llaman a los controladores; las reglas de negocio pertenecen al modelo. Los controladores validan copias antes de modificar datos almacenados y sus listados devuelven copias protegidas.
-
-## Diseños y funcionalidades pendientes
-
-La carpeta externa `../sigecap-jv-mockups` permite ejecutar los diseños de referencia de manera independiente. Las vistas `FrmLogin`, `PnlInicio` (cuatro perfiles), `PnlSeguimiento`, `PnlReportes`, `PnlUsuarios`, `PnlMisCapacitaciones` y `PnlAlertas` ya adaptadas se conservan en la aplicación para las siguientes etapas. Todavía usan datos referenciales y no están habilitadas en el flujo funcional.
-
-DAO, conexión y las otras ocho clases del UML mantienen sus esqueletos. No se implementan SQL, MySQL, autenticación, asistencia, resultados, certificados, notificaciones ni reportes. Las pestañas futuras están deshabilitadas.
-
-Los atributos, tipos y firmas principales siguen el UML. Las referencias de objetos y la colección de participaciones representan sus relaciones. `copia()` y `toString()` son auxiliares técnicos.
-
-`Trabajador.consultarHistorial()` y `consultarCapacitaciones()` conservan retorno `void` y comunican que están pendientes con `UnsupportedOperationException`. HU-JVR-008 y HU-JVR-014 todavía no están implementadas. `Participacion.actualizarEstado()` valida `PENDIENTE` o `CANCELADA`; el cumplimiento se incorporará con asistencia y resultados. Cerrar una capacitación actualmente bloquea nuevas asignaciones y edición, sin consolidar resultados.
-
-La aplicación inicia sin datos ni autenticación. Los estados usan `String` y los IDs son secuenciales en memoria. Los datos se pierden al cerrar. La persistencia de HU-JVR-001 a 004 queda pendiente del diseño 3.2. No se ha modificado el informe ni redactado 3.5.
-
-## Verificar
-
-El mismo script permite compilar y ejecutar la única clase de pruebas, sin generar capturas ni informes adicionales:
-
-```powershell
-.\aplicacion\ejecutar.ps1 -JavaHome 'C:\Users\Adria\.jdks\ms-17.0.18' -Probar
-```
-
-Comprueba el flujo, relaciones UML, encapsulamiento, estados, datos inválidos, duplicados, protección de registros y eventos Swing de registro, edición, búsqueda y programación. Los eventos se prueban sin pantalla; los diálogos nativos requieren revisión manual.
+Este avance no modifica el informe ni incorpora todavía las capturas de código del apartado 3.5.
