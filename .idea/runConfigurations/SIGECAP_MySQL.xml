@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="SIGECAP J&amp;V" type="Application" factoryName="Application">
+  <configuration default="false" name="SIGECAP MySQL" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="pe.utp.sigecapjv.vista.FrmPrincipal" />
     <module name="aplicacion" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/aplicacion" />

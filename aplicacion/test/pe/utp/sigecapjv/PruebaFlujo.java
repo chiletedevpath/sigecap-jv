@@ -162,7 +162,8 @@ public class PruebaFlujo {
 
     }
     private static void verificarVentana() {
-        FrmPrincipal ventana = new FrmPrincipal();
+        PersonalControlador personal = new PersonalControlador();
+        FrmPrincipal ventana = new FrmPrincipal(personal, new CapacitacionControlador(personal));
         try {
             ventana.addNotify(); ventana.validate();
             JPanel contenido = (JPanel) ventana.getContentPane();

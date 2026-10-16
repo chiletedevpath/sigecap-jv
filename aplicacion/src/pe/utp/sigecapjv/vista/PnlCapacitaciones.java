@@ -270,7 +270,7 @@ public class PnlCapacitaciones extends JPanel {
                 if ("ACTIVO".equals(estado.getSelectedItem())) c.activar(); else c.desactivar();
                 if (actual == null) controlador.registrarCurso(c); else controlador.actualizarCurso(c);
                 refrescar(); return;
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException | IllegalStateException ex) {
                 JOptionPane.showMessageDialog(this, ex instanceof NumberFormatException ? "La vigencia debe ser un número entero de meses." : ex.getMessage());
             }
         }

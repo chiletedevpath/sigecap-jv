@@ -4,7 +4,7 @@ Proyecto académico de gestión de capacitaciones para el personal del área de 
 
 ## Alcance implementado
 
-El primer avance cubre el flujo **registrar personal → registrar curso → programar capacitación → asignar trabajador**. Los registros se mantienen en memoria durante la sesión.
+El primer avance cubre el flujo **registrar personal → registrar curso → programar capacitación → asignar trabajador**. La aplicación guarda y consulta estos registros en MySQL mediante JDBC; conserva los controladores en memoria para las pruebas unitarias.
 
 | Clase del modelo | Funcionalidad implementada | Requerimiento |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Los atributos, tipos y métodos principales conservan el diseño del diagrama de
 ## Separación de responsabilidades
 
 - **Modelo:** valida los datos y aplica las reglas de negocio.
-- **Controladores:** `PersonalControlador` y `CapacitacionControlador` coordinan los registros en memoria, identificadores y controles de duplicidad.
+- **Controladores:** `PersonalJdbcControlador` y `CapacitacionJdbcControlador` coordinan las operaciones persistentes con sus DAO, conservando las validaciones del modelo. Las variantes originales se utilizan en las pruebas en memoria.
 - **Vistas:** `FrmPrincipal`, `PnlPersonal` y `PnlCapacitaciones` capturan datos y llaman a los controladores. Permiten registrar, editar, buscar, programar y asignar participantes.
 - **Utilidades:** `Validador` concentra validaciones reutilizables.
 
@@ -34,7 +34,9 @@ El primer avance queda preparado como evidencia para documentar el apartado **3.
 
 ## Organización
 
-El código funcional está en `aplicacion/src/pe/utp/sigecapjv`, organizado en `modelo`, `vista`, `controlador`, `dao`, `conexion` y `util`. DAO y conexión conservan sus esqueletos para una etapa posterior.
+El código funcional está en `aplicacion/src/pe/utp/sigecapjv`, organizado en `modelo`, `vista`, `controlador`, `dao`, `conexion` y `util`. La conexión y los cuatro DAO del flujo inicial están implementados; los restantes conservan sus esqueletos para una etapa posterior.
+
+La [guía MySQL](database/README.md) explica cómo preparar el esquema, configurar las credenciales, ejecutar con IntelliJ o PowerShell y probar con Docker sin utilizar la base real. El esquema físico recibido se conserva en `database/001-esquema.sql`.
 
 Los mockups de referencia están en una carpeta hermana independiente. Las vistas adaptadas se conservan en la aplicación; los módulos futuros permanecen deshabilitados en el flujo funcional.
 
@@ -42,9 +44,11 @@ Los mockups de referencia están en una carpeta hermana independiente. Las vista
 
 Se verificó la compilación con Java 17 y se completaron **120 comprobaciones** del flujo, relaciones UML, encapsulamiento, estados, datos inválidos, duplicados, protección de registros y eventos Swing. Los eventos se verificaron sin pantalla; los diálogos nativos requieren revisión manual.
 
+La integración JDBC se validó en MySQL 8.4 aislado con **32 comprobaciones** de esquema, restricciones, CRUD, transacciones, concurrencia y lectura desde paneles Swing, además de **3 comprobaciones en otra JVM** para confirmar persistencia. Se comprobó también el rechazo de una conexión sin credenciales. El contenedor y su volumen se eliminaron al finalizar; la base local del usuario no se modificó.
+
 ## Pendientes
 
-- Persistencia en base de datos: los datos actuales se pierden al cerrar la aplicación.
+- Persistencia de los módulos posteriores al flujo inicial.
 - Desarrollo funcional de `Asistencia`, `Resultado`, `Certificado`, `Usuario`, `Rol`, `Permiso`, `Notificacion` y `Reporte`.
 - Autenticación, historial del trabajador, asistencia, resultados, certificados, notificaciones y reportes.
 - Consolidación de resultados al cerrar una capacitación. Actualmente el cierre bloquea edición y nuevas asignaciones.
