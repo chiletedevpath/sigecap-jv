@@ -1,9 +1,10 @@
 package pe.utp.sigecapjv.controlador;
 
-import java.util.ArrayList;
-import java.util.List;
 import pe.utp.sigecapjv.modelo.Trabajador;
 import pe.utp.sigecapjv.util.Validador;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PersonalControlador {
     // Mientras no exista persistencia, los registros se mantienen en memoria.
@@ -35,7 +36,8 @@ public class PersonalControlador {
     }
 
     private void validarDniUnico(Trabajador trabajador, int exceptuarId) {
-        if (trabajadores.stream().anyMatch(t -> t.getIdTrabajador() != exceptuarId && t.getDni().equals(trabajador.getDni()))) {
+        if (trabajadores.stream().anyMatch(
+                t -> t.getIdTrabajador() != exceptuarId && t.getDni().equals(trabajador.getDni()))) {
             throw new IllegalArgumentException("Ya existe un trabajador con ese DNI.");
         }
     }

@@ -1,7 +1,7 @@
 package pe.utp.sigecapjv.vista;
 
-import pe.utp.sigecapjv.modelo.*;
-import pe.utp.sigecapjv.controlador.*;
+import pe.utp.sigecapjv.controlador.PersonalControlador;
+import pe.utp.sigecapjv.modelo.Trabajador;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -20,15 +20,17 @@ public class PnlPersonal extends JPanel {
 
     private final PersonalControlador controlador;
     private final JTabbedPane tabs = new JTabbedPane();
-    private final JTextField dni = new JTextField(18), nombres = new JTextField(18),
-            apellidos = new JTextField(18), cargo = new JTextField(18), buscar = new JTextField();
+    private final JTextField dni = new JTextField(18), nombres = new JTextField(18), apellidos = new JTextField(
+            18), cargo = new JTextField(18), buscar = new JTextField();
     private final JComboBox<String> estado = new JComboBox<>(new String[]{"ACTIVO", "INACTIVO"});
     private JTable listado;
     private int idEdicion;
 
     public PnlPersonal(PersonalControlador controlador) {
         this.controlador = controlador;
-        setLayout(new BorderLayout()); add(crearContenido(), BorderLayout.CENTER); refrescar();
+        setLayout(new BorderLayout());
+        add(crearContenido(), BorderLayout.CENTER);
+        refrescar();
     }
 
     private JPanel crearContenido() {
@@ -93,8 +95,7 @@ public class PnlPersonal extends JPanel {
         buscar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         buscar.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDE),
-                new EmptyBorder(0, 10, 0, 10)
-        ));
+                new EmptyBorder(0, 10, 0, 10)));
 
         JButton btnBuscar = crearBotonSecundario("Buscar");
         JButton btnNuevo = crearBotonPrimario("Nuevo trabajador");
@@ -103,9 +104,14 @@ public class PnlPersonal extends JPanel {
         acciones.setOpaque(false);
         acciones.add(btnBuscar);
         acciones.add(btnNuevo);
-        JButton editar = crearBotonSecundario("Editar trabajador"); acciones.add(editar);
-        btnBuscar.addActionListener(e -> refrescar()); buscar.addActionListener(e -> refrescar());
-        btnNuevo.addActionListener(e -> { limpiar(); tabs.setSelectedIndex(1); });
+        JButton editar = crearBotonSecundario("Editar trabajador");
+        acciones.add(editar);
+        btnBuscar.addActionListener(e -> refrescar());
+        buscar.addActionListener(e -> refrescar());
+        btnNuevo.addActionListener(e -> {
+            limpiar();
+            tabs.setSelectedIndex(1);
+        });
         editar.addActionListener(e -> editarSeleccionado());
 
         JPanel buscador = new JPanel(new BorderLayout(8, 0));
@@ -153,8 +159,12 @@ public class PnlPersonal extends JPanel {
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         botones.setOpaque(false);
         JButton cancelar = crearBotonSecundario("Cancelar"), guardar = crearBotonPrimario("Guardar");
-        botones.add(cancelar); botones.add(guardar);
-        cancelar.addActionListener(e -> { limpiar(); tabs.setSelectedIndex(0); });
+        botones.add(cancelar);
+        botones.add(guardar);
+        cancelar.addActionListener(e -> {
+            limpiar();
+            tabs.setSelectedIndex(0);
+        });
         guardar.addActionListener(e -> guardar());
 
         gbc.gridx = 0;
@@ -202,37 +212,62 @@ public class PnlPersonal extends JPanel {
 
     private void guardar() {
         try {
-            Trabajador trabajador = new Trabajador(idEdicion, dni.getText(), nombres.getText(), apellidos.getText(),
+            Trabajador trabajador = new Trabajador(
+                    idEdicion, dni.getText(), nombres.getText(), apellidos.getText(),
                     cargo.getText(), (String) estado.getSelectedItem());
             if (idEdicion == 0) controlador.registrarTrabajador(trabajador);
             else controlador.actualizarTrabajador(trabajador);
-            limpiar(); refrescar(); tabs.setSelectedIndex(0);
+            limpiar();
+            refrescar();
+            tabs.setSelectedIndex(0);
             JOptionPane.showMessageDialog(this, "Trabajador guardado correctamente.");
         } catch (IllegalArgumentException | IllegalStateException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Revisar datos", JOptionPane.WARNING_MESSAGE);
         }
     }
+
     private void editarSeleccionado() {
         int fila = listado.getSelectedRow();
-        if (fila < 0) { JOptionPane.showMessageDialog(this, "Seleccione un trabajador."); return; }
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Seleccione un trabajador.");
+            return;
+        }
         String seleccionado = (String) listado.getValueAt(fila, 0);
-        Trabajador t = controlador.listarTrabajadores().stream().filter(x -> x.getDni().equals(seleccionado)).findFirst().orElseThrow();
-        idEdicion = t.getIdTrabajador(); tabs.setTitleAt(1, "Editar trabajador"); dni.setText(t.getDni()); nombres.setText(t.getNombres());
-        apellidos.setText(t.getApellidos()); cargo.setText(t.getCargo()); estado.setSelectedItem(t.getEstado()); tabs.setSelectedIndex(1);
+        Trabajador t = controlador.listarTrabajadores().stream().filter(
+                x -> x.getDni().equals(seleccionado)).findFirst().orElseThrow();
+        idEdicion = t.getIdTrabajador();
+        tabs.setTitleAt(1, "Editar trabajador");
+        dni.setText(t.getDni());
+        nombres.setText(t.getNombres());
+        apellidos.setText(t.getApellidos());
+        cargo.setText(t.getCargo());
+        estado.setSelectedItem(t.getEstado());
+        tabs.setSelectedIndex(1);
     }
+
     private void limpiar() {
-        idEdicion = 0; tabs.setTitleAt(1, "Registrar trabajador"); dni.setText(""); nombres.setText(""); apellidos.setText(""); cargo.setText(""); estado.setSelectedIndex(0);
+        idEdicion = 0;
+        tabs.setTitleAt(1, "Registrar trabajador");
+        dni.setText("");
+        nombres.setText("");
+        apellidos.setText("");
+        cargo.setText("");
+        estado.setSelectedIndex(0);
     }
+
     public void refrescar() {
-        DefaultTableModel modelo = (DefaultTableModel) listado.getModel(); modelo.setRowCount(0);
+        DefaultTableModel modelo = (DefaultTableModel) listado.getModel();
+        modelo.setRowCount(0);
         String filtro = buscar.getText().trim().toLowerCase(java.util.Locale.ROOT);
         for (Trabajador t : controlador.listarTrabajadores()) {
-            if ((t.getDni() + " " + t.getApellidos() + " " + t.getNombres() + " " + t.getCargo()).toLowerCase(java.util.Locale.ROOT).contains(filtro))
-                modelo.addRow(new Object[]{t.getDni(), t.getApellidos() + ", " + t.getNombres(), t.getCargo(), t.getEstado()});
+            if ((t.getDni() + " " + t.getApellidos() + " " + t.getNombres() + " " + t.getCargo()).toLowerCase(
+                    java.util.Locale.ROOT).contains(filtro)) modelo.addRow(
+                    new Object[]{t.getDni(), t.getApellidos() + ", " + t.getNombres(), t.getCargo(), t.getEstado()});
         }
     }
 
-    private void agregarCampo(JPanel panel, GridBagConstraints gbc, int col, int fila, String etiqueta, JComponent campo) {
+    private void agregarCampo(JPanel panel, GridBagConstraints gbc, int col, int fila, String etiqueta,
+                              JComponent campo) {
         JPanel bloque = new JPanel();
         bloque.setOpaque(false);
         bloque.setLayout(new BoxLayout(bloque, BoxLayout.Y_AXIS));
@@ -249,8 +284,7 @@ public class PnlPersonal extends JPanel {
         if (campo instanceof JTextField textField) {
             textField.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(BORDE),
-                    new EmptyBorder(0, 9, 0, 9)
-            ));
+                    new EmptyBorder(0, 9, 0, 9)));
         }
 
         campo.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -307,8 +341,7 @@ public class PnlPersonal extends JPanel {
         boton.setFocusPainted(false);
         boton.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDE),
-                new EmptyBorder(9, 14, 9, 14)
-        ));
+                new EmptyBorder(9, 14, 9, 14)));
         boton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return boton;
     }

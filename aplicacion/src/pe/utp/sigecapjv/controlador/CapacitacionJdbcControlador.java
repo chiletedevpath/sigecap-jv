@@ -1,16 +1,22 @@
 package pe.utp.sigecapjv.controlador;
 
-import java.util.List;
 import pe.utp.sigecapjv.dao.*;
-import pe.utp.sigecapjv.modelo.*;
+import pe.utp.sigecapjv.modelo.Capacitacion;
+import pe.utp.sigecapjv.modelo.Curso;
+import pe.utp.sigecapjv.modelo.Participacion;
+import pe.utp.sigecapjv.modelo.Trabajador;
 import pe.utp.sigecapjv.util.Validador;
+
+import java.util.List;
 
 public class CapacitacionJdbcControlador extends CapacitacionControlador {
     private final CursoDAO cursos = new CursoDAO();
     private final CapacitacionDAO capacitaciones = new CapacitacionDAO();
     private final ParticipacionDAO participaciones = new ParticipacionDAO();
 
-    public CapacitacionJdbcControlador(PersonalJdbcControlador personal) { super(personal); }
+    public CapacitacionJdbcControlador(PersonalJdbcControlador personal) {
+        super(personal);
+    }
 
     @Override
     public void registrarCurso(Curso curso) {
@@ -38,7 +44,8 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
         Validador.requerido(datos.getCurso(), "Curso");
         Capacitacion guardada = Jdbc.transaccion(c -> {
             Curso curso = cursos.buscar(c, datos.getCurso().getIdCurso(), true);
-            Capacitacion nueva = new Capacitacion(0, datos.getFecha(), datos.getHoraInicio(),
+            Capacitacion nueva = new Capacitacion(
+                    0, datos.getFecha(), datos.getHoraInicio(),
                     datos.getHoraFin(), datos.getModalidad(), datos.getEstado(), curso);
             nueva.programar();
             nueva.setIdCapacitacion(capacitaciones.insertar(c, nueva));
@@ -55,7 +62,8 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
         Jdbc.transaccion(c -> {
             Capacitacion actual = capacitaciones.buscar(c, datos.getIdCapacitacion(), true);
             Curso curso = cursos.buscar(c, datos.getCurso().getIdCurso(), true);
-            Capacitacion nueva = new Capacitacion(actual.getIdCapacitacion(), datos.getFecha(),
+            Capacitacion nueva = new Capacitacion(
+                    actual.getIdCapacitacion(), datos.getFecha(),
                     datos.getHoraInicio(), datos.getHoraFin(), datos.getModalidad(), actual.getEstado(), curso);
             nueva.actualizar();
             capacitaciones.actualizar(c, nueva);
@@ -64,15 +72,20 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
     }
 
     @Override
-    public void cancelarCapacitacion(int id) { cambiarEstado(id, false); }
+    public void cancelarCapacitacion(int id) {
+        cambiarEstado(id, false);
+    }
 
     @Override
-    public void cerrarCapacitacion(int id) { cambiarEstado(id, true); }
+    public void cerrarCapacitacion(int id) {
+        cambiarEstado(id, true);
+    }
 
     private void cambiarEstado(int id, boolean cerrar) {
         Jdbc.transaccion(c -> {
             Capacitacion actual = capacitaciones.buscar(c, id, true);
-            if (cerrar) actual.cerrar(); else actual.cancelar();
+            if (cerrar) actual.cerrar();
+            else actual.cancelar();
             capacitaciones.actualizar(c, actual);
             return null;
         });
@@ -93,7 +106,9 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
     }
 
     @Override
-    public List<Curso> listarCursos() { return Jdbc.transaccion(cursos::listar); }
+    public List<Curso> listarCursos() {
+        return Jdbc.transaccion(cursos::listar);
+    }
 
     @Override
     public List<Capacitacion> listarCapacitaciones() {
@@ -102,12 +117,14 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
             List<Participacion> asignaciones = participaciones.listar(c);
             for (Capacitacion capacitacion : lista) {
                 capacitacion.restaurarParticipaciones(asignaciones.stream()
-                        .filter(p -> p.getCapacitacion().getIdCapacitacion() == capacitacion.getIdCapacitacion()).toList());
+                                                              .filter(p -> p.getCapacitacion().getIdCapacitacion() == capacitacion.getIdCapacitacion()).toList());
             }
             return lista;
         });
     }
 
     @Override
-    public List<Participacion> listarParticipaciones() { return Jdbc.transaccion(participaciones::listar); }
+    public List<Participacion> listarParticipaciones() {
+        return Jdbc.transaccion(participaciones::listar);
+    }
 }

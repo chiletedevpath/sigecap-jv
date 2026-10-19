@@ -30,6 +30,8 @@ public class PruebaFlujo {
         return new Capacitacion(0, LocalDate.now().plusDays(2), LocalTime.of(9, 0), LocalTime.of(13, 0), "Presencial", null, curso);
     }
     public static void main(String[] args) throws Exception {
+        PruebaAsistencia.verificar();
+        PruebaPantallaAsistencia.verificar();
         if (args.length > 0 && args[0].equals("--ventana")) {
             SwingUtilities.invokeAndWait(() -> verificarVentana());
             System.out.println("OK: ventana principal creada y navegación Personal/Capacitaciones verificada.");

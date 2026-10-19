@@ -1,9 +1,9 @@
 package pe.utp.sigecapjv.vista;
 
 import pe.utp.sigecapjv.controlador.CapacitacionControlador;
+import pe.utp.sigecapjv.controlador.CapacitacionJdbcControlador;
 import pe.utp.sigecapjv.controlador.PersonalControlador;
 import pe.utp.sigecapjv.controlador.PersonalJdbcControlador;
-import pe.utp.sigecapjv.controlador.CapacitacionJdbcControlador;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -15,13 +15,20 @@ public class FrmPrincipal extends JFrame {
     }
 
     private FrmPrincipal(PersonalJdbcControlador personal) {
-        this(personal, new CapacitacionJdbcControlador(personal));
+        this(
+                personal, new CapacitacionJdbcControlador(personal),
+                new pe.utp.sigecapjv.controlador.SeguimientoControlador());
     }
 
     public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones) {
+        this(personal, capacitaciones, null);
+    }
+
+    public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
+                        pe.utp.sigecapjv.controlador.SeguimientoControlador seguimiento) {
         super("SIGECAP J&V");
         PnlPersonal pnlPersonal = new PnlPersonal(personal);
-        PnlCapacitaciones pnlCapacitaciones = new PnlCapacitaciones(capacitaciones, personal);
+        PnlCapacitaciones pnlCapacitaciones = new PnlCapacitaciones(capacitaciones, personal, seguimiento);
         CardLayout tarjetas = new CardLayout();
         JPanel contenido = new JPanel(tarjetas);
         contenido.add(pnlPersonal, "Personal");

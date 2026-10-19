@@ -1,6 +1,7 @@
 package pe.utp.sigecapjv.modelo;
 
 import pe.utp.sigecapjv.util.Validador;
+
 import java.time.LocalDate;
 
 public class Participacion {
@@ -10,9 +11,11 @@ public class Participacion {
     private Trabajador trabajador;
     private Capacitacion capacitacion;
 
-    public Participacion() {}
+    public Participacion() {
+    }
 
-    public Participacion(int idParticipacion, LocalDate fechaAsignacion, String estado, Trabajador trabajador, Capacitacion capacitacion) {
+    public Participacion(int idParticipacion, LocalDate fechaAsignacion, String estado, Trabajador trabajador,
+                         Capacitacion capacitacion) {
         this.idParticipacion = idParticipacion;
         this.fechaAsignacion = fechaAsignacion;
         this.estado = estado;
@@ -44,7 +47,8 @@ public class Participacion {
     }
 
     Participacion copiaPara(Capacitacion copiaCapacitacion) {
-        return new Participacion(idParticipacion, fechaAsignacion, estado,
+        return new Participacion(
+                idParticipacion, fechaAsignacion, estado,
                 trabajador == null ? null : trabajador.copia(), copiaCapacitacion);
     }
 

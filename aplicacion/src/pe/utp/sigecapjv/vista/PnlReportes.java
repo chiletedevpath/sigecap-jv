@@ -84,19 +84,23 @@ public class PnlReportes extends JPanel {
 
         agregarCampo(panel, g, 0, 0, "Desde", new JTextField("01/09/2026"));
         agregarCampo(panel, g, 1, 0, "Hasta", new JTextField("30/09/2026"));
-        agregarCampo(panel, g, 2, 0, "Curso", new JComboBox<>(new String[]{
-                "Todos", "Formación Básica", "Perfeccionamiento", "Protección Portuaria"
-        }));
+        agregarCampo(
+                panel, g, 2, 0, "Curso", new JComboBox<>(new String[]{
+                        "Todos", "Formación Básica", "Perfeccionamiento", "Protección Portuaria"
+                }));
 
-        agregarCampo(panel, g, 0, 1, "Trabajador", new JComboBox<>(new String[]{
-                "Todos", "Juan Carlos Pérez Soto", "María Elena Torres Ruiz", "Carlos Alberto Rojas Díaz"
-        }));
-        agregarCampo(panel, g, 1, 1, "Estado", new JComboBox<>(new String[]{
-                "Todos", "Programada", "Pendiente", "Completada"
-        }));
-        agregarCampo(panel, g, 2, 1, "Vigencia", new JComboBox<>(new String[]{
-                "Todas", "Vigente", "Próxima a vencer", "Vencida"
-        }));
+        agregarCampo(
+                panel, g, 0, 1, "Trabajador", new JComboBox<>(new String[]{
+                        "Todos", "Juan Carlos Pérez Soto", "María Elena Torres Ruiz", "Carlos Alberto Rojas Díaz"
+                }));
+        agregarCampo(
+                panel, g, 1, 1, "Estado", new JComboBox<>(new String[]{
+                        "Todos", "Programada", "Pendiente", "Completada"
+                }));
+        agregarCampo(
+                panel, g, 2, 1, "Vigencia", new JComboBox<>(new String[]{
+                        "Todas", "Vigente", "Próxima a vencer", "Vencida"
+                }));
 
         JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         acciones.setOpaque(false);
@@ -170,7 +174,8 @@ public class PnlReportes extends JPanel {
         return panel;
     }
 
-    private void agregarCampo(JPanel panel, GridBagConstraints g, int col, int fila, String etiqueta, JComponent campo) {
+    private void agregarCampo(JPanel panel, GridBagConstraints g, int col, int fila, String etiqueta,
+                              JComponent campo) {
         JPanel bloque = new JPanel();
         bloque.setOpaque(false);
         bloque.setLayout(new BoxLayout(bloque, BoxLayout.Y_AXIS));

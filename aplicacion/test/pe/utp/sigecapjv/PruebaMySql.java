@@ -56,6 +56,9 @@ public class PruebaMySql {
             comprobar(personal.listarTrabajadores().stream().anyMatch(t -> "87654321".equals(t.getDni())), "Persistencia del trabajador entre procesos");
             comprobar(gestion.listarParticipaciones().size() == 2, "Persistencia de asignaciones entre procesos");
             comprobar(gestion.listarCapacitaciones().stream().anyMatch(c -> "CERRADA".equals(c.getEstado())), "Persistencia del cierre");
+            int participacion = gestion.listarParticipaciones().get(0).getIdParticipacion();
+            comprobar("JUSTIFICADA".equals(new SeguimientoControlador().consultarAsistencia(participacion).getCondicion()),
+                    "Asistencia persistida entre procesos");
             System.out.println("OK: " + comprobaciones + " comprobaciones entre procesos.");
             return;
         }
@@ -103,7 +106,31 @@ public class PruebaMySql {
         comprobar(p.getIdParticipacion() > 0 && "PENDIENTE".equals(p.getEstado()), "Asignación persistida");
         rechazar(() -> gestion.asignarTrabajador(t, cap));
         comprobar(gestion.listarCapacitaciones().get(0).getParticipaciones().size() == 1, "Composición reconstruida");
+        SeguimientoControlador seguimiento = new SeguimientoControlador();
+        int idParticipacion = p.getIdParticipacion();
+        comprobar(seguimiento.consultarAsistencia(idParticipacion) == null, "Sin asistencia ficticia");
+        rechazar(() -> seguimiento.registrarAsistencia(idParticipacion, "ASISTIO"));
+        rechazar(() -> seguimiento.registrarAsistencia(999999, "ASISTIO"));
+        // Simula que llegó el día del curso exclusivamente en la base aislada.
+        Jdbc.transaccion(c -> {
+            Jdbc.actualizar(c, "UPDATE capacitacion SET fecha=? WHERE idCapacitacion=?", LocalDate.now(), cap.getIdCapacitacion());
+            return null;
+        });
+        rechazar(() -> seguimiento.actualizarAsistencia(idParticipacion, "ASISTIO"));
+        rechazar(() -> seguimiento.registrarAsistencia(idParticipacion, "INVALIDA"));
+        comprobar(seguimiento.consultarAsistencia(idParticipacion) == null, "Registro inválido no persiste");
+        Asistencia asistencia = seguimiento.registrarAsistencia(idParticipacion, " asistio ");
+        comprobar(asistencia.getIdAsistencia() > 0 && "ASISTIO".equals(asistencia.getCondicion()), "Asistencia registrada y normalizada");
+        rechazar(() -> seguimiento.registrarAsistencia(idParticipacion, "NO_ASISTIO"));
+        rechazar(() -> seguimiento.actualizarAsistencia(idParticipacion, ""));
+        comprobar("ASISTIO".equals(seguimiento.consultarAsistencia(idParticipacion).getCondicion()), "Actualización inválida conserva asistencia");
+        Asistencia editada = seguimiento.actualizarAsistencia(idParticipacion, "JUSTIFICADA");
+        comprobar(editada.getIdAsistencia() == asistencia.getIdAsistencia()
+                && editada.getFechaRegistro().equals(asistencia.getFechaRegistro()), "Edición conserva identidad y fecha original");
+        comprobar("JUSTIFICADA".equals(new SeguimientoControlador().consultarAsistencia(idParticipacion).getCondicion()), "Edición persistida");
+        PruebaPantallaAsistencia.verificarMySql(gestion, seguimiento);
         gestion.cerrarCapacitacion(cap.getIdCapacitacion());
+        rechazar(() -> seguimiento.actualizarAsistencia(idParticipacion, "ASISTIO"));
         rechazar(() -> gestion.actualizarCapacitacion(cap));
         rechazar(() -> gestion.asignarTrabajador(t, cap));
 

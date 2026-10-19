@@ -239,7 +239,8 @@ public class PnlUsuarios extends JPanel {
         return scroll;
     }
 
-    private void agregarCampo(JPanel panel, GridBagConstraints g, int col, int fila, String etiqueta, JComponent campo) {
+    private void agregarCampo(JPanel panel, GridBagConstraints g, int col, int fila, String etiqueta,
+                              JComponent campo) {
         JPanel bloque = new JPanel();
         bloque.setOpaque(false);
         bloque.setLayout(new BoxLayout(bloque, BoxLayout.Y_AXIS));

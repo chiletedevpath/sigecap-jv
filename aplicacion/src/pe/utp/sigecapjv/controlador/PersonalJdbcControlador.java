@@ -1,11 +1,15 @@
 package pe.utp.sigecapjv.controlador;
 
-import java.util.List;
-import pe.utp.sigecapjv.dao.*;
+import pe.utp.sigecapjv.dao.Jdbc;
+import pe.utp.sigecapjv.dao.TrabajadorDAO;
 import pe.utp.sigecapjv.modelo.Trabajador;
 import pe.utp.sigecapjv.util.Validador;
 
-/** Variante persistente; la variante en memoria se conserva para pruebas unitarias. */
+import java.util.List;
+
+/**
+ * Variante persistente; la variante en memoria se conserva para pruebas unitarias.
+ */
 public class PersonalJdbcControlador extends PersonalControlador {
     private final TrabajadorDAO dao = new TrabajadorDAO();
 
@@ -36,8 +40,12 @@ public class PersonalJdbcControlador extends PersonalControlador {
     }
 
     @Override
-    Trabajador trabajadorRegistrado(int id) { return buscarTrabajador(id); }
+    Trabajador trabajadorRegistrado(int id) {
+        return buscarTrabajador(id);
+    }
 
     @Override
-    public List<Trabajador> listarTrabajadores() { return Jdbc.transaccion(dao::listar); }
+    public List<Trabajador> listarTrabajadores() {
+        return Jdbc.transaccion(dao::listar);
+    }
 }

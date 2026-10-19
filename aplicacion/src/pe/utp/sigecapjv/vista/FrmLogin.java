@@ -4,7 +4,9 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
-/** Diseño de acceso pendiente de autenticación real. */
+/**
+ * Diseño de acceso pendiente de autenticación real.
+ */
 public class FrmLogin extends JFrame {
 
     private static final Color AZUL = new Color(28, 48, 71);

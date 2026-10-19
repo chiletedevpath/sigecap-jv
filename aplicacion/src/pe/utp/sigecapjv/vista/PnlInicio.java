@@ -25,7 +25,10 @@ public class PnlInicio extends JPanel {
     private final Perfil perfil;
 
     // Los cuatro perfiles se conservan como diseños referenciales, sin autenticar usuarios.
-    public PnlInicio() { this(Perfil.ADMINISTRADOR); }
+    public PnlInicio() {
+        this(Perfil.ADMINISTRADOR);
+    }
+
     public PnlInicio(Perfil perfil) {
         this.perfil = java.util.Objects.requireNonNull(perfil);
         setLayout(new BorderLayout());
@@ -281,6 +284,7 @@ public class PnlInicio extends JPanel {
         panel.add(scroll, BorderLayout.CENTER);
         return panel;
     }
+
     private JPanel crearContenidoAdministrador() {
         JPanel contenedor = new JPanel(new BorderLayout());
         contenedor.setBackground(FONDO);

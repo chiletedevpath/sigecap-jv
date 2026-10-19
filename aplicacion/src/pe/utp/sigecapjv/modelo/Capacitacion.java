@@ -84,11 +84,9 @@ public class Capacitacion {
     // La composición del UML se mantiene: la capacitación contiene sus participaciones.
     void agregarParticipacion(Participacion participacion) {
         exigirProgramada();
-        if (participaciones.stream().anyMatch(p ->
-                                                      (p.getTrabajador().getIdTrabajador() > 0
-                                                              && p.getTrabajador().getIdTrabajador() == participacion.getTrabajador().getIdTrabajador())
-                                                              || p.getTrabajador().getDni().equals(
-                                                              participacion.getTrabajador().getDni()))) {
+        if (participaciones.stream().anyMatch(
+                p -> (p.getTrabajador().getIdTrabajador() > 0 && p.getTrabajador().getIdTrabajador() == participacion.getTrabajador().getIdTrabajador()) || p.getTrabajador().getDni().equals(
+                        participacion.getTrabajador().getDni()))) {
             throw new IllegalArgumentException("El trabajador ya está asignado a esta capacitación.");
         }
         participaciones.add(participacion);
@@ -98,14 +96,15 @@ public class Capacitacion {
         return List.copyOf(participaciones);
     }
 
-    /** Reconstruye la composición desde registros persistidos, sin volver a asignarlos. */
+    /**
+     * Reconstruye la composición desde registros persistidos, sin volver a asignarlos.
+     */
     public void restaurarParticipaciones(List<Participacion> registros) {
         if (!participaciones.isEmpty()) throw new IllegalStateException("Las participaciones ya fueron cargadas.");
         java.util.Set<Integer> trabajadores = new java.util.HashSet<>();
         for (Participacion p : registros) {
-            if (p.getCapacitacion() == null || p.getCapacitacion().getIdCapacitacion() != idCapacitacion
-                    || p.getTrabajador() == null || p.getIdParticipacion() <= 0
-                    || !trabajadores.add(p.getTrabajador().getIdTrabajador())) {
+            if (p.getCapacitacion() == null || p.getCapacitacion().getIdCapacitacion() != idCapacitacion || p.getTrabajador() == null || p.getIdParticipacion() <= 0 || !trabajadores.add(
+                    p.getTrabajador().getIdTrabajador())) {
                 throw new IllegalArgumentException("Participación persistida inconsistente.");
             }
         }
@@ -115,7 +114,7 @@ public class Capacitacion {
     public Capacitacion copia() {
         Capacitacion copia = new Capacitacion(
                 idCapacitacion, fecha, horaInicio, horaFin, modalidad, estado,
-                curso == null ? null : curso.copia());
+                                              curso == null ? null : curso.copia());
         for (Participacion p : participaciones) {
             copia.participaciones.add(p.copiaPara(copia));
         }

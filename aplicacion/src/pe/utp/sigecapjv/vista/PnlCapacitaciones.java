@@ -1,7 +1,12 @@
 package pe.utp.sigecapjv.vista;
 
-import pe.utp.sigecapjv.modelo.*;
-import pe.utp.sigecapjv.controlador.*;
+import pe.utp.sigecapjv.controlador.CapacitacionControlador;
+import pe.utp.sigecapjv.controlador.PersonalControlador;
+import pe.utp.sigecapjv.controlador.SeguimientoControlador;
+import pe.utp.sigecapjv.modelo.Capacitacion;
+import pe.utp.sigecapjv.modelo.Curso;
+import pe.utp.sigecapjv.modelo.Participacion;
+import pe.utp.sigecapjv.modelo.Trabajador;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -29,11 +34,24 @@ public class PnlCapacitaciones extends JPanel {
     private java.util.List<Curso> cursosVisibles = java.util.List.of();
     private java.util.List<Capacitacion> programacionesVisibles = java.util.List.of();
     private int idEdicion;
+    private PnlAsistencia asistencia;
 
     public PnlCapacitaciones(CapacitacionControlador controlador, PersonalControlador personal) {
-        this.controlador = controlador; this.personal = personal;
-        setLayout(new BorderLayout()); add(crearContenido(), BorderLayout.CENTER); refrescar();
-        tabs.addChangeListener(e -> refrescar());
+        this(controlador, personal, null);
+    }
+
+    public PnlCapacitaciones(CapacitacionControlador controlador, PersonalControlador personal,
+                             SeguimientoControlador seguimiento) {
+        this.controlador = controlador;
+        this.personal = personal;
+        if (seguimiento != null) asistencia = new PnlAsistencia(controlador, seguimiento);
+        setLayout(new BorderLayout());
+        add(crearContenido(), BorderLayout.CENTER);
+        refrescar();
+        tabs.addChangeListener(e -> {
+            refrescar();
+            if (tabs.getSelectedIndex() == 3 && asistencia != null) asistencia.refrescar();
+        });
     }
 
     private JPanel crearContenido() {
@@ -72,10 +90,13 @@ public class PnlCapacitaciones extends JPanel {
         tabs.addTab("Cursos", crearCursos());
         tabs.addTab("Programación", crearProgramacion());
         tabs.addTab("Participantes", crearParticipantes());
-        tabs.addTab("Asistencia", crearAsistencia());
+        tabs.addTab("Asistencia", asistencia == null ? crearAsistencia() : asistencia);
         tabs.addTab("Resultados", crearResultados());
         tabs.addTab("Certificados", crearCertificados());
-        for (int i = 3; i < 6; i++) { tabs.setEnabledAt(i, false); tabs.setToolTipTextAt(i, "Funcionalidad pendiente de implementación"); }
+        for (int i = asistencia == null ? 3 : 4; i < 6; i++) {
+            tabs.setEnabledAt(i, false);
+            tabs.setToolTipTextAt(i, "Funcionalidad pendiente de implementación");
+        }
 
         JPanel centro = new JPanel(new BorderLayout());
         centro.setOpaque(false);
@@ -101,8 +122,10 @@ public class PnlCapacitaciones extends JPanel {
         acciones.setOpaque(false);
         acciones.add(btnBuscar);
         acciones.add(btnNuevo);
-        JButton editar = botonSecundario("Editar curso"); acciones.add(editar);
-        btnBuscar.addActionListener(e -> refrescar()); buscar.addActionListener(e -> refrescar());
+        JButton editar = botonSecundario("Editar curso");
+        acciones.add(editar);
+        btnBuscar.addActionListener(e -> refrescar());
+        buscar.addActionListener(e -> refrescar());
         btnNuevo.addActionListener(e -> editarCurso(null));
         editar.addActionListener(e -> {
             int fila = tablaCursos.getSelectedRow();
@@ -144,11 +167,18 @@ public class PnlCapacitaciones extends JPanel {
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         botones.setOpaque(false);
         JButton limpiar = botonSecundario("Limpiar"), guardar = botonPrimario("Guardar");
-        JButton editar = botonSecundario("Editar"), cancelar = botonSecundario("Cancelar sesión"), cerrar = botonSecundario("Cerrar sesión");
-        botones.add(limpiar); botones.add(editar); botones.add(cancelar); botones.add(cerrar); botones.add(guardar);
-        limpiar.addActionListener(e -> limpiarProgramacion()); guardar.addActionListener(e -> guardarProgramacion());
+        JButton editar = botonSecundario("Editar"), cancelar = botonSecundario(
+                "Cancelar sesión"), cerrar = botonSecundario("Cerrar sesión");
+        botones.add(limpiar);
+        botones.add(editar);
+        botones.add(cancelar);
+        botones.add(cerrar);
+        botones.add(guardar);
+        limpiar.addActionListener(e -> limpiarProgramacion());
+        guardar.addActionListener(e -> guardarProgramacion());
         editar.addActionListener(e -> editarProgramacion());
-        cancelar.addActionListener(e -> cambiarEstado(false)); cerrar.addActionListener(e -> cambiarEstado(true));
+        cancelar.addActionListener(e -> cambiarEstado(false));
+        cerrar.addActionListener(e -> cambiarEstado(true));
 
         g.gridx = 0;
         g.gridy = 2;
@@ -173,8 +203,10 @@ public class PnlCapacitaciones extends JPanel {
         filtros.add(new JLabel("Capacitación:"));
         cap.setPreferredSize(new Dimension(420, 36));
         filtros.add(cap);
-        JButton asignar = botonPrimario("Asignar trabajador"); filtros.add(asignar);
-        asignar.addActionListener(e -> asignar()); cap.addActionListener(e -> refrescarParticipantes());
+        JButton asignar = botonPrimario("Asignar trabajador");
+        filtros.add(asignar);
+        asignar.addActionListener(e -> asignar());
+        cap.addActionListener(e -> refrescarParticipantes());
 
         String[] columnas = {"DNI", "Trabajador", "Cargo", "Estado"};
         tablaParticipantes = tablaVacia(columnas);
@@ -242,101 +274,175 @@ public class PnlCapacitaciones extends JPanel {
     private JTable tablaVacia(String[] columnas) {
         return (JTable) scrollTabla(new Object[0][0], columnas).getViewport().getView();
     }
+
     private boolean ejecutar(Runnable accion) {
-        try { accion.run(); refrescar(); return true; }
-        catch (IllegalArgumentException | IllegalStateException | java.time.DateTimeException ex) {
+        try {
+            accion.run();
+            refrescar();
+            return true;
+        } catch (IllegalArgumentException | IllegalStateException | java.time.DateTimeException ex) {
             String mensaje = ex instanceof java.time.format.DateTimeParseException
                     ? "Revise la fecha (AAAA-MM-DD) y el horario (HH:mm - HH:mm)." : ex.getMessage();
             JOptionPane.showMessageDialog(this, mensaje, "Revisar datos", JOptionPane.WARNING_MESSAGE);
             return false;
         }
     }
+
     private void editarCurso(Curso actual) {
         JTextField codigo = campoTexto(18), nombre = campoTexto(18), tipo = campoTexto(18), vigencia = campoTexto(18);
         JComboBox<String> estado = new JComboBox<>(new String[]{"ACTIVO", "INACTIVO"});
         if (actual != null) {
-            codigo.setText(actual.getCodigo()); nombre.setText(actual.getNombre()); tipo.setText(actual.getTipo());
-            vigencia.setText(actual.getVigenciaMeses() == null ? "" : actual.getVigenciaMeses().toString()); estado.setSelectedItem(actual.getEstado());
+            codigo.setText(actual.getCodigo());
+            nombre.setText(actual.getNombre());
+            tipo.setText(actual.getTipo());
+            vigencia.setText(actual.getVigenciaMeses() == null ? "" : actual.getVigenciaMeses().toString());
+            estado.setSelectedItem(actual.getEstado());
         }
-        JPanel form = new JPanel(new GridBagLayout()); GridBagConstraints g = baseGbc();
-        agregarCampo(form, g, 0, 0, "Código", codigo); agregarCampo(form, g, 1, 0, "Nombre", nombre);
-        agregarCampo(form, g, 0, 1, "Tipo", tipo); agregarCampo(form, g, 1, 1, "Vigencia en meses (vacío: no aplica)", vigencia);
+        JPanel form = new JPanel(new GridBagLayout());
+        GridBagConstraints g = baseGbc();
+        agregarCampo(form, g, 0, 0, "Código", codigo);
+        agregarCampo(form, g, 1, 0, "Nombre", nombre);
+        agregarCampo(form, g, 0, 1, "Tipo", tipo);
+        agregarCampo(form, g, 1, 1, "Vigencia en meses (vacío: no aplica)", vigencia);
         agregarCampo(form, g, 0, 2, "Estado", estado);
-        while (JOptionPane.showConfirmDialog(this, form, actual == null ? "Nuevo curso" : "Editar curso",
+        while (JOptionPane.showConfirmDialog(
+                this, form, actual == null ? "Nuevo curso" : "Editar curso",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION) {
             try {
                 Integer meses = vigencia.getText().isBlank() ? null : Integer.valueOf(vigencia.getText().trim());
-                Curso c = new Curso(actual == null ? 0 : actual.getIdCurso(), codigo.getText(), nombre.getText(), tipo.getText(), meses, "ACTIVO");
-                if ("ACTIVO".equals(estado.getSelectedItem())) c.activar(); else c.desactivar();
-                if (actual == null) controlador.registrarCurso(c); else controlador.actualizarCurso(c);
-                refrescar(); return;
+                Curso c = new Curso(
+                        actual == null ? 0 : actual.getIdCurso(), codigo.getText(), nombre.getText(), tipo.getText(),
+                        meses, "ACTIVO");
+                if ("ACTIVO".equals(estado.getSelectedItem())) c.activar();
+                else c.desactivar();
+                if (actual == null) controlador.registrarCurso(c);
+                else controlador.actualizarCurso(c);
+                refrescar();
+                return;
             } catch (IllegalArgumentException | IllegalStateException ex) {
-                JOptionPane.showMessageDialog(this, ex instanceof NumberFormatException ? "La vigencia debe ser un número entero de meses." : ex.getMessage());
+                JOptionPane.showMessageDialog(
+                        this,
+                        ex instanceof NumberFormatException ? "La vigencia debe ser un número entero de meses." :
+                                ex.getMessage());
             }
         }
     }
+
     private void guardarProgramacion() {
         if (ejecutar(() -> {
             String[] horas = horario.getText().split("-", -1);
             if (horas.length != 2) throw new IllegalArgumentException("Use el horario HH:mm - HH:mm.");
-            Capacitacion c = new Capacitacion(idEdicion, java.time.LocalDate.parse(fecha.getText().trim()),
+            Capacitacion c = new Capacitacion(
+                    idEdicion, java.time.LocalDate.parse(fecha.getText().trim()),
                     java.time.LocalTime.parse(horas[0].trim()), java.time.LocalTime.parse(horas[1].trim()),
                     (String) modalidad.getSelectedItem(), null, (Curso) curso.getSelectedItem());
-            if (idEdicion == 0) controlador.programarCapacitacion(c); else controlador.actualizarCapacitacion(c);
+            if (idEdicion == 0) controlador.programarCapacitacion(c);
+            else controlador.actualizarCapacitacion(c);
             limpiarProgramacion();
         })) JOptionPane.showMessageDialog(this, "Programación guardada correctamente.");
     }
-    private void limpiarProgramacion() { idEdicion = 0; fecha.setText(""); horario.setText(""); }
+
+    private void limpiarProgramacion() {
+        idEdicion = 0;
+        fecha.setText("");
+        horario.setText("");
+    }
+
     private void editarProgramacion() {
         int fila = tablaProgramacion.getSelectedRow();
-        if (fila < 0) { JOptionPane.showMessageDialog(this, "Seleccione una capacitación."); return; }
-        Capacitacion c = programacionesVisibles.get(fila); idEdicion = c.getIdCapacitacion();
-        fecha.setText(c.getFecha().toString()); horario.setText(c.getHoraInicio() + " - " + c.getHoraFin()); modalidad.setSelectedItem(c.getModalidad());
-        for (int i = 0; i < curso.getItemCount(); i++) if (curso.getItemAt(i).getIdCurso() == c.getCurso().getIdCurso()) curso.setSelectedIndex(i);
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Seleccione una capacitación.");
+            return;
+        }
+        Capacitacion c = programacionesVisibles.get(fila);
+        idEdicion = c.getIdCapacitacion();
+        fecha.setText(c.getFecha().toString());
+        horario.setText(c.getHoraInicio() + " - " + c.getHoraFin());
+        modalidad.setSelectedItem(c.getModalidad());
+        for (int i = 0; i < curso.getItemCount(); i++)
+            if (curso.getItemAt(i).getIdCurso() == c.getCurso().getIdCurso()) curso.setSelectedIndex(i);
     }
+
     private void cambiarEstado(boolean cerrar) {
         int fila = tablaProgramacion.getSelectedRow();
-        if (fila < 0) { JOptionPane.showMessageDialog(this, "Seleccione una capacitación."); return; }
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Seleccione una capacitación.");
+            return;
+        }
         Capacitacion c = programacionesVisibles.get(fila);
-        if (JOptionPane.showConfirmDialog(this, (cerrar ? "¿Cerrar" : "¿Cancelar") + " la capacitación seleccionada?",
+        if (JOptionPane.showConfirmDialog(
+                this, (cerrar ? "¿Cerrar" : "¿Cancelar") + " la capacitación seleccionada?",
                 "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
-            ejecutar(() -> { if (cerrar) controlador.cerrarCapacitacion(c.getIdCapacitacion()); else controlador.cancelarCapacitacion(c.getIdCapacitacion()); limpiarProgramacion(); });
+            ejecutar(() -> {
+                if (cerrar) controlador.cerrarCapacitacion(c.getIdCapacitacion());
+                else controlador.cancelarCapacitacion(c.getIdCapacitacion());
+                limpiarProgramacion();
+            });
     }
+
     private void asignar() {
         Capacitacion seleccionada = (Capacitacion) cap.getSelectedItem();
-        if (seleccionada == null) { JOptionPane.showMessageDialog(this, "Primero programe una capacitación."); return; }
+        if (seleccionada == null) {
+            JOptionPane.showMessageDialog(this, "Primero programe una capacitación.");
+            return;
+        }
         Object[] trabajadores = personal.listarTrabajadores().toArray();
-        if (trabajadores.length == 0) { JOptionPane.showMessageDialog(this, "Primero registre un trabajador en Personal."); return; }
-        Trabajador t = (Trabajador) JOptionPane.showInputDialog(this, "Trabajador", "Asignar trabajador",
+        if (trabajadores.length == 0) {
+            JOptionPane.showMessageDialog(this, "Primero registre un trabajador en Personal.");
+            return;
+        }
+        Trabajador t = (Trabajador) JOptionPane.showInputDialog(
+                this, "Trabajador", "Asignar trabajador",
                 JOptionPane.PLAIN_MESSAGE, null, trabajadores, trabajadores[0]);
         if (t != null && ejecutar(() -> controlador.asignarTrabajador(t, seleccionada)))
             JOptionPane.showMessageDialog(this, "Trabajador asignado correctamente.");
     }
+
     public void refrescar() {
         int cursoId = curso.getSelectedItem() == null ? 0 : ((Curso) curso.getSelectedItem()).getIdCurso();
         int capId = cap.getSelectedItem() == null ? 0 : ((Capacitacion) cap.getSelectedItem()).getIdCapacitacion();
-        curso.removeAllItems(); cap.removeAllItems();
+        curso.removeAllItems();
+        cap.removeAllItems();
         java.util.List<Curso> todos = controlador.listarCursos();
         String filtro = buscar.getText().trim().toLowerCase(java.util.Locale.ROOT);
-        cursosVisibles = todos.stream().filter(c -> (c.getCodigo()+" "+c.getNombre()+" "+c.getTipo()).toLowerCase(java.util.Locale.ROOT).contains(filtro)).toList();
-        DefaultTableModel m = (DefaultTableModel) tablaCursos.getModel(); m.setRowCount(0);
-        for (Curso c : cursosVisibles) m.addRow(new Object[]{c.getCodigo(), c.getNombre(), c.getTipo(), c.getVigenciaMeses() == null ? "No aplica" : c.getVigenciaMeses() + " meses", c.getEstado()});
-        for (Curso c : todos) { curso.addItem(c); if (c.getIdCurso() == cursoId) curso.setSelectedItem(c); }
-        programacionesVisibles = controlador.listarCapacitaciones(); m = (DefaultTableModel) tablaProgramacion.getModel(); m.setRowCount(0);
+        cursosVisibles = todos.stream().filter(
+                c -> (c.getCodigo() + " " + c.getNombre() + " " + c.getTipo()).toLowerCase(
+                        java.util.Locale.ROOT).contains(filtro)).toList();
+        DefaultTableModel m = (DefaultTableModel) tablaCursos.getModel();
+        m.setRowCount(0);
+        for (Curso c : cursosVisibles)
+            m.addRow(
+                    new Object[]{c.getCodigo(), c.getNombre(), c.getTipo(), c.getVigenciaMeses() == null ? "No aplica"
+                            : c.getVigenciaMeses() + " meses", c.getEstado()});
+        for (Curso c : todos) {
+            curso.addItem(c);
+            if (c.getIdCurso() == cursoId) curso.setSelectedItem(c);
+        }
+        programacionesVisibles = controlador.listarCapacitaciones();
+        m = (DefaultTableModel) tablaProgramacion.getModel();
+        m.setRowCount(0);
         for (Capacitacion c : programacionesVisibles) {
-            m.addRow(new Object[]{c.getCurso().getNombre(), c.getFecha(), c.getHoraInicio()+" - "+c.getHoraFin(), c.getModalidad(), c.getEstado()});
-            cap.addItem(c); if (c.getIdCapacitacion() == capId) cap.setSelectedItem(c);
+            m.addRow(
+                    new Object[]{c.getCurso().getNombre(), c.getFecha(), c.getHoraInicio() + " - " + c.getHoraFin(),
+                            c.getModalidad(), c.getEstado()});
+            cap.addItem(c);
+            if (c.getIdCapacitacion() == capId) cap.setSelectedItem(c);
         }
         refrescarParticipantes();
     }
+
     private void refrescarParticipantes() {
         if (tablaParticipantes == null) return;
-        DefaultTableModel m = (DefaultTableModel) tablaParticipantes.getModel(); m.setRowCount(0);
-        Capacitacion c = (Capacitacion) cap.getSelectedItem(); if (c == null) return;
-        for (Participacion p : controlador.listarParticipaciones()) if (p.getCapacitacion().getIdCapacitacion() == c.getIdCapacitacion()) {
-            Trabajador t = personal.buscarTrabajador(p.getTrabajador().getIdTrabajador());
-            m.addRow(new Object[]{t.getDni(), t.getNombres()+" "+t.getApellidos(), t.getCargo(), p.getEstado()});
-        }
+        DefaultTableModel m = (DefaultTableModel) tablaParticipantes.getModel();
+        m.setRowCount(0);
+        Capacitacion c = (Capacitacion) cap.getSelectedItem();
+        if (c == null) return;
+        for (Participacion p : controlador.listarParticipaciones())
+            if (p.getCapacitacion().getIdCapacitacion() == c.getIdCapacitacion()) {
+                Trabajador t = personal.buscarTrabajador(p.getTrabajador().getIdTrabajador());
+                m.addRow(
+                        new Object[]{t.getDni(), t.getNombres() + " " + t.getApellidos(), t.getCargo(), p.getEstado()});
+            }
     }
 
     private JPanel panelBase() {
@@ -379,7 +485,8 @@ public class PnlCapacitaciones extends JPanel {
         return g;
     }
 
-    private void agregarCampo(JPanel panel, GridBagConstraints g, int col, int fila, String etiqueta, JComponent campo) {
+    private void agregarCampo(JPanel panel, GridBagConstraints g, int col, int fila, String etiqueta,
+                              JComponent campo) {
         JPanel bloque = new JPanel();
         bloque.setOpaque(false);
         bloque.setLayout(new BoxLayout(bloque, BoxLayout.Y_AXIS));

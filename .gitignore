@@ -13,3 +13,14 @@
 Thumbs.db
 .DS_Store
 hs_err_pid*.log
+
+# Configuración y documentos solo locales
+.env
+.env.*
+!.env.example
+/privado/
+.idea/codeStyles/
+**/.idea/dataSources.xml
+**/.idea/dataSources.local.xml
+**/.idea/dataSources/
+**/tempCodeRunnerFile.*
