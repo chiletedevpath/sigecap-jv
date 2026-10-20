@@ -35,6 +35,7 @@ public class PnlCapacitaciones extends JPanel {
     private java.util.List<Capacitacion> programacionesVisibles = java.util.List.of();
     private int idEdicion;
     private PnlAsistencia asistencia;
+    private PnlEvaluacion resultados, certificados;
 
     public PnlCapacitaciones(CapacitacionControlador controlador, PersonalControlador personal) {
         this(controlador, personal, null);
@@ -44,13 +45,19 @@ public class PnlCapacitaciones extends JPanel {
                              SeguimientoControlador seguimiento) {
         this.controlador = controlador;
         this.personal = personal;
-        if (seguimiento != null) asistencia = new PnlAsistencia(controlador, seguimiento);
+        if (seguimiento != null) {
+            asistencia = new PnlAsistencia(controlador, seguimiento);
+            resultados = new PnlEvaluacion(controlador, seguimiento, false);
+            certificados = new PnlEvaluacion(controlador, seguimiento, true);
+        }
         setLayout(new BorderLayout());
         add(crearContenido(), BorderLayout.CENTER);
         refrescar();
         tabs.addChangeListener(e -> {
             refrescar();
             if (tabs.getSelectedIndex() == 3 && asistencia != null) asistencia.refrescar();
+            if (tabs.getSelectedIndex() == 4 && resultados != null) resultados.refrescar();
+            if (tabs.getSelectedIndex() == 5 && certificados != null) certificados.refrescar();
         });
     }
 
@@ -91,9 +98,9 @@ public class PnlCapacitaciones extends JPanel {
         tabs.addTab("Programación", crearProgramacion());
         tabs.addTab("Participantes", crearParticipantes());
         tabs.addTab("Asistencia", asistencia == null ? crearAsistencia() : asistencia);
-        tabs.addTab("Resultados", crearResultados());
-        tabs.addTab("Certificados", crearCertificados());
-        for (int i = asistencia == null ? 3 : 4; i < 6; i++) {
+        tabs.addTab("Resultados", resultados == null ? crearResultados() : resultados);
+        tabs.addTab("Certificados", certificados == null ? crearCertificados() : certificados);
+        for (int i = asistencia == null ? 3 : 6; i < 6; i++) {
             tabs.setEnabledAt(i, false);
             tabs.setToolTipTextAt(i, "Funcionalidad pendiente de implementación");
         }

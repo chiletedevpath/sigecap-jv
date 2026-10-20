@@ -31,6 +31,7 @@ public class PruebaFlujo {
     }
     public static void main(String[] args) throws Exception {
         PruebaAsistencia.verificar();
+        PruebaResultados.verificar();
         PruebaPantallaAsistencia.verificar();
         if (args.length > 0 && args[0].equals("--ventana")) {
             SwingUtilities.invokeAndWait(() -> verificarVentana());

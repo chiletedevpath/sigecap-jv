@@ -61,6 +61,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
         Validador.requerido(datos.getCurso(), "Curso");
         Jdbc.transaccion(c -> {
             Capacitacion actual = capacitaciones.buscar(c, datos.getIdCapacitacion(), true);
+            verificarSinSeguimiento(c, actual.getIdCapacitacion());
             Curso curso = cursos.buscar(c, datos.getCurso().getIdCurso(), true);
             Capacitacion nueva = new Capacitacion(
                     actual.getIdCapacitacion(), datos.getFecha(),
@@ -84,11 +85,25 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
     private void cambiarEstado(int id, boolean cerrar) {
         Jdbc.transaccion(c -> {
             Capacitacion actual = capacitaciones.buscar(c, id, true);
+            if (!cerrar) verificarSinSeguimiento(c, id);
             if (cerrar) actual.cerrar();
             else actual.cancelar();
             capacitaciones.actualizar(c, actual);
             return null;
         });
+    }
+
+    private void verificarSinSeguimiento(java.sql.Connection conexion, int id) throws java.sql.SQLException {
+        try (java.sql.PreparedStatement sentencia = conexion.prepareStatement(
+                "SELECT 1 FROM participacion p LEFT JOIN asistencia a ON a.idParticipacion=p.idParticipacion "
+                + "LEFT JOIN resultado r ON r.idParticipacion=p.idParticipacion "
+                + "LEFT JOIN certificado ce ON ce.idParticipacion=p.idParticipacion "
+                + "WHERE p.idCapacitacion=? AND (a.idAsistencia IS NOT NULL OR r.idResultado IS NOT NULL OR ce.idCertificado IS NOT NULL) LIMIT 1")) {
+            sentencia.setInt(1, id);
+            try (java.sql.ResultSet fila = sentencia.executeQuery()) {
+                if (fila.next()) throw new IllegalStateException("La capacitación tiene seguimiento registrado; no se puede reprogramar ni cancelar.");
+            }
+        }
     }
 
     @Override

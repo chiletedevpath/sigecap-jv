@@ -4,18 +4,20 @@ Sistema de gestión de cursos de capacitación desarrollado como proyecto acadé
 
 ## Avance
 
-Ya se puede registrar personal y cursos, programar capacitaciones, asignar trabajadores y registrar o corregir su asistencia. Estos datos se guardan en MySQL.
+Ya se puede registrar personal y cursos, programar capacitaciones, asignar trabajadores y registrar asistencia, resultados y certificados. Estos datos se guardan en MySQL.
 
 | Hito | Estado |
 | --- | --- |
 | Personal, cursos, programación y participantes | Implementado |
 | Asistencia: registro, consulta y actualización | Implementado |
-| Resultados y certificados | Pendiente |
+| Resultados y certificados | Implementado |
 | Historial y alertas del trabajador | Pendiente |
 | Usuarios, roles y acceso | Pendiente |
 | Reportes | Pendiente |
 
 Las clases y vistas de los módulos pendientes se conservan para continuar el desarrollo. Las pruebas de Swing verifican los eventos; la revisión visual de las ventanas se hace en IntelliJ.
+
+Los resultados admiten notas opcionales de 0 a 20 y requieren asistencia. La condición (Aprobado, Desaprobado, Apto o No apto) se registra según la evaluación recibida. El certificado requiere un resultado favorable; se guardan su número, fechas y ruta de evidencia. La ruta referencia el archivo local, no lo copia ni lo publica. La vigencia se calcula al consultar; las alertas de próximo vencimiento corresponden al siguiente hito.
 
 ## Ejecutar
 

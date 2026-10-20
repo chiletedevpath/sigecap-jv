@@ -54,7 +54,10 @@ public class PruebaMySql {
         // Una segunda JVM debe recuperar lo registrado por la primera.
         if (!personal.listarTrabajadores().isEmpty()) {
             comprobar(personal.listarTrabajadores().stream().anyMatch(t -> "87654321".equals(t.getDni())), "Persistencia del trabajador entre procesos");
-            comprobar(gestion.listarParticipaciones().size() == 2, "Persistencia de asignaciones entre procesos");
+            comprobar(gestion.listarParticipaciones().size() == 3, "Persistencia de asignaciones entre procesos");
+            int evaluada = gestion.listarParticipaciones().stream().filter(p -> "EVALUACION".equals(p.getCapacitacion().getCurso().getCodigo())).findFirst().orElseThrow().getIdParticipacion();
+            comprobar("APTO".equals(new SeguimientoControlador().consultarResultado(evaluada).getCondicion()), "Resultado entre procesos");
+            comprobar("CERT-EVAL-EDITADO".equals(new SeguimientoControlador().consultarCertificado(evaluada).getNumero()), "Certificado entre procesos");
             comprobar(gestion.listarCapacitaciones().stream().anyMatch(c -> "CERRADA".equals(c.getEstado())), "Persistencia del cierre");
             int participacion = gestion.listarParticipaciones().get(0).getIdParticipacion();
             comprobar("JUSTIFICADA".equals(new SeguimientoControlador().consultarAsistencia(participacion).getCondicion()),
@@ -180,6 +183,7 @@ public class PruebaMySql {
             comprobar(contieneFilas(new pe.utp.sigecapjv.vista.PnlPersonal(personal), 1), "Personal muestra datos JDBC");
             comprobar(contieneFilas(new pe.utp.sigecapjv.vista.PnlCapacitaciones(gestion, personal), 3), "Programaciones muestran datos JDBC");
         });
+        PruebaResultadosMySql.verificar(personal, gestion);
         System.out.println("OK: " + comprobaciones + " comprobaciones MySQL.");
     }
 }

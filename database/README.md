@@ -6,7 +6,7 @@ La aplicación funcional requiere Java 17 o superior y MySQL 8.4. Los mockups de
 
 `001-esquema.sql` conserva el diseño físico entregado: 12 tablas InnoDB y la vista `vw_control_vigencias`. Ejecútalo una sola vez en una base nueva desde MySQL Workbench. Si ya creaste las tablas, no vuelvas a ejecutarlo: no es una migración incremental ni borra registros existentes.
 
-El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participacion` y `asistencia`. Las demás tablas están preparadas para etapas posteriores. La vista obtiene el estado actual por fecha; el umbral de próximo vencimiento todavía debe definirse. El primer avance no utiliza el campo almacenado `estadoVigencia`.
+El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participacion`, `asistencia`, `resultado` y `certificado`. Las demás tablas están preparadas para etapas posteriores. La vista obtiene el estado actual por fecha; el umbral de próximo vencimiento todavía debe definirse. El estado de vigencia se calcula al consultar las fechas; `estadoVigencia` se guarda como NULL para evitar estados desactualizados.
 
 ## Conexión local
 
@@ -19,7 +19,7 @@ La aplicación lee estas variables del proceso que la inicia:
 | `SIGECAP_DB_PASSWORD` | Contraseña de ese usuario. No guardarla en Git. |
 | `SIGECAP_JDBC_JAR` | Ruta al JAR de Connector/J para el lanzador PowerShell, si no está en la caché Maven indicada abajo. |
 
-Usa una cuenta de aplicación con permisos SELECT, INSERT y UPDATE sobre las cinco tablas del flujo. La creación del esquema se hace con una cuenta administrativa separada. No se requiere acceso a Docker para trabajar con el MySQL que ya tienes en Workbench.
+Usa una cuenta de aplicación con permisos SELECT, INSERT y UPDATE sobre las siete tablas del flujo. La creación del esquema se hace con una cuenta administrativa separada. No se requiere acceso a Docker para trabajar con el MySQL que ya tienes en Workbench.
 
 En IntelliJ selecciona **SIGECAP MySQL** y configura las variables en la configuración local de ejecución, sin incorporarlas al XML compartido. También puedes iniciar IntelliJ desde una consola donde ya estén definidas. Si falta el SDK, selecciona tu JDK instalado. La biblioteca del proyecto usa `com.mysql:mysql-connector-j:26.7.0`; IntelliJ puede resolverla desde Maven.
 
@@ -56,6 +56,8 @@ El segundo comando crea un MySQL 8.4 aislado con puerto aleatorio enlazado solo 
 - MySQL genera los identificadores. Los objetos reciben el identificador después de confirmar la transacción.
 - Programar bloquea el curso; asignar bloquea capacitación y trabajador mientras se validan sus estados. La restricción UNIQUE impide asignaciones duplicadas incluso con dos sesiones.
 - Las participaciones se reconstruyen al leer las capacitaciones, sin ejecutar otra vez la asignación del modelo.
-- `DATE` se mapea a `LocalDate`, `TIME` a `LocalTime` y `vigenciaMeses` permite NULL. `DATETIME` de asistencia se mapea a `LocalDateTime`; los resultados quedan pendientes.
+- `DATE` se mapea a `LocalDate`, `TIME` a `LocalTime` y `vigenciaMeses` permite NULL. `DATETIME` se mapea a `LocalDateTime` y las notas `DECIMAL` a `BigDecimal` (0 a 20, hasta dos decimales).
 
-La implementación no modifica el informe académico ni incorpora autenticación, certificados o notificaciones funcionales.
+La implementación no modifica el informe académico ni incorpora autenticación o notificaciones funcionales.
+
+Registrar un resultado marca la participación como COMPLETADA en la misma transacción, incluso si fue desaprobado. Resultados y certificados pueden registrarse o corregirse tras cerrar la capacitación. Las capacitaciones con seguimiento no se pueden reprogramar ni cancelar. Un resultado existente bloquea el cambio a inasistencia; un certificado existente bloquea el cambio a resultado desfavorable. El vencimiento se toma del documento recibido: vacío significa que no aplica. El día del vencimiento todavía es vigente.
