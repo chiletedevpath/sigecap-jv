@@ -105,6 +105,8 @@ public class FrmPrincipal extends JFrame {
                     super.dispatchEvent(evento);
                 } catch (IllegalStateException ex) {
                     if (!(ex.getCause() instanceof java.sql.SQLException)) throw ex;
+                    // El diálogo es genérico; la causa queda en la consola (docker compose logs app).
+                    ex.getCause().printStackTrace();
                     JOptionPane.showMessageDialog(null, ex.getMessage(), "MySQL", JOptionPane.ERROR_MESSAGE);
                 }
             }

@@ -33,6 +33,19 @@ Desde PowerShell, en la raíz del proyecto y con la conexión configurada:
 
 El script toma el JDK de `JAVA_HOME` o `PATH`. Si es necesario, se pueden indicar las rutas con `-JavaHome` y `-ConnectorJar`.
 
+### Con Docker
+
+`docker-compose.yml` levanta MySQL 8.4 y la aplicación, sin JDK ni MySQL instalados. Requiere Windows 11 con Docker Desktop (WSL 2): la ventana Swing se muestra mediante WSLg.
+
+```powershell
+# Una vez: copiar .env.example como .env y definir SIGECAP_MYSQL_ROOT_PASSWORD y SIGECAP_DB_PASSWORD.
+docker compose up -d --build   # base y aplicación
+docker compose up -d app       # volver a abrir la ventana tras cerrarla
+docker compose down            # detener; los datos quedan en el volumen sigecap-datos
+```
+
+El esquema y la cuenta `sigecap_app` (SELECT, INSERT y UPDATE sobre las siete tablas del flujo) se crean solo la primera vez que se inicializa el volumen. La base queda publicada en `127.0.0.1:3307` para Workbench, separada del MySQL local. `docker compose down -v` borra el volumen y todos sus datos.
+
 ## Carpetas
 
 - `aplicacion/src/`: código del sistema.
