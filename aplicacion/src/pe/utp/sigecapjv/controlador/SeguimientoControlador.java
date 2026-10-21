@@ -1,24 +1,21 @@
 package pe.utp.sigecapjv.controlador;
 
-import pe.utp.sigecapjv.dao.AsistenciaDAO;
-import pe.utp.sigecapjv.dao.Jdbc;
+import pe.utp.sigecapjv.dao.*;
 import pe.utp.sigecapjv.modelo.Asistencia;
+import pe.utp.sigecapjv.modelo.Certificado;
+import pe.utp.sigecapjv.modelo.Participacion;
+import pe.utp.sigecapjv.modelo.Resultado;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.math.BigDecimal;
-import pe.utp.sigecapjv.modelo.Resultado;
-import pe.utp.sigecapjv.modelo.Certificado;
-import pe.utp.sigecapjv.dao.ResultadoDAO;
-import pe.utp.sigecapjv.dao.CertificadoDAO;
 
 public class SeguimientoControlador {
     private final AsistenciaDAO asistencias = new AsistenciaDAO();
     private final ResultadoDAO resultados = new ResultadoDAO();
     private final CertificadoDAO certificados = new CertificadoDAO();
+    private final ParticipacionDAO participaciones = new ParticipacionDAO();
 
     public Asistencia consultarAsistencia(int idParticipacion) {
         if (idParticipacion <= 0) throw new IllegalArgumentException("Participación inválida.");
@@ -45,8 +42,10 @@ public class SeguimientoControlador {
             if (asistencia == null) throw new IllegalArgumentException("La participación aún no tiene asistencia.");
             asistencia.setCondicion(condicion);
             asistencia.actualizar();
-            if (!"ASISTIO".equals(asistencia.getCondicion()) && resultados.buscarPorParticipacion(conexion, idParticipacion) != null) {
-                throw new IllegalStateException("La asistencia tiene un resultado registrado y debe mantenerse como ASISTIO.");
+            if (!"ASISTIO".equals(asistencia.getCondicion()) && resultados.buscarPorParticipacion(
+                    conexion, idParticipacion) != null) {
+                throw new IllegalStateException(
+                        "La asistencia tiene un resultado registrado y debe mantenerse como ASISTIO.");
             }
             asistencias.actualizar(conexion, asistencia);
             return asistencia;
@@ -54,33 +53,32 @@ public class SeguimientoControlador {
     }
 
     private void validarParticipacion(Connection conexion, int idParticipacion) throws SQLException {
+
         validarParticipacion(conexion, idParticipacion, false);
     }
 
-    private record DatosParticipacion(int trabajador, LocalDate fecha) {}
+    private Participacion validarParticipacion(Connection conexion, int idParticipacion, boolean admiteCerrada) throws
+            SQLException {
 
-    private DatosParticipacion validarParticipacion(Connection conexion, int idParticipacion, boolean admiteCerrada) throws SQLException {
-        // El bloqueo serializa registros concurrentes y cambios de estado de la capacitación.
-        try (PreparedStatement sentencia = conexion.prepareStatement(
-                "SELECT p.idTrabajador,p.estado AS estadoParticipacion,c.estado AS estadoCapacitacion,c.fecha "
-                        + "FROM participacion p JOIN capacitacion c ON c.idCapacitacion=p.idCapacitacion "
-                        + "WHERE p.idParticipacion=? FOR UPDATE")) {
-            sentencia.setInt(1, idParticipacion);
-            try (ResultSet fila = sentencia.executeQuery()) {
-                if (!fila.next()) throw new IllegalArgumentException("La participación no existe.");
-                if ("CANCELADA".equals(fila.getString("estadoParticipacion"))
-                        || !("PROGRAMADA".equals(fila.getString("estadoCapacitacion"))
-                        || admiteCerrada && "CERRADA".equals(fila.getString("estadoCapacitacion")))) {
-                    throw new IllegalStateException(
-                            "Solo se registra asistencia en participaciones vigentes de capacitaciones programadas.");
-                }
-                if (fila.getObject("fecha", LocalDate.class).isAfter(LocalDate.now())) {
-                    throw new IllegalStateException(
-                            "No se puede registrar asistencia antes de la fecha de capacitación.");
-                }
-                return new DatosParticipacion(fila.getInt("idTrabajador"), fila.getObject("fecha", LocalDate.class));
-            }
+        Participacion participacion = participaciones.buscar(conexion, idParticipacion, true);
+
+        String estadoParticipacion = participacion.getEstado();
+
+        String estadoCapacitacion = participacion.getCapacitacion().getEstado();
+
+        if ("CANCELADA".equals(estadoParticipacion) || !("PROGRAMADA".equals(
+                estadoCapacitacion) || (admiteCerrada && "CERRADA".equals(estadoCapacitacion)))) {
+
+            throw new IllegalStateException(
+                    "Solo se registra seguimiento en participaciones " + "vigentes de capacitaciones programadas.");
         }
+
+        if (participacion.getCapacitacion().getFecha().isAfter(LocalDate.now())) {
+
+            throw new IllegalStateException("No se puede registrar asistencia antes " + "de la fecha de capacitación.");
+        }
+
+        return participacion;
     }
 
     public Resultado consultarResultado(int idParticipacion) {
@@ -99,18 +97,23 @@ public class SeguimientoControlador {
         return Jdbc.transaccion(c -> {
             validarParticipacion(c, id, true);
             Resultado anterior = resultados.buscarPorParticipacion(c, id);
-            if (editar != (anterior != null)) throw new IllegalStateException(editar ? "El resultado no existe." : "Ya existe un resultado. Utilice actualizar.");
-            Resultado dato = new Resultado(anterior == null ? 0 : anterior.getIdResultado(), id, condicion, nota,
-                    anterior == null ? null : anterior.getFechaRegistro());
-            if (editar) dato.actualizar(); else dato.registrar();
+            if (editar != (anterior != null)) throw new IllegalStateException(
+                    editar ? "El resultado no existe." : "Ya existe un resultado. Utilice actualizar.");
+            Resultado dato = new Resultado(
+                    anterior == null ? 0 : anterior.getIdResultado(), id, condicion, nota,
+                                           anterior == null ? null : anterior.getFechaRegistro());
+            if (editar) dato.actualizar();
+            else dato.registrar();
             if (!dato.validarAsistencia(asistencias.buscarPorParticipacion(c, id))) {
                 throw new IllegalStateException("Para registrar un resultado, la asistencia debe ser ASISTIO.");
             }
             if (!dato.esFavorable() && certificados.buscarPorParticipacion(c, id) != null) {
-                throw new IllegalStateException("El resultado tiene un certificado registrado y debe mantenerse favorable.");
+                throw new IllegalStateException(
+                        "El resultado tiene un certificado registrado y debe mantenerse favorable.");
             }
-            if (editar) resultados.actualizar(c, dato); else dato.setIdResultado(resultados.insertar(c, dato));
-            Jdbc.actualizar(c, "UPDATE participacion SET estado='COMPLETADA' WHERE idParticipacion=?", id);
+            if (editar) resultados.actualizar(c, dato);
+            else dato.setIdResultado(resultados.insertar(c, dato));
+            participaciones.actualizarEstado(c, id, "COMPLETADA");
             return dato;
         });
     }
@@ -119,28 +122,37 @@ public class SeguimientoControlador {
         return Jdbc.transaccion(c -> certificados.buscarPorParticipacion(c, idParticipacion));
     }
 
-    public Certificado registrarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento, String evidencia) {
+    public Certificado registrarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento,
+                                            String evidencia) {
         return guardarCertificado(id, numero, emision, vencimiento, evidencia, false);
     }
 
-    public Certificado actualizarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento, String evidencia) {
+    public Certificado actualizarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento,
+                                             String evidencia) {
         return guardarCertificado(id, numero, emision, vencimiento, evidencia, true);
     }
 
-    private Certificado guardarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento, String evidencia, boolean editar) {
+    private Certificado guardarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento,
+                                           String evidencia, boolean editar) {
         return Jdbc.transaccion(c -> {
-            DatosParticipacion participante = validarParticipacion(c, id, true);
+            Participacion participante = validarParticipacion(c, id, true);
             Resultado resultado = resultados.buscarPorParticipacion(c, id);
-            if (resultado == null || !resultado.esFavorable() || !resultado.validarAsistencia(asistencias.buscarPorParticipacion(c, id))) {
+            if (resultado == null || !resultado.esFavorable() || !resultado.validarAsistencia(
+                    asistencias.buscarPorParticipacion(c, id))) {
                 throw new IllegalStateException("El certificado requiere asistencia y un resultado APROBADO o APTO.");
             }
             Certificado anterior = certificados.buscarPorParticipacion(c, id);
-            if (editar != (anterior != null)) throw new IllegalStateException(editar ? "El certificado no existe." : "Ya existe un certificado. Utilice actualizar.");
-            Certificado dato = new Certificado(anterior == null ? 0 : anterior.getIdCertificado(), id, participante.trabajador(),
-                    numero, emision, vencimiento, evidencia);
-            if (editar) dato.actualizar(); else dato.registrar();
-            if (emision.isBefore(participante.fecha())) throw new IllegalArgumentException("La emisión no puede ser anterior a la capacitación.");
-            if (editar) certificados.actualizar(c, dato); else dato.setIdCertificado(certificados.insertar(c, dato));
+            if (editar != (anterior != null)) throw new IllegalStateException(
+                    editar ? "El certificado no existe." : "Ya existe un certificado. Utilice actualizar.");
+            Certificado dato = new Certificado(
+                    anterior == null ? 0 : anterior.getIdCertificado(), id,
+                    participante.getTrabajador().getIdTrabajador(), numero, emision, vencimiento, evidencia);
+            if (editar) dato.actualizar();
+            else dato.registrar();
+            if (emision.isBefore(participante.getCapacitacion().getFecha()))
+                throw new IllegalArgumentException("La emisión no puede ser anterior a la capacitación.");
+            if (editar) certificados.actualizar(c, dato);
+            else dato.setIdCertificado(certificados.insertar(c, dato));
             return dato;
         });
     }

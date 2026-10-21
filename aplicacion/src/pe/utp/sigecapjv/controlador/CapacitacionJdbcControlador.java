@@ -93,16 +93,14 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
         });
     }
 
-    private void verificarSinSeguimiento(java.sql.Connection conexion, int id) throws java.sql.SQLException {
-        try (java.sql.PreparedStatement sentencia = conexion.prepareStatement(
-                "SELECT 1 FROM participacion p LEFT JOIN asistencia a ON a.idParticipacion=p.idParticipacion "
-                + "LEFT JOIN resultado r ON r.idParticipacion=p.idParticipacion "
-                + "LEFT JOIN certificado ce ON ce.idParticipacion=p.idParticipacion "
-                + "WHERE p.idCapacitacion=? AND (a.idAsistencia IS NOT NULL OR r.idResultado IS NOT NULL OR ce.idCertificado IS NOT NULL) LIMIT 1")) {
-            sentencia.setInt(1, id);
-            try (java.sql.ResultSet fila = sentencia.executeQuery()) {
-                if (fila.next()) throw new IllegalStateException("La capacitación tiene seguimiento registrado; no se puede reprogramar ni cancelar.");
-            }
+    private void verificarSinSeguimiento(
+            java.sql.Connection conexion,
+            int id) throws java.sql.SQLException {
+
+        if (capacitaciones.tieneSeguimiento(conexion, id)) {
+            throw new IllegalStateException(
+                    "La capacitación tiene seguimiento registrado; "
+                            + "no se puede reprogramar ni cancelar.");
         }
     }
 

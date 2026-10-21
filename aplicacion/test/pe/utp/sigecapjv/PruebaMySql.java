@@ -107,6 +107,29 @@ public class PruebaMySql {
         t.setEstado("ACTIVO"); personal.actualizarTrabajador(t);
         Participacion p = gestion.asignarTrabajador(t, cap);
         comprobar(p.getIdParticipacion() > 0 && "PENDIENTE".equals(p.getEstado()), "Asignación persistida");
+        // La extracción a DAO debe conservar el bloqueo de ambas entidades.
+        try (Connection lectura = ConexionBD.obtenerConexion(); Connection cambio = ConexionBD.obtenerConexion()) {
+            lectura.setAutoCommit(false);
+            cambio.setAutoCommit(false);
+            try {
+                new ParticipacionDAO().buscar(lectura, p.getIdParticipacion(), true);
+                try (Statement configuracion = cambio.createStatement()) {
+                    configuracion.execute("SET SESSION innodb_lock_wait_timeout=1");
+                }
+                try (PreparedStatement cancelar = cambio.prepareStatement("UPDATE capacitacion SET estado='CANCELADA' WHERE idCapacitacion=?")) {
+                    cancelar.setInt(1, cap.getIdCapacitacion());
+                    try {
+                        cancelar.executeUpdate();
+                        throw new AssertionError("La capacitación no quedó bloqueada durante el seguimiento.");
+                    } catch (SQLException ex) {
+                        comprobar(ex.getErrorCode() == 1205, "Cambio concurrente espera el bloqueo de capacitación");
+                    }
+                }
+            } finally {
+                cambio.rollback();
+                lectura.rollback();
+            }
+        }
         rechazar(() -> gestion.asignarTrabajador(t, cap));
         comprobar(gestion.listarCapacitaciones().get(0).getParticipaciones().size() == 1, "Composición reconstruida");
         SeguimientoControlador seguimiento = new SeguimientoControlador();

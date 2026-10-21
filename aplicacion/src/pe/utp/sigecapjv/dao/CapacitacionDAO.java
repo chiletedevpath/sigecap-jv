@@ -55,4 +55,30 @@ public class CapacitacionDAO {
                 r.getString("modalidad"), r.getString("estado"),
                 new CursoDAO().buscar(c, r.getInt("idCurso"), false));
     }
+
+    public boolean tieneSeguimiento(Connection c, int idCapacitacion)
+            throws SQLException {
+
+        String sql =
+                "SELECT 1 FROM participacion p "
+                        + "LEFT JOIN asistencia a "
+                        + "ON a.idParticipacion = p.idParticipacion "
+                        + "LEFT JOIN resultado r "
+                        + "ON r.idParticipacion = p.idParticipacion "
+                        + "LEFT JOIN certificado ce "
+                        + "ON ce.idParticipacion = p.idParticipacion "
+                        + "WHERE p.idCapacitacion = ? "
+                        + "AND (a.idAsistencia IS NOT NULL "
+                        + "OR r.idResultado IS NOT NULL "
+                        + "OR ce.idCertificado IS NOT NULL) "
+                        + "LIMIT 1";
+
+        try (PreparedStatement p = c.prepareStatement(sql)) {
+            p.setInt(1, idCapacitacion);
+
+            try (ResultSet r = p.executeQuery()) {
+                return r.next();
+            }
+        }
+    }
 }
