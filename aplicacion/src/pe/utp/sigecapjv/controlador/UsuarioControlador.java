@@ -10,6 +10,9 @@ public class UsuarioControlador {
     private final UsuarioDAO usuarios = new UsuarioDAO();
     private final RolDAO roles = new RolDAO();
     public UsuarioControlador(SesionUsuario sesion) { this.sesion = java.util.Objects.requireNonNull(sesion); }
+    public RolControlador controladorRoles() { return new RolControlador(sesion); }
+    public boolean puedeGestionar() { return sesion.puede("usuarios", "gestionar"); }
+    public String rolActual() { return sesion.getRol(); }
     public List<Usuario> listar() {
         AccesoControlador.exigir(sesion,"usuarios","consultar");
         return Jdbc.transaccion(usuarios::listar);
@@ -28,8 +31,7 @@ public class UsuarioControlador {
         if (usuario.idUsuario() == 0 && hash == null) throw new IllegalArgumentException("Ingrese una contraseña para el nuevo usuario.");
         return Jdbc.transaccion(c -> {
             usuarios.bloquear(c);
-            if (!sesion.estaActiva() || !AccesoDAO.permite(c,sesion.getIdUsuario(),"usuarios","gestionar"))
-                throw new SecurityException("La sesión ya no puede administrar usuarios.");
+            AccesoControlador.exigir(c, sesion, "usuarios", "gestionar");
             List<Usuario> actuales = usuarios.listar(c);
             Usuario anterior = actuales.stream().filter(u -> u.idUsuario()==usuario.idUsuario()).findFirst().orElse(null);
             if (usuario.idUsuario() > 0 && anterior == null) throw new IllegalArgumentException("Usuario inexistente.");

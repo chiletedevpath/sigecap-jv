@@ -23,9 +23,21 @@ public final class PruebaVentanasAcceso {
             }
         }).autenticar("prueba","Clave-solo-pruebas-2026".toCharArray());
         UsuarioControlador datos = new UsuarioControlador(sesion) {
+            @Override public boolean puedeGestionar() { return true; }
             @Override public List<Rol> roles() { return List.of(new Rol(1,"Administrador"),new Rol(2,"Trabajador")); }
             @Override public List<Usuario> listar() { return List.of(new Usuario(1,1,null,"Persona de prueba","prueba","prueba@example.test","ACTIVO")); }
             @Override public List<String[]> permisos() { return java.util.Collections.singletonList(new String[]{"Administrador","usuarios","gestionar"}); }
+            @Override public RolControlador controladorRoles() {
+                return new RolControlador(sesion) {
+                    @Override public List<Rol> listar() { return roles(); }
+                    @Override public boolean puedeEditar() { return true; }
+                    @Override public Configuracion consultar(int id) {
+                        return new Configuracion(new Rol(id, id == 1 ? "Administrador" : "Trabajador"),
+                                List.of(new Permiso(1, "usuarios", "consultar"), new Permiso(2, "usuarios", "gestionar")),
+                                id == 1 ? Set.of(1, 2) : Set.of());
+                    }
+                };
+            }
         };
         SwingUtilities.invokeAndWait(() -> {
             FrmLogin login = new FrmLogin();

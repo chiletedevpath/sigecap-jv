@@ -2,9 +2,6 @@ package pe.utp.sigecapjv.vista;
 
 import pe.utp.sigecapjv.controlador.*;
 
-
-
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -101,9 +98,22 @@ public class FrmPrincipal extends JFrame {
         principal.add(menu, BorderLayout.WEST);
         principal.add(contenido, BorderLayout.CENTER);
 
-        if (sesion != null) addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override public void windowClosed(java.awt.event.WindowEvent e) { sesion.close(); }
-        });
+        if (sesion != null) {
+            VigilanciaSesion vigilancia = new VigilanciaSesion(sesion, new SesionControlador(), mensaje -> {
+                if (!isDisplayable()) return;
+                dispose();
+                FrmLogin acceso = new FrmLogin();
+                acceso.setVisible(true);
+                JOptionPane.showMessageDialog(acceso, mensaje, "Sesión finalizada", JOptionPane.INFORMATION_MESSAGE);
+            });
+            addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override public void windowOpened(java.awt.event.WindowEvent e) { vigilancia.iniciar(); }
+                @Override public void windowClosed(java.awt.event.WindowEvent e) { vigilancia.close(); sesion.close(); }
+            });
+            addWindowFocusListener(new java.awt.event.WindowAdapter() {
+                @Override public void windowGainedFocus(java.awt.event.WindowEvent e) { vigilancia.revisar(); }
+            });
+        }
         setContentPane(principal);
         setSize(1220, 750);
         setMinimumSize(new Dimension(1100, 680));
