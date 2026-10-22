@@ -10,16 +10,24 @@ import pe.utp.sigecapjv.util.Validador;
 import java.util.List;
 
 public class CapacitacionJdbcControlador extends CapacitacionControlador {
+    private final SesionUsuario sesion;
+
     private final CursoDAO cursos = new CursoDAO();
     private final CapacitacionDAO capacitaciones = new CapacitacionDAO();
     private final ParticipacionDAO participaciones = new ParticipacionDAO();
 
     public CapacitacionJdbcControlador(PersonalJdbcControlador personal) {
+        this(personal, null);
+    }
+
+    public CapacitacionJdbcControlador(PersonalJdbcControlador personal, SesionUsuario sesion) {
         super(personal);
+        this.sesion = sesion;
     }
 
     @Override
     public void registrarCurso(Curso curso) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(curso, "Curso");
         Curso nuevo = curso.copia();
         nuevo.registrar();
@@ -28,6 +36,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public void actualizarCurso(Curso curso) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(curso, "Curso");
         Curso nuevo = curso.copia();
         nuevo.actualizar();
@@ -40,6 +49,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public void programarCapacitacion(Capacitacion datos) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(datos, "Capacitación");
         Validador.requerido(datos.getCurso(), "Curso");
         Capacitacion guardada = Jdbc.transaccion(c -> {
@@ -57,6 +67,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public void actualizarCapacitacion(Capacitacion datos) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(datos, "Capacitación");
         Validador.requerido(datos.getCurso(), "Curso");
         Jdbc.transaccion(c -> {
@@ -74,11 +85,13 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public void cancelarCapacitacion(int id) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         cambiarEstado(id, false);
     }
 
     @Override
     public void cerrarCapacitacion(int id) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         cambiarEstado(id, true);
     }
 
@@ -106,6 +119,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public Participacion asignarTrabajador(Trabajador trabajador, Capacitacion capacitacion) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(trabajador, "Trabajador");
         Validador.requerido(capacitacion, "Capacitación");
         return Jdbc.transaccion(c -> {
@@ -120,11 +134,13 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public List<Curso> listarCursos() {
+        AccesoControlador.exigir(sesion, "capacitaciones", "consultar");
         return Jdbc.transaccion(cursos::listar);
     }
 
     @Override
     public List<Capacitacion> listarCapacitaciones() {
+        AccesoControlador.exigir(sesion, "capacitaciones", "consultar");
         return Jdbc.transaccion(c -> {
             List<Capacitacion> lista = capacitaciones.listar(c);
             List<Participacion> asignaciones = participaciones.listar(c);
@@ -138,6 +154,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public List<Participacion> listarParticipaciones() {
+        AccesoControlador.exigir(sesion, "capacitaciones", "consultar");
         return Jdbc.transaccion(participaciones::listar);
     }
 }

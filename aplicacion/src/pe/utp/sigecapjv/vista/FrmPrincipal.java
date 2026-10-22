@@ -1,38 +1,49 @@
 package pe.utp.sigecapjv.vista;
 
-import pe.utp.sigecapjv.controlador.CapacitacionControlador;
-import pe.utp.sigecapjv.controlador.CapacitacionJdbcControlador;
-import pe.utp.sigecapjv.controlador.PersonalControlador;
-import pe.utp.sigecapjv.controlador.PersonalJdbcControlador;
+import pe.utp.sigecapjv.controlador.*;
+
+
+
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class FrmPrincipal extends JFrame {
-    public FrmPrincipal() {
-        this(new PersonalJdbcControlador());
-    }
+    public FrmPrincipal() { this((SesionUsuario) null); }
 
-    private FrmPrincipal(PersonalJdbcControlador personal) {
-        this(
-                personal, new CapacitacionJdbcControlador(personal),
-                new pe.utp.sigecapjv.controlador.SeguimientoControlador());
+    public FrmPrincipal(SesionUsuario sesion) {
+        this(new PersonalJdbcControlador(java.util.Objects.requireNonNull(sesion, "Debe iniciar sesión.")), sesion);
     }
-
+    private FrmPrincipal(PersonalJdbcControlador personal, SesionUsuario sesion) {
+        this(personal, new CapacitacionJdbcControlador(personal, sesion), new SeguimientoControlador(sesion), sesion);
+    }
     public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones) {
         this(personal, capacitaciones, null);
     }
 
     public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
                         pe.utp.sigecapjv.controlador.SeguimientoControlador seguimiento) {
+        this(personal, capacitaciones, seguimiento, null);
+    }
+
+    private FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
+                         SeguimientoControlador seguimiento, SesionUsuario sesion) {
         super("SIGECAP J&V");
-        PnlPersonal pnlPersonal = new PnlPersonal(personal);
-        PnlCapacitaciones pnlCapacitaciones = new PnlCapacitaciones(capacitaciones, personal, seguimiento);
+        if (sesion == null && !Boolean.getBoolean("sigecap.pruebas")) throw new SecurityException("Debe iniciar sesión.");
+        PnlPersonal pnlPersonal = sesion == null || sesion.puede("personal", "consultar") ? new PnlPersonal(personal) : null;
+        PnlCapacitaciones pnlCapacitaciones = sesion == null || sesion.puede("capacitaciones", "consultar") ? new PnlCapacitaciones(capacitaciones, personal, seguimiento) : null;
         CardLayout tarjetas = new CardLayout();
         JPanel contenido = new JPanel(tarjetas);
-        contenido.add(pnlPersonal, "Personal");
-        contenido.add(pnlCapacitaciones, "Capacitaciones");
+        contenido.add(new JLabel("Seleccione un módulo disponible en el menú.", SwingConstants.CENTER), "Inicio");
+        if (pnlPersonal != null) contenido.add(pnlPersonal, "Personal");
+        if (pnlCapacitaciones != null) contenido.add(pnlCapacitaciones, "Capacitaciones");
+        PnlUsuarios usuarios = sesion != null && sesion.puede("usuarios", "consultar") ? new PnlUsuarios(new UsuarioControlador(sesion)) : null;
+        if (usuarios != null) contenido.add(usuarios,"Usuarios");
+        if (sesion != null) {
+            if (pnlPersonal != null && !sesion.puede("personal","gestionar")) soloConsulta(pnlPersonal);
+            if (pnlCapacitaciones != null && !sesion.puede("capacitaciones","gestionar")) soloConsulta(pnlCapacitaciones);
+        }
         JPanel menu = new JPanel();
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
         Color azul = new Color(28, 48, 71), seleccionado = new Color(46, 102, 158);
@@ -56,17 +67,18 @@ public class FrmPrincipal extends JFrame {
             boton.setAlignmentX(Component.LEFT_ALIGNMENT);
             boton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
             boton.setHorizontalAlignment(SwingConstants.LEFT);
-            boton.setBackground(nombre.equals("Personal") ? seleccionado : azul);
+            boton.setBackground(nombre.equals("Inicio") ? seleccionado : azul);
             boton.setForeground(Color.WHITE);
             boton.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             boton.setFocusPainted(false);
             boton.setBorder(new EmptyBorder(0, 12, 0, 10));
-            boolean disponible = nombre.equals("Personal") || nombre.equals("Capacitaciones");
+            boolean disponible = nombre.equals("Inicio") || nombre.equals("Personal") && pnlPersonal != null || nombre.equals("Capacitaciones") && pnlCapacitaciones != null || nombre.equals("Usuarios") && usuarios != null;
             boton.setEnabled(disponible);
-            if (!disponible) boton.setToolTipText("Funcionalidad pendiente de implementación");
+            if (!disponible) boton.setToolTipText(java.util.Set.of("Personal","Capacitaciones","Usuarios").contains(nombre) ? "Sin acceso para su rol" : "Funcionalidad pendiente de implementación");
             boton.addActionListener(e -> {
-                pnlPersonal.refrescar();
-                pnlCapacitaciones.refrescar();
+                if (nombre.equals("Personal")) pnlPersonal.refrescar();
+                if (nombre.equals("Capacitaciones")) pnlCapacitaciones.refrescar();
+                if (nombre.equals("Usuarios")) usuarios.refrescar();
                 tarjetas.show(contenido, nombre);
                 for (Component c : menu.getComponents())
                     if (c instanceof JButton b)
@@ -76,24 +88,35 @@ public class FrmPrincipal extends JFrame {
             menu.add(Box.createVerticalStrut(6));
         }
         menu.add(Box.createVerticalGlue());
-        JButton salir = new JButton("Salir");
+        JButton salir = new JButton("Cerrar sesión");
         salir.setForeground(Color.WHITE);
         salir.setBackground(azul);
         salir.setFocusPainted(false);
         salir.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         salir.setBorder(new EmptyBorder(10, 12, 10, 12));
-        salir.addActionListener(e -> dispose());
+        salir.addActionListener(e -> { if (sesion != null) sesion.close(); dispose(); if (sesion != null) new FrmLogin().setVisible(true); });
         salir.setAlignmentX(Component.LEFT_ALIGNMENT);
         menu.add(salir);
         JPanel principal = new JPanel(new BorderLayout());
         principal.add(menu, BorderLayout.WEST);
         principal.add(contenido, BorderLayout.CENTER);
 
+        if (sesion != null) addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosed(java.awt.event.WindowEvent e) { sesion.close(); }
+        });
         setContentPane(principal);
         setSize(1220, 750);
         setMinimumSize(new Dimension(1100, 680));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
+    }
+
+    private static void soloConsulta(Container contenedor) {
+        for (Component componente : contenedor.getComponents()) {
+            if (componente instanceof JButton boton && !java.util.Set.of("Buscar", "Actualizar listado", "Limpiar", "Consultar").contains(boton.getText()))
+                boton.setEnabled(false);
+            if (componente instanceof Container hijo) soloConsulta(hijo);
+        }
     }
 
     public static void main(String[] args) {
@@ -103,7 +126,7 @@ public class FrmPrincipal extends JFrame {
             protected void dispatchEvent(AWTEvent evento) {
                 try {
                     super.dispatchEvent(evento);
-                } catch (IllegalStateException ex) {
+                } catch (SecurityException ex) { JOptionPane.showMessageDialog(null, ex.getMessage(), "Acceso", JOptionPane.WARNING_MESSAGE); } catch (IllegalStateException ex) {
                     if (!(ex.getCause() instanceof java.sql.SQLException)) throw ex;
                     // Registrar códigos de diagnóstico sin publicar SQL ni datos de los registros.
                     java.sql.SQLException sql = (java.sql.SQLException) ex.getCause();
@@ -112,6 +135,6 @@ public class FrmPrincipal extends JFrame {
                 }
             }
         });
-        SwingUtilities.invokeLater(() -> new FrmPrincipal().setVisible(true));
+        SwingUtilities.invokeLater(() -> new FrmLogin().setVisible(true));
     }
 }

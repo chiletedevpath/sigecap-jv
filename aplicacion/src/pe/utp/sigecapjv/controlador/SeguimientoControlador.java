@@ -12,17 +12,23 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 
 public class SeguimientoControlador {
+    private final SesionUsuario sesion;
+    public SeguimientoControlador() { this(null); }
+    public SeguimientoControlador(SesionUsuario sesion) { this.sesion = sesion; }
+
     private final AsistenciaDAO asistencias = new AsistenciaDAO();
     private final ResultadoDAO resultados = new ResultadoDAO();
     private final CertificadoDAO certificados = new CertificadoDAO();
     private final ParticipacionDAO participaciones = new ParticipacionDAO();
 
     public Asistencia consultarAsistencia(int idParticipacion) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "consultar");
         if (idParticipacion <= 0) throw new IllegalArgumentException("Participación inválida.");
         return Jdbc.transaccion(conexion -> asistencias.buscarPorParticipacion(conexion, idParticipacion));
     }
 
     public Asistencia registrarAsistencia(int idParticipacion, String condicion) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         return Jdbc.transaccion(conexion -> {
             validarParticipacion(conexion, idParticipacion);
             if (asistencias.buscarPorParticipacion(conexion, idParticipacion) != null) {
@@ -36,6 +42,7 @@ public class SeguimientoControlador {
     }
 
     public Asistencia actualizarAsistencia(int idParticipacion, String condicion) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         return Jdbc.transaccion(conexion -> {
             validarParticipacion(conexion, idParticipacion);
             Asistencia asistencia = asistencias.buscarPorParticipacion(conexion, idParticipacion);
@@ -82,14 +89,17 @@ public class SeguimientoControlador {
     }
 
     public Resultado consultarResultado(int idParticipacion) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "consultar");
         return Jdbc.transaccion(c -> resultados.buscarPorParticipacion(c, idParticipacion));
     }
 
     public Resultado registrarResultado(int idParticipacion, String condicion, BigDecimal nota) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         return guardarResultado(idParticipacion, condicion, nota, false);
     }
 
     public Resultado actualizarResultado(int idParticipacion, String condicion, BigDecimal nota) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         return guardarResultado(idParticipacion, condicion, nota, true);
     }
 
@@ -119,16 +129,19 @@ public class SeguimientoControlador {
     }
 
     public Certificado consultarCertificado(int idParticipacion) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "consultar");
         return Jdbc.transaccion(c -> certificados.buscarPorParticipacion(c, idParticipacion));
     }
 
     public Certificado registrarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento,
                                             String evidencia) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         return guardarCertificado(id, numero, emision, vencimiento, evidencia, false);
     }
 
     public Certificado actualizarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento,
                                              String evidencia) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         return guardarCertificado(id, numero, emision, vencimiento, evidencia, true);
     }
 
