@@ -23,6 +23,19 @@ Inicialmente, el administrador gestiona Personal, Capacitaciones y Usuarios; el 
 
 Los resultados admiten notas opcionales de 0 a 20 y requieren asistencia. La condición (Aprobado, Desaprobado, Apto o No apto) se registra según la evaluación recibida. El certificado requiere un resultado favorable; se guardan su número, fechas y ruta de evidencia. La ruta referencia el archivo local, no lo copia ni lo publica. La vigencia se calcula al consultar; las alertas de próximo vencimiento corresponden al siguiente hito.
 
+## Trabajo en equipo
+
+| Integrante | Trabajo | Rama |
+| --- | --- | --- |
+| Adrian Pisco | Usuarios, roles, permisos y login (HU-012, HU-013) | `feature/seguridad-acceso` |
+| Anthony Sacha | Historial y Mis capacitaciones (HU-008, HU-014) | `feature/historial-trabajador` |
+| Cristofher Chirihuana | Vigencias y notificaciones (HU-009, HU-010) | `feature/vigencias-notificaciones` |
+| Lijhoan Machaca | Reportes, inicio e integración (HU-011) | `feature/reportes-integracion` |
+
+Cada integrante publica sus avances en su rama y abre un pull request hacia `main`. Un PR puede incluir varios commits y se actualiza con los siguientes push de esa misma rama. Los cambios de los compañeros pasan por la revisión de Adrian antes de integrarse. Hacer push no significa que el trabajo ya esté en `main`.
+
+Antes de solicitar revisión, ejecutar las pruebas que correspondan y describir qué cambió, cómo se probó y qué queda pendiente. Los cambios de base de datos o clases compartidas se coordinan con el equipo. Esta organización debe acompañarse de reglas de protección en GitHub; el README por sí solo no bloquea las fusiones.
+
 ## Ejecutar
 
 Se necesita un JDK 17 o superior, MySQL 8.4 y MySQL Connector/J. La [guía de conexión](database/README.md) explica cómo crear el esquema y configurar las credenciales.
