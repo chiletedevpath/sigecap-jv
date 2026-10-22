@@ -31,6 +31,7 @@ public class PruebaFlujo {
     }
     public static void main(String[] args) throws Exception {
         PruebaAcceso.verificar();
+        PruebaPermisosSwing.verificar();
         PruebaAsistencia.verificar();
         PruebaResultados.verificar();
         PruebaPantallaAsistencia.verificar();

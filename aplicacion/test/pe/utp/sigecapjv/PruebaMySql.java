@@ -209,6 +209,7 @@ public class PruebaMySql {
         });
         PruebaResultadosMySql.verificar(personal, gestion);
         PruebaUsuariosMySql.verificar();
+        PruebaPermisosMySql.verificar();
         PruebaAccesoMySql.verificar();
         System.out.println("OK: " + comprobaciones + " comprobaciones MySQL.");
     }

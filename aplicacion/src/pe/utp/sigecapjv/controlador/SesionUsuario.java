@@ -25,6 +25,10 @@ public final class SesionUsuario implements AutoCloseable {
     public String getNombreCompleto() { return nombreCompleto; }
     public String getRol() { return rol; }
     public boolean estaActiva() { return activa; }
+    boolean conservaAcceso(Integer trabajador, String nombreRol, Set<PermisoAcceso> actuales) {
+        return activa && java.util.Objects.equals(idTrabajador, trabajador)
+                && rol.equals(nombreRol) && permisos.equals(actuales);
+    }
     public boolean puede(String modulo, String accion) {
         return activa && permisos.contains(new PermisoAcceso(modulo, accion));
     }

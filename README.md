@@ -12,14 +12,14 @@ Ya se puede registrar personal y cursos, programar capacitaciones, asignar traba
 | Asistencia: registro, consulta y actualización | Implementado |
 | Resultados y certificados | Implementado |
 | Historial y alertas del trabajador | Pendiente |
-| Usuarios, roles y acceso | Login, administración de usuarios y acceso por rol implementados |
+| Usuarios, roles y acceso | Login, usuarios, permisos editables y control de sesiones implementados |
 | Reportes | Pendiente |
 
 Las clases y vistas de los módulos pendientes se conservan para continuar el desarrollo. Las pruebas de Swing verifican los eventos; la revisión visual de las ventanas se hace en IntelliJ.
 
 Al ejecutar se abre el login. Si la base aún no tiene usuarios, usa **Crear primer administrador** y define tu propia contraseña (12 a 128 caracteres). Después puedes registrar cuentas, asignar roles, cambiar su estado y renovar sus contraseñas desde Usuarios. No se permite desactivar ni quitar el rol al último administrador activo. Al editar, dejar la contraseña vacía conserva la actual.
 
-El administrador gestiona Personal, Capacitaciones y Usuarios; el responsable gestiona Personal y Capacitaciones; el supervisor tiene acceso de consulta. Los módulos propios del trabajador, reportes y alertas siguen pendientes de integración. El rol Trabajador requiere asociar el ID de un trabajador existente. Los cambios de acceso se validan en MySQL en cada operación; para actualizar el menú después de cambiar de rol, hay que cerrar sesión e ingresar de nuevo.
+Inicialmente, el administrador gestiona Personal, Capacitaciones y Usuarios; el responsable gestiona Personal y Capacitaciones; el supervisor tiene acceso de consulta. En **Usuarios → Roles y permisos** puedes ajustar estos permisos y guardarlos para cada rol. Gestionar requiere consultar; el acceso administrativo no se puede quitar. Los módulos propios del trabajador, reportes y alertas siguen pendientes de integración. El rol Trabajador requiere asociar el ID de un trabajador existente. Cambiar el rol, sus permisos o el vínculo del trabajador invalida la sesión en la siguiente operación. La ventana también lo revisa cada 15 segundos y al recuperar el foco; si el acceso cambió, la cuenta fue desactivada o no se puede verificar la conexión, vuelve al login. Dos administradores no pueden sobrescribir permisos cargados antes del cambio del otro: hay que recargar primero.
 
 Los resultados admiten notas opcionales de 0 a 20 y requieren asistencia. La condición (Aprobado, Desaprobado, Apto o No apto) se registra según la evaluación recibida. El certificado requiere un resultado favorable; se guardan su número, fechas y ruta de evidencia. La ruta referencia el archivo local, no lo copia ni lo publica. La vigencia se calcula al consultar; las alertas de próximo vencimiento corresponden al siguiente hito.
 

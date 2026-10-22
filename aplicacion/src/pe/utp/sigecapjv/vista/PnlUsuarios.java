@@ -109,7 +109,7 @@ public class PnlUsuarios extends JPanel {
         titulos.add(Box.createVerticalStrut(4));
         titulos.add(subtitulo);
 
-        JLabel usuario = new JLabel("Administrador");
+        JLabel usuario = new JLabel(controlador.rolActual());
         usuario.setForeground(TEXTO);
         usuario.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
@@ -122,6 +122,7 @@ public class PnlUsuarios extends JPanel {
         tabs.addTab("Listado", crearListado());
         tabs.addTab("Registrar usuario", crearRegistro());
         tabs.addTab("Roles y permisos", crearRoles());
+        tabs.setEnabledAt(1, controlador.puedeGestionar());
 
         JPanel centro = new JPanel(new BorderLayout());
         centro.setOpaque(false);
@@ -138,6 +139,7 @@ public class PnlUsuarios extends JPanel {
         JPanel panel=panelBase(), superior=new JPanel(new FlowLayout(FlowLayout.LEFT));
         superior.setOpaque(false); superior.add(new JLabel("Buscar:")); superior.add(buscar);
         JButton consultar=botonSecundario("Buscar"), nuevo=botonPrimario("Nuevo usuario"), editar=botonSecundario("Editar / cambiar estado");
+        nuevo.setEnabled(controlador.puedeGestionar()); editar.setEnabled(controlador.puedeGestionar());
         consultar.addActionListener(e -> refrescar()); nuevo.addActionListener(e -> { limpiar(); tabs.setSelectedIndex(1); }); editar.addActionListener(e -> editar());
         superior.add(consultar); superior.add(nuevo);
         tabla.setFont(new Font("Segoe UI",Font.PLAIN,13)); tabla.setRowHeight(31); tabla.setFillsViewportHeight(true);
@@ -184,12 +186,9 @@ public class PnlUsuarios extends JPanel {
     }
 
     private JPanel crearRoles() {
-        JPanel panel=panelBase();
-        panel.add(new JLabel("El rol se asigna al registrar o editar una cuenta."),BorderLayout.NORTH);
-        java.util.List<String[]> permisos=controlador.permisos();
-        panel.add(scrollTabla(permisos.toArray(new Object[0][]),new String[]{"Rol","Módulo","Permiso"}),BorderLayout.CENTER);
-        return panel;
+        return new PnlPermisos(controlador.controladorRoles());
     }
+
     private static void ampliarEtiquetas(Container contenedor) {
         for (Component c : contenedor.getComponents()) {
             if (c instanceof JLabel etiqueta) {
