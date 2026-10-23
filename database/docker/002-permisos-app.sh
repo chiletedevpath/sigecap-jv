@@ -1,12 +1,13 @@
 #!/bin/bash
-# Lo ejecuta la imagen oficial de MySQL una sola vez, al inicializar el volumen.
-# Crea la cuenta de la aplicación solo con los permisos del flujo implementado.
-# Usa el cliente por socket: desde Windows el montaje es ejecutable y no recibe las funciones del entrypoint.
-set -e
-tablas="trabajador curso capacitacion participacion asistencia resultado certificado"
+# Solo se ejecuta al inicializar un volumen nuevo.
+set -euo pipefail
+# NO_BACKSLASH_ESCAPES conserva barras; duplicar apostrofos conserva el literal SQL.
+clave_sql=${SIGECAP_DB_PASSWORD//\'/\'\'}
 {
-    echo "CREATE USER '${SIGECAP_DB_USER}'@'%' IDENTIFIED BY '${SIGECAP_DB_PASSWORD}';"
-    for tabla in $tablas; do
-        echo "GRANT SELECT, INSERT, UPDATE ON sigecap_jv.${tabla} TO '${SIGECAP_DB_USER}'@'%';"
+    printf "SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';\n"
+    printf "CREATE USER 'sigecap_app'@'%%' IDENTIFIED BY '%s';\n" "$clave_sql"
+    for tabla in trabajador curso capacitacion participacion asistencia resultado certificado usuario rol permiso rol_permiso; do
+        printf "GRANT SELECT, INSERT, UPDATE ON sigecap_jv.%s TO 'sigecap_app'@'%%';\n" "$tabla"
     done
+    printf "GRANT DELETE ON sigecap_jv.rol_permiso TO 'sigecap_app'@'%%';\n"
 } | MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql --protocol=socket -uroot
