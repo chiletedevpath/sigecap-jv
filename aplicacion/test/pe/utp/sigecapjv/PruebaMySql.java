@@ -64,6 +64,8 @@ public class PruebaMySql {
                     "Asistencia persistida entre procesos");
             System.out.println("OK: " + comprobaciones + " comprobaciones entre procesos.");
             PruebaAccesoMySql.verificarPersistencia();
+            // Al final: agrega datos propios que alterarían los conteos anteriores.
+            PruebaReportesMySql.verificar();
             return;
         }
 
