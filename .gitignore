@@ -19,6 +19,7 @@ hs_err_pid*.log
 .env.*
 !.env.example
 /privado/
+/reportes/
 .idea/codeStyles/
 **/.idea/dataSources.xml
 **/.idea/dataSources.local.xml
