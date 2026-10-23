@@ -12,12 +12,29 @@ Ya se puede registrar personal y cursos, programar capacitaciones, asignar traba
 | Asistencia: registro, consulta y actualización | Implementado |
 | Resultados y certificados | Implementado |
 | Historial y alertas del trabajador | Pendiente |
-| Usuarios, roles y acceso | Pendiente |
+| Usuarios, roles y acceso | Login, usuarios, permisos editables y control de sesiones implementados |
 | Reportes | Pendiente |
 
 Las clases y vistas de los módulos pendientes se conservan para continuar el desarrollo. Las pruebas de Swing verifican los eventos; la revisión visual de las ventanas se hace en IntelliJ.
 
+Al ejecutar se abre el login. Ingresa con tu **nombre de usuario y contraseña**; el correo se registra como dato de contacto y no se utiliza para autenticar. Si ya creaste tu cuenta, no tienes que registrarla otra vez. La opción **Crear primer administrador** solo aparece cuando se confirma que la base no tiene usuarios y se oculta después del registro. En una instalación nueva, define una contraseña de 12 a 128 caracteres. Después puedes registrar cuentas, asignar roles, cambiar su estado y renovar sus contraseñas desde Usuarios. No se permite desactivar ni quitar el rol al último administrador activo. Al editar, dejar la contraseña vacía conserva la actual.
+
+Inicialmente, el administrador gestiona Personal, Capacitaciones y Usuarios; el responsable gestiona Personal y Capacitaciones; el supervisor tiene acceso de consulta. En **Usuarios → Roles y permisos** puedes ajustar estos permisos y guardarlos para cada rol. Gestionar requiere consultar; el acceso administrativo no se puede quitar. Los módulos propios del trabajador, reportes y alertas siguen pendientes de integración. El rol Trabajador requiere asociar el ID de un trabajador existente. Cambiar el rol, sus permisos o el vínculo del trabajador invalida la sesión en la siguiente operación. La ventana también lo revisa cada 15 segundos y al recuperar el foco; si el acceso cambió, la cuenta fue desactivada o no se puede verificar la conexión, vuelve al login. Dos administradores no pueden sobrescribir permisos cargados antes del cambio del otro: hay que recargar primero.
+
 Los resultados admiten notas opcionales de 0 a 20 y requieren asistencia. La condición (Aprobado, Desaprobado, Apto o No apto) se registra según la evaluación recibida. El certificado requiere un resultado favorable; se guardan su número, fechas y ruta de evidencia. La ruta referencia el archivo local, no lo copia ni lo publica. La vigencia se calcula al consultar; las alertas de próximo vencimiento corresponden al siguiente hito.
+
+## Trabajo en equipo
+
+| Integrante | Trabajo | Rama |
+| --- | --- | --- |
+| Adrian Pisco | Usuarios, roles, permisos y login (HU-012, HU-013) | `feature/seguridad-acceso` |
+| Anthony Sacha | Historial y Mis capacitaciones (HU-008, HU-014) | `feature/historial-trabajador` |
+| Cristofher Chirihuana | Vigencias y notificaciones (HU-009, HU-010) | `feature/vigencias-notificaciones` |
+| Lijhoan Machaca | Reportes, inicio e integración (HU-011) | `feature/reportes-integracion` |
+
+Cada integrante publica sus avances en su rama y abre un pull request hacia `main`. Un PR puede incluir varios commits y se actualiza con los siguientes push de esa misma rama. Los cambios de los compañeros pasan por la revisión de Adrian antes de integrarse. Hacer push no significa que el trabajo ya esté en `main`.
+
+Antes de solicitar revisión, ejecutar las pruebas que correspondan y describir qué cambió, cómo se probó y qué queda pendiente. Los cambios de base de datos o clases compartidas se coordinan con el equipo. Esta organización debe acompañarse de reglas de protección en GitHub; el README por sí solo no bloquea las fusiones.
 
 ## Ejecutar
 

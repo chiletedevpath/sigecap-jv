@@ -63,6 +63,7 @@ public class PruebaMySql {
             comprobar("JUSTIFICADA".equals(new SeguimientoControlador().consultarAsistencia(participacion).getCondicion()),
                     "Asistencia persistida entre procesos");
             System.out.println("OK: " + comprobaciones + " comprobaciones entre procesos.");
+            PruebaAccesoMySql.verificarPersistencia();
             return;
         }
 
@@ -207,6 +208,9 @@ public class PruebaMySql {
             comprobar(contieneFilas(new pe.utp.sigecapjv.vista.PnlCapacitaciones(gestion, personal), 3), "Programaciones muestran datos JDBC");
         });
         PruebaResultadosMySql.verificar(personal, gestion);
+        PruebaUsuariosMySql.verificar();
+        PruebaPermisosMySql.verificar();
+        PruebaAccesoMySql.verificar();
         System.out.println("OK: " + comprobaciones + " comprobaciones MySQL.");
     }
 }

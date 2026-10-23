@@ -19,7 +19,7 @@ La aplicación lee estas variables del proceso que la inicia:
 | `SIGECAP_DB_PASSWORD` | Contraseña de ese usuario. No guardarla en Git. |
 | `SIGECAP_JDBC_JAR` | Ruta al JAR de Connector/J para el lanzador PowerShell, si no está en la caché Maven indicada abajo. |
 
-Usa una cuenta de aplicación con permisos SELECT, INSERT y UPDATE sobre las siete tablas del flujo. La creación del esquema se hace con una cuenta administrativa separada. No se requiere acceso a Docker para trabajar con el MySQL que ya tienes en Workbench.
+Usa una cuenta de aplicación con permisos SELECT, INSERT y UPDATE sobre las siete tablas del flujo y sobre `usuario`, `rol`, `permiso` y `rol_permiso`. Para revocar permisos, añade DELETE únicamente sobre `rol_permiso`; no se necesita DELETE en las tablas de usuarios ni del flujo. Estas cuatro tablas ya forman parte del esquema; no hace falta recrearlo. La creación del esquema se hace con una cuenta administrativa separada. No se requiere acceso a Docker para trabajar con el MySQL que ya tienes en Workbench.
 
 En IntelliJ selecciona **SIGECAP MySQL** y configura las variables en la configuración local de ejecución, sin incorporarlas al XML compartido. También puedes iniciar IntelliJ desde una consola donde ya estén definidas. Si falta el SDK, selecciona tu JDK instalado. La biblioteca del proyecto usa `com.mysql:mysql-connector-j:26.7.0`; IntelliJ puede resolverla desde Maven.
 
@@ -45,7 +45,7 @@ Desde la raíz del repositorio:
 .\aplicacion\probar-mysql.ps1
 ```
 
-El segundo comando crea un MySQL 8.4 aislado con puerto aleatorio enlazado solo a 127.0.0.1, credenciales aleatorias y el esquema adjunto. Comprueba CRUD, restricciones, estados, rollback, asignaciones concurrentes y persistencia en una segunda JVM. Finalmente elimina exclusivamente su contenedor y volumen y restaura las variables del proceso. La imagen Docker puede permanecer como caché reutilizable.
+El segundo comando crea un MySQL 8.4 aislado con puerto aleatorio enlazado solo a 127.0.0.1, credenciales aleatorias y el esquema adjunto. Comprueba CRUD, restricciones, estados, rollback, asignaciones concurrentes, edición de permisos, invalidación de sesiones y persistencia en una segunda JVM. Finalmente elimina exclusivamente su contenedor y volumen y restaura las variables del proceso. La imagen Docker puede permanecer como caché reutilizable.
 
 `SIGECAP_DB_TEST=true` es una protección adicional del ejecutable de pruebas, no una autorización para probar sobre datos reales. Utiliza siempre el script aislado.
 
@@ -58,6 +58,8 @@ El segundo comando crea un MySQL 8.4 aislado con puerto aleatorio enlazado solo 
 - Las participaciones se reconstruyen al leer las capacitaciones, sin ejecutar otra vez la asignación del modelo.
 - `DATE` se mapea a `LocalDate`, `TIME` a `LocalTime` y `vigenciaMeses` permite NULL. `DATETIME` se mapea a `LocalDateTime` y las notas `DECIMAL` a `BigDecimal` (0 a 20, hasta dos decimales).
 
-La implementación no modifica el informe académico ni incorpora autenticación o notificaciones funcionales.
+La autenticación usa las cuentas de `usuario`, sus roles y permisos. El primer administrador se crea desde el login solo cuando no existe ninguna cuenta; no hay claves predeterminadas. Si ya tienes usuarios, utiliza una cuenta con un hash PBKDF2 compatible; no se aceptan contraseñas en texto plano. Las notificaciones siguen pendientes.
 
 Registrar un resultado marca la participación como COMPLETADA en la misma transacción, incluso si fue desaprobado. Resultados y certificados pueden registrarse o corregirse tras cerrar la capacitación. Las capacitaciones con seguimiento no se pueden reprogramar ni cancelar. Un resultado existente bloquea el cambio a inasistencia; un certificado existente bloquea el cambio a resultado desfavorable. El vencimiento se toma del documento recibido: vacío significa que no aplica. El día del vencimiento todavía es vigente.
+
+El acceso por rol se aplica en los controladores de la aplicación. Como es un cliente de escritorio con conexión JDBC directa, las credenciales de MySQL son de confianza y deben permanecer en el equipo autorizado; estos controles no sustituyen los permisos del servidor MySQL. La opción JVM `sigecap.pruebas` se activa únicamente en los scripts de pruebas para los controladores sin sesión; no se usa al iniciar normalmente.

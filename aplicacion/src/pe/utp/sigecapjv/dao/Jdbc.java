@@ -34,7 +34,7 @@ public final class Jdbc {
         } catch (SQLException ex) {
             // No mostrar SQL, credenciales ni detalles internos en los diálogos.
             String mensaje = ex.getErrorCode() == 1062
-                    ? "Ya existe un registro con esos datos únicos (DNI, código o asignación)."
+                    ? "Ya existe un registro con esos datos únicos (DNI, código, asignación, usuario o correo)."
                     : ex.getSQLState() != null && ex.getSQLState().startsWith("23")
                     ? "La operación incumple una relación o restricción de la base de datos."
                     : "No se pudo completar la operación en MySQL. Revise conexión, configuración y datos.";
