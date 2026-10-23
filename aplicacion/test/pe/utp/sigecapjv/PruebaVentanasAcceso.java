@@ -16,6 +16,8 @@ import pe.utp.sigecapjv.vista.*;
 /** Comprueba la distribución Swing sin conectarse a MySQL ni mostrar ventanas. */
 public final class PruebaVentanasAcceso {
     public static void main(String[] args) throws Exception {
+        verificarConfiguracionInicial(false);
+        verificarConfiguracionInicial(true);
         String hash = Contrasenas.crearHash("Clave-solo-pruebas-2026".toCharArray());
         SesionUsuario sesion = new LoginControlador(new AutenticacionDAO() {
             @Override public Cuenta buscar(String nombre) {
@@ -59,6 +61,41 @@ public final class PruebaVentanasAcceso {
                 System.out.println("OK: distribución de login y tres pestañas de usuarios.");
             } finally { login.dispose(); usuarios.dispose(); sesion.close(); }
         });
+    }
+    private static void verificarConfiguracionInicial(boolean vacia) throws Exception {
+        FrmLogin[] ventana = new FrmLogin[1];
+        JButton[] boton = new JButton[1];
+        java.util.concurrent.CountDownLatch consulta = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicBoolean fueraEdt = new java.util.concurrent.atomic.AtomicBoolean();
+        SwingUtilities.invokeAndWait(() -> {
+            ventana[0] = new FrmLogin() {
+                @Override protected boolean requiereAdministradorInicial() {
+                    fueraEdt.set(!SwingUtilities.isEventDispatchThread());
+                    consulta.countDown();
+                    return vacia;
+                }
+            };
+            boton[0] = buscarInicial(ventana[0].getContentPane());
+            if (boton[0] == null || boton[0].isVisible()) throw new AssertionError("No debe ofrecer registro antes de consultar.");
+            ventana[0].addNotify();
+            ventana[0].dispatchEvent(new java.awt.event.WindowEvent(ventana[0], java.awt.event.WindowEvent.WINDOW_OPENED));
+        });
+        try {
+            if (!consulta.await(5, java.util.concurrent.TimeUnit.SECONDS) || !fueraEdt.get())
+                throw new AssertionError("La consulta inicial debe ejecutarse fuera del EDT.");
+            // Espera la entrega de done() de SwingWorker al EDT.
+            Thread.sleep(300);
+            SwingUtilities.invokeAndWait(() -> {
+                if (boton[0].isVisible() != vacia) throw new AssertionError("Registro inicial visible en estado incorrecto.");
+            });
+        } finally { SwingUtilities.invokeAndWait(() -> ventana[0].dispose()); }
+    }
+    private static JButton buscarInicial(Container padre) {
+        for (Component c : padre.getComponents()) {
+            if (c instanceof JButton b && b.getText().equals("Crear primer administrador")) return b;
+            if (c instanceof Container hijo) { JButton b = buscarInicial(hijo); if (b != null) return b; }
+        }
+        return null;
     }
     private static void verificarBotones(Container c,Container raiz) {
         for(Component hijo:c.getComponents()) {

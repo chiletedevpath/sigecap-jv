@@ -18,6 +18,7 @@ public class FrmLogin extends JFrame {
 
     private final JTextField txtUsuario = new JTextField();
     private final JPasswordField txtContrasena = new JPasswordField();
+    private final JButton inicial = new JButton("Crear primer administrador");
 
     public FrmLogin() {
         setTitle("SIGECAP J&V");
@@ -32,6 +33,33 @@ public class FrmLogin extends JFrame {
 
         ampliarEtiquetas(principal);
         setContentPane(principal);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowOpened(java.awt.event.WindowEvent e) { verificarConfiguracionInicial(); }
+        });
+    }
+
+    private void verificarConfiguracionInicial() {
+        inicial.setVisible(false);
+        new SwingWorker<Boolean,Void>() {
+            @Override protected Boolean doInBackground() {
+                return requiereAdministradorInicial();
+            }
+            @Override protected void done() {
+                if (!isDisplayable()) return;
+                try { inicial.setVisible(get()); }
+                catch (Exception ex) {
+                    inicial.setVisible(false);
+                    JOptionPane.showMessageDialog(FrmLogin.this,
+                            "No se pudo verificar la conexión. Revise MySQL y vuelva a abrir el login.",
+                            "Conexión", JOptionPane.WARNING_MESSAGE);
+                }
+                getContentPane().revalidate(); getContentPane().repaint();
+            }
+        }.execute();
+    }
+
+    protected boolean requiereAdministradorInicial() {
+        return UsuarioControlador.requiereAdministradorInicial();
     }
 
     private static void ampliarEtiquetas(Container contenedor) {
@@ -72,7 +100,7 @@ public class FrmLogin extends JFrame {
         JTextField nombre = new JTextField(), usuario = new JTextField(), correo = new JTextField();
         JPasswordField clave = new JPasswordField(), confirmar = new JPasswordField();
         Object[] campos = {"Solo para una base sin usuarios.","Nombre completo",nombre,"Usuario",usuario,
-                "Correo",correo,"Contraseña (12 a 128 caracteres)",clave,"Confirmar contraseña",confirmar};
+                "Correo de contacto (no se usa para ingresar)",correo,"Contraseña (12 a 128 caracteres)",clave,"Confirmar contraseña",confirmar};
         if (JOptionPane.showConfirmDialog(this,campos,"Primer administrador",JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
         char[] valor = clave.getPassword(), repetida = confirmar.getPassword();
         boolean iguales = java.util.Arrays.equals(valor,repetida);
@@ -87,8 +115,13 @@ public class FrmLogin extends JFrame {
             }
             @Override protected void done() {
                 boton.setEnabled(true);
-                try { get(); JOptionPane.showMessageDialog(FrmLogin.this,"Administrador creado. Ya puede iniciar sesión."); }
+                try {
+                    get(); inicial.setVisible(false); txtUsuario.setText(u);
+                    JOptionPane.showMessageDialog(FrmLogin.this,"Administrador creado. Ingrese con su nombre de usuario y contraseña.");
+                    txtContrasena.requestFocusInWindow();
+                }
                 catch (Exception ex) { mostrarError(ex); }
+                finally { verificarConfiguracionInicial(); }
             }
         }.execute();
     }
@@ -162,7 +195,8 @@ public class FrmLogin extends JFrame {
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
         titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel lblUsuario = crearEtiqueta("Usuario");
+        JLabel lblUsuario = crearEtiqueta("Nombre de usuario");
+        txtUsuario.setToolTipText("Ingrese el nombre de usuario registrado, no el correo de contacto.");
         configurarCampo(txtUsuario);
 
         JLabel lblContrasena = crearEtiqueta("Contraseña");
@@ -205,7 +239,7 @@ public class FrmLogin extends JFrame {
         formulario.add(btnIngresar);
         formulario.add(Box.createVerticalStrut(12));
         formulario.add(btnSalir);
-        JButton inicial = new JButton("Crear primer administrador");
+        inicial.setVisible(false);
         inicial.setToolTipText("Disponible únicamente si aún no existen usuarios en la base de datos.");
         inicial.addActionListener(e -> prepararAdministrador(inicial));
 
