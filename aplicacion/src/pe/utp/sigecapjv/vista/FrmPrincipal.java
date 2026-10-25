@@ -7,14 +7,18 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class FrmPrincipal extends JFrame {
-    public FrmPrincipal() { this((SesionUsuario) null); }
+    public FrmPrincipal() {
+        this((SesionUsuario) null);
+    }
 
     public FrmPrincipal(SesionUsuario sesion) {
         this(new PersonalJdbcControlador(java.util.Objects.requireNonNull(sesion, "Debe iniciar sesión.")), sesion);
     }
+
     private FrmPrincipal(PersonalJdbcControlador personal, SesionUsuario sesion) {
         this(personal, new CapacitacionJdbcControlador(personal, sesion), new SeguimientoControlador(sesion), sesion);
     }
+
     public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones) {
         this(personal, capacitaciones, null);
     }
@@ -27,19 +31,37 @@ public class FrmPrincipal extends JFrame {
     private FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
                          SeguimientoControlador seguimiento, SesionUsuario sesion) {
         super("SIGECAP J&V");
-        if (sesion == null && !Boolean.getBoolean("sigecap.pruebas")) throw new SecurityException("Debe iniciar sesión.");
-        PnlPersonal pnlPersonal = sesion == null || sesion.puede("personal", "consultar") ? new PnlPersonal(personal) : null;
-        PnlCapacitaciones pnlCapacitaciones = sesion == null || sesion.puede("capacitaciones", "consultar") ? new PnlCapacitaciones(capacitaciones, personal, seguimiento) : null;
+        if (sesion == null) {
+            throw new SecurityException("Debe iniciar sesión.");
+        }
+        PnlPersonal pnlPersonal = sesion == null || sesion.puede("personal", "consultar") ? new PnlPersonal(
+                personal) : null;
+        PnlCapacitaciones pnlCapacitaciones = sesion == null || sesion.puede(
+                "capacitaciones", "consultar") ? new PnlCapacitaciones(capacitaciones, personal, seguimiento) : null;
         CardLayout tarjetas = new CardLayout();
         JPanel contenido = new JPanel(tarjetas);
-        contenido.add(new JLabel("Seleccione un módulo disponible en el menú.", SwingConstants.CENTER), "Inicio");
+        PnlInicio.Perfil perfilInicio = PnlInicio.Perfil.ADMINISTRADOR;
+
+        if (sesion != null) {
+            perfilInicio = switch (sesion.getRol()) {
+                case "Administrador" -> PnlInicio.Perfil.ADMINISTRADOR;
+                case "Responsable de capacitaciones" -> PnlInicio.Perfil.RESPONSABLE_CAPACITACIONES;
+                case "Supervisor de Operaciones" -> PnlInicio.Perfil.SUPERVISOR_OPERACIONES;
+                case "Trabajador" -> PnlInicio.Perfil.TRABAJADOR;
+                default -> throw new IllegalStateException("Rol no reconocido: " + sesion.getRol());
+            };
+        }
+
+        contenido.add(new PnlInicio(perfilInicio), "Inicio");
         if (pnlPersonal != null) contenido.add(pnlPersonal, "Personal");
         if (pnlCapacitaciones != null) contenido.add(pnlCapacitaciones, "Capacitaciones");
-        PnlUsuarios usuarios = sesion != null && sesion.puede("usuarios", "consultar") ? new PnlUsuarios(new UsuarioControlador(sesion)) : null;
-        if (usuarios != null) contenido.add(usuarios,"Usuarios");
+        PnlUsuarios usuarios = sesion != null && "Administrador".equals(sesion.getRol()) && sesion.puede(
+                "usuarios", "consultar") ? new PnlUsuarios(new UsuarioControlador(sesion)) : null;
+        if (usuarios != null) contenido.add(usuarios, "Usuarios");
         if (sesion != null) {
-            if (pnlPersonal != null && !sesion.puede("personal","gestionar")) soloConsulta(pnlPersonal);
-            if (pnlCapacitaciones != null && !sesion.puede("capacitaciones","gestionar")) soloConsulta(pnlCapacitaciones);
+            if (pnlPersonal != null && !sesion.puede("personal", "gestionar")) soloConsulta(pnlPersonal);
+            if (pnlCapacitaciones != null && !sesion.puede("capacitaciones", "gestionar"))
+                soloConsulta(pnlCapacitaciones);
         }
         JPanel menu = new JPanel();
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
@@ -60,6 +82,9 @@ public class FrmPrincipal extends JFrame {
         menu.add(Box.createVerticalStrut(30));
         for (String nombre : new String[]{"Inicio", "Personal", "Capacitaciones", "Seguimiento", "Reportes",
                 "Usuarios"}) {
+            if (nombre.equals("Usuarios") && usuarios == null) {
+                continue;
+            }
             JButton boton = new JButton(nombre);
             boton.setAlignmentX(Component.LEFT_ALIGNMENT);
             boton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
@@ -69,17 +94,19 @@ public class FrmPrincipal extends JFrame {
             boton.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             boton.setFocusPainted(false);
             boton.setBorder(new EmptyBorder(0, 12, 0, 10));
-            boolean disponible = nombre.equals("Inicio") || nombre.equals("Personal") && pnlPersonal != null || nombre.equals("Capacitaciones") && pnlCapacitaciones != null || nombre.equals("Usuarios") && usuarios != null;
+            boolean disponible = nombre.equals("Inicio") || nombre.equals(
+                    "Personal") && pnlPersonal != null || nombre.equals(
+                    "Capacitaciones") && pnlCapacitaciones != null || nombre.equals("Usuarios") && usuarios != null;
             boton.setEnabled(disponible);
-            if (!disponible) boton.setToolTipText(java.util.Set.of("Personal","Capacitaciones","Usuarios").contains(nombre) ? "Sin acceso para su rol" : "Funcionalidad pendiente de implementación");
+            if (!disponible) boton.setToolTipText(java.util.Set.of("Personal", "Capacitaciones", "Usuarios").contains(
+                    nombre) ? "Sin acceso para su rol" : "Funcionalidad pendiente de implementación");
             boton.addActionListener(e -> {
                 if (nombre.equals("Personal")) pnlPersonal.refrescar();
                 if (nombre.equals("Capacitaciones")) pnlCapacitaciones.refrescar();
                 if (nombre.equals("Usuarios")) usuarios.refrescar();
                 tarjetas.show(contenido, nombre);
                 for (Component c : menu.getComponents())
-                    if (c instanceof JButton b)
-                        b.setBackground(b == boton ? seleccionado : azul);
+                    if (c instanceof JButton b) b.setBackground(b == boton ? seleccionado : azul);
             });
             menu.add(boton);
             menu.add(Box.createVerticalStrut(6));
@@ -91,7 +118,11 @@ public class FrmPrincipal extends JFrame {
         salir.setFocusPainted(false);
         salir.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         salir.setBorder(new EmptyBorder(10, 12, 10, 12));
-        salir.addActionListener(e -> { if (sesion != null) sesion.close(); dispose(); if (sesion != null) new FrmLogin().setVisible(true); });
+        salir.addActionListener(e -> {
+            if (sesion != null) sesion.close();
+            dispose();
+            if (sesion != null) new FrmLogin().setVisible(true);
+        });
         salir.setAlignmentX(Component.LEFT_ALIGNMENT);
         menu.add(salir);
         JPanel principal = new JPanel(new BorderLayout());
@@ -99,7 +130,8 @@ public class FrmPrincipal extends JFrame {
         principal.add(contenido, BorderLayout.CENTER);
 
         if (sesion != null) {
-            VigilanciaSesion vigilancia = new VigilanciaSesion(sesion, new SesionControlador(), mensaje -> {
+            VigilanciaSesion vigilancia = new VigilanciaSesion(
+                    sesion, new SesionControlador(), mensaje -> {
                 if (!isDisplayable()) return;
                 dispose();
                 FrmLogin acceso = new FrmLogin();
@@ -107,11 +139,22 @@ public class FrmPrincipal extends JFrame {
                 JOptionPane.showMessageDialog(acceso, mensaje, "Sesión finalizada", JOptionPane.INFORMATION_MESSAGE);
             });
             addWindowListener(new java.awt.event.WindowAdapter() {
-                @Override public void windowOpened(java.awt.event.WindowEvent e) { vigilancia.iniciar(); }
-                @Override public void windowClosed(java.awt.event.WindowEvent e) { vigilancia.close(); sesion.close(); }
+                @Override
+                public void windowOpened(java.awt.event.WindowEvent e) {
+                    vigilancia.iniciar();
+                }
+
+                @Override
+                public void windowClosed(java.awt.event.WindowEvent e) {
+                    vigilancia.close();
+                    sesion.close();
+                }
             });
             addWindowFocusListener(new java.awt.event.WindowAdapter() {
-                @Override public void windowGainedFocus(java.awt.event.WindowEvent e) { vigilancia.revisar(); }
+                @Override
+                public void windowGainedFocus(java.awt.event.WindowEvent e) {
+                    vigilancia.revisar();
+                }
             });
         }
         setContentPane(principal);
@@ -123,7 +166,8 @@ public class FrmPrincipal extends JFrame {
 
     private static void soloConsulta(Container contenedor) {
         for (Component componente : contenedor.getComponents()) {
-            if (componente instanceof JButton boton && !java.util.Set.of("Buscar", "Actualizar listado", "Limpiar", "Consultar").contains(boton.getText()))
+            if (componente instanceof JButton boton && !java.util.Set.of(
+                    "Buscar", "Actualizar listado", "Limpiar", "Consultar").contains(boton.getText()))
                 boton.setEnabled(false);
             if (componente instanceof Container hijo) soloConsulta(hijo);
         }
@@ -136,7 +180,9 @@ public class FrmPrincipal extends JFrame {
             protected void dispatchEvent(AWTEvent evento) {
                 try {
                     super.dispatchEvent(evento);
-                } catch (SecurityException ex) { JOptionPane.showMessageDialog(null, ex.getMessage(), "Acceso", JOptionPane.WARNING_MESSAGE); } catch (IllegalStateException ex) {
+                } catch (SecurityException ex) {
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Acceso", JOptionPane.WARNING_MESSAGE);
+                } catch (IllegalStateException ex) {
                     if (!(ex.getCause() instanceof java.sql.SQLException)) throw ex;
                     // Registrar códigos de diagnóstico sin publicar SQL ni datos de los registros.
                     java.sql.SQLException sql = (java.sql.SQLException) ex.getCause();
