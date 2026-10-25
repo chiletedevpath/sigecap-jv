@@ -1,11 +1,20 @@
 package pe.utp.sigecapjv.controlador;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import pe.utp.sigecapjv.dao.*;
-import pe.utp.sigecapjv.modelo.*;
+import pe.utp.sigecapjv.dao.Jdbc;
+import pe.utp.sigecapjv.dao.RolDAO;
+import pe.utp.sigecapjv.dao.UsuarioDAO;
+import pe.utp.sigecapjv.modelo.Permiso;
+import pe.utp.sigecapjv.modelo.PermisoAcceso;
+import pe.utp.sigecapjv.modelo.Rol;
 
-/** Administra las asignaciones del catálogo, sin crear módulos todavía no implementados. */
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * Administra las asignaciones del catálogo, sin crear módulos todavía no implementados.
+ */
 public class RolControlador {
     public record Configuracion(Rol rol, List<Permiso> catalogo, Set<Integer> asignados) {
         public Configuracion {
@@ -26,7 +35,9 @@ public class RolControlador {
         return Jdbc.transaccion(dao::listar);
     }
 
-    public boolean puedeEditar() { return sesion.puede("usuarios", "gestionar"); }
+    public boolean puedeEditar() {
+        return sesion.puede("usuarios", "gestionar");
+    }
 
     public Configuracion consultar(int idRol) {
         AccesoControlador.exigir(sesion, "usuarios", "consultar");
@@ -44,8 +55,8 @@ public class RolControlador {
             AccesoControlador.exigir(c, sesion, "usuarios", "gestionar");
             Rol rol = dao.buscar(c, idRol);
             Set<Integer> actuales = dao.asignados(c, idRol);
-            if (!actuales.equals(original))
-                throw new IllegalStateException("Otro administrador cambió estos permisos. Recargue el rol antes de guardar.");
+            if (!actuales.equals(original)) throw new IllegalStateException(
+                    "Otro administrador cambió estos permisos. Recargue el rol antes de guardar.");
             validar(rol, dao.catalogo(c), elegidos);
             dao.actualizarPermisos(c, idRol, actuales, elegidos);
             return null;
@@ -54,21 +65,30 @@ public class RolControlador {
 
     private static void validar(Rol rol, List<Permiso> catalogo, Set<Integer> elegidos) {
         Set<Integer> conocidos = catalogo.stream().map(Permiso::idPermiso).collect(Collectors.toSet());
-        if (!conocidos.containsAll(elegidos)) throw new IllegalArgumentException("La selección contiene un permiso inexistente.");
-        Set<PermisoAcceso> permisos = catalogo.stream().filter(p -> elegidos.contains(p.idPermiso()))
-                .map(p -> new PermisoAcceso(p.modulo(), p.nombre())).collect(Collectors.toSet());
+        if (!conocidos.containsAll(elegidos))
+            throw new IllegalArgumentException("La selección contiene un permiso inexistente.");
+        Set<PermisoAcceso> permisos = catalogo.stream().filter(p -> elegidos.contains(p.idPermiso())).map(
+                p -> new PermisoAcceso(p.modulo(), p.nombre())).collect(Collectors.toSet());
         for (PermisoAcceso permiso : permisos) {
-            if (permiso.nombre().equals("gestionar") && !permisos.contains(new PermisoAcceso(permiso.modulo(), "consultar")))
-                throw new IllegalArgumentException("Para gestionar " + permiso.modulo() + " también debe permitir su consulta.");
+            if (permiso.nombre().equals("gestionar") && !permisos.contains(
+                    new PermisoAcceso(permiso.modulo(), "consultar"))) throw new IllegalArgumentException(
+                    "Para gestionar " + permiso.modulo() + " también debe permitir su consulta.");
         }
-        if (permisos.contains(new PermisoAcceso("capacitaciones", "consultar"))
-                && !permisos.contains(new PermisoAcceso("personal", "consultar")))
-            throw new IllegalArgumentException("Capacitaciones necesita consultar Personal para mostrar los participantes.");
-        if (rol.nombre().equals("Administrador") && (!permisos.contains(new PermisoAcceso("usuarios", "consultar"))
-                || !permisos.contains(new PermisoAcceso("usuarios", "gestionar"))))
-            throw new IllegalArgumentException("El rol Administrador debe conservar la consulta y gestión de Usuarios.");
-        if (rol.nombre().equals("Trabajador") && permisos.stream()
-                .anyMatch(p -> Set.of("personal", "capacitaciones", "usuarios").contains(p.modulo())))
-            throw new IllegalArgumentException("Trabajador utiliza consultas propias; no puede recibir acceso global a estos módulos.");
+        if (permisos.contains(new PermisoAcceso("capacitaciones", "consultar")) && !permisos.contains(
+                new PermisoAcceso("personal", "consultar"))) throw new IllegalArgumentException(
+                "Capacitaciones necesita consultar Personal para mostrar los participantes.");
+        if (rol.nombre().equals("Administrador") && (!permisos.contains(
+                new PermisoAcceso("usuarios", "consultar")) || !permisos.contains(
+                new PermisoAcceso("usuarios", "gestionar")))) throw new IllegalArgumentException(
+                "El rol Administrador debe conservar la consulta y gestión de Usuarios.");
+        if (!"Administrador".equals(rol.nombre())
+                && permisos.stream().anyMatch(p -> "usuarios".equals(p.modulo()))) {
+            throw new IllegalArgumentException(
+                    "Solo el rol Administrador puede tener permisos de Usuarios.");
+        }
+        if (rol.nombre().equals("Trabajador") && permisos.stream().anyMatch(
+                p -> Set.of("personal", "capacitaciones", "usuarios").contains(p.modulo())))
+            throw new IllegalArgumentException(
+                    "Trabajador utiliza consultas propias; no puede recibir acceso global a estos módulos.");
     }
 }
