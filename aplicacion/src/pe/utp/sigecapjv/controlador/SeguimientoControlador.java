@@ -13,8 +13,14 @@ import java.time.LocalDate;
 
 public class SeguimientoControlador {
     private final SesionUsuario sesion;
-    public SeguimientoControlador() { this(null); }
-    public SeguimientoControlador(SesionUsuario sesion) { this.sesion = sesion; }
+
+    public SeguimientoControlador() {
+        this(null);
+    }
+
+    public SeguimientoControlador(SesionUsuario sesion) {
+        this.sesion = sesion;
+    }
 
     private final AsistenciaDAO asistencias = new AsistenciaDAO();
     private final ResultadoDAO resultados = new ResultadoDAO();
@@ -159,7 +165,8 @@ public class SeguimientoControlador {
                     editar ? "El certificado no existe." : "Ya existe un certificado. Utilice actualizar.");
             Certificado dato = new Certificado(
                     anterior == null ? 0 : anterior.getIdCertificado(), id,
-                    participante.getTrabajador().getIdTrabajador(), numero, emision, vencimiento, evidencia);
+                                               participante.getTrabajador().getIdTrabajador(), numero, emision,
+                                               vencimiento, evidencia);
             if (editar) dato.actualizar();
             else dato.registrar();
             if (emision.isBefore(participante.getCapacitacion().getFecha()))

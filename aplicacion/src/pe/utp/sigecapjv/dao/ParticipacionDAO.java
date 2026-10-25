@@ -32,9 +32,9 @@ public class ParticipacionDAO {
     public Participacion buscar(Connection c, int idParticipacion, boolean bloquear) throws SQLException {
 
         // Al registrar seguimiento también se protege la fecha y el estado de la capacitación.
-        String sql = "SELECT p.* FROM participacion p "
-                + "JOIN capacitacion c ON c.idCapacitacion=p.idCapacitacion "
-                + "WHERE p.idParticipacion=?" + (bloquear ? " FOR UPDATE" : "");
+        String sql =
+                "SELECT p.* FROM participacion p " + "JOIN capacitacion c ON c.idCapacitacion=p.idCapacitacion " +
+                        "WHERE p.idParticipacion=?" + (bloquear ? " FOR UPDATE" : "");
 
         try (PreparedStatement p = c.prepareStatement(sql)) {
             p.setInt(1, idParticipacion);

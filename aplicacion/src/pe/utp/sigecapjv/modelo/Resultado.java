@@ -1,9 +1,10 @@
 package pe.utp.sigecapjv.modelo;
 
+import pe.utp.sigecapjv.util.Validador;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Locale;
-import pe.utp.sigecapjv.util.Validador;
 
 public class Resultado {
     private int idResultado;
@@ -22,13 +23,15 @@ public class Resultado {
     }
 
     public void registrar() {
-        if (idResultado != 0 || fechaRegistro != null) throw new IllegalStateException("El resultado ya está registrado.");
+        if (idResultado != 0 || fechaRegistro != null)
+            throw new IllegalStateException("El resultado ya está registrado.");
         validar();
         fechaRegistro = LocalDateTime.now().withNano(0);
     }
 
     public void actualizar() {
-        if (idResultado <= 0 || fechaRegistro == null) throw new IllegalStateException("El resultado no está registrado.");
+        if (idResultado <= 0 || fechaRegistro == null)
+            throw new IllegalStateException("El resultado no está registrado.");
         validar();
     }
 
@@ -36,7 +39,8 @@ public class Resultado {
         if (idParticipacion <= 0) throw new IllegalArgumentException("Participación inválida.");
         condicion = Validador.texto(condicion, "Resultado").toUpperCase(Locale.ROOT);
         Validador.estado(condicion, "APROBADO", "DESAPROBADO", "APTO", "NO_APTO");
-        if (!validarCalificacion()) throw new IllegalArgumentException("La nota debe estar entre 0 y 20, con hasta dos decimales.");
+        if (!validarCalificacion())
+            throw new IllegalArgumentException("La nota debe estar entre 0 y 20, con hasta dos decimales.");
     }
 
     public boolean validarCalificacion() {
@@ -50,11 +54,31 @@ public class Resultado {
                 && "ASISTIO".equals(asistencia.getCondicion());
     }
 
-    public boolean esFavorable() { return "APROBADO".equals(condicion) || "APTO".equals(condicion); }
-    public int getIdResultado() { return idResultado; }
-    public void setIdResultado(int id) { idResultado = id; }
-    public int getIdParticipacion() { return idParticipacion; }
-    public String getCondicion() { return condicion; }
-    public BigDecimal getCalificacion() { return calificacion; }
-    public LocalDateTime getFechaRegistro() { return fechaRegistro; }
+    public boolean esFavorable() {
+        return "APROBADO".equals(condicion) || "APTO".equals(condicion);
+    }
+
+    public int getIdResultado() {
+        return idResultado;
+    }
+
+    public void setIdResultado(int id) {
+        idResultado = id;
+    }
+
+    public int getIdParticipacion() {
+        return idParticipacion;
+    }
+
+    public String getCondicion() {
+        return condicion;
+    }
+
+    public BigDecimal getCalificacion() {
+        return calificacion;
+    }
+
+    public LocalDateTime getFechaRegistro() {
+        return fechaRegistro;
+    }
 }

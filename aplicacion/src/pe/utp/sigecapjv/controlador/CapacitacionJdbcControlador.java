@@ -55,8 +55,8 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
         Capacitacion guardada = Jdbc.transaccion(c -> {
             Curso curso = cursos.buscar(c, datos.getCurso().getIdCurso(), true);
             Capacitacion nueva = new Capacitacion(
-                    0, datos.getFecha(), datos.getHoraInicio(),
-                    datos.getHoraFin(), datos.getModalidad(), datos.getEstado(), curso);
+                    0, datos.getFecha(), datos.getHoraInicio(), datos.getHoraFin(),
+                                                  datos.getModalidad(), datos.getEstado(), curso);
             nueva.programar();
             nueva.setIdCapacitacion(capacitaciones.insertar(c, nueva));
             return nueva;
@@ -75,8 +75,8 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
             verificarSinSeguimiento(c, actual.getIdCapacitacion());
             Curso curso = cursos.buscar(c, datos.getCurso().getIdCurso(), true);
             Capacitacion nueva = new Capacitacion(
-                    actual.getIdCapacitacion(), datos.getFecha(),
-                    datos.getHoraInicio(), datos.getHoraFin(), datos.getModalidad(), actual.getEstado(), curso);
+                    actual.getIdCapacitacion(), datos.getFecha(), datos.getHoraInicio(),
+                                                  datos.getHoraFin(), datos.getModalidad(), actual.getEstado(), curso);
             nueva.actualizar();
             capacitaciones.actualizar(c, nueva);
             return null;
@@ -106,14 +106,11 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
         });
     }
 
-    private void verificarSinSeguimiento(
-            java.sql.Connection conexion,
-            int id) throws java.sql.SQLException {
+    private void verificarSinSeguimiento(java.sql.Connection conexion, int id) throws java.sql.SQLException {
 
         if (capacitaciones.tieneSeguimiento(conexion, id)) {
             throw new IllegalStateException(
-                    "La capacitación tiene seguimiento registrado; "
-                            + "no se puede reprogramar ni cancelar.");
+                    "La capacitación tiene seguimiento registrado; " + "no se puede reprogramar ni cancelar.");
         }
     }
 
@@ -145,8 +142,8 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
             List<Capacitacion> lista = capacitaciones.listar(c);
             List<Participacion> asignaciones = participaciones.listar(c);
             for (Capacitacion capacitacion : lista) {
-                capacitacion.restaurarParticipaciones(asignaciones.stream()
-                                                              .filter(p -> p.getCapacitacion().getIdCapacitacion() == capacitacion.getIdCapacitacion()).toList());
+                capacitacion.restaurarParticipaciones(asignaciones.stream().filter(
+                        p -> p.getCapacitacion().getIdCapacitacion() == capacitacion.getIdCapacitacion()).toList());
             }
             return lista;
         });

@@ -36,8 +36,8 @@ public class TrabajadorDAO {
 
     public List<Trabajador> listar(Connection c) throws SQLException {
         List<Trabajador> datos = new ArrayList<>();
-        try (PreparedStatement p = c.prepareStatement("SELECT * FROM trabajador ORDER BY idTrabajador");
-             ResultSet r = p.executeQuery()) {
+        try (PreparedStatement p = c.prepareStatement(
+                "SELECT * FROM trabajador ORDER BY idTrabajador"); ResultSet r = p.executeQuery()) {
             while (r.next()) datos.add(mapear(r));
         }
         return datos;
@@ -45,7 +45,7 @@ public class TrabajadorDAO {
 
     private Trabajador mapear(ResultSet r) throws SQLException {
         return new Trabajador(
-                r.getInt("idTrabajador"), r.getString("dni"), r.getString("nombres"), r.getString("apellidos"),
-                r.getString("cargo"), r.getString("estado"));
+                r.getInt("idTrabajador"), r.getString("dni"), r.getString("nombres"),
+                              r.getString("apellidos"), r.getString("cargo"), r.getString("estado"));
     }
 }
