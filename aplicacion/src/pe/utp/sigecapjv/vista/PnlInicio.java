@@ -1,17 +1,19 @@
 package pe.utp.sigecapjv.vista;
 
+import pe.utp.sigecapjv.controlador.InicioControlador;
+import pe.utp.sigecapjv.dao.InicioDAO;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PnlInicio extends JPanel {
 
     public enum Perfil {
-        ADMINISTRADOR,
-        RESPONSABLE_CAPACITACIONES,
-        SUPERVISOR_OPERACIONES,
-        TRABAJADOR
+        ADMINISTRADOR, RESPONSABLE_CAPACITACIONES, SUPERVISOR_OPERACIONES, TRABAJADOR
     }
 
     private static final Color AZUL = new Color(28, 48, 71);
@@ -23,6 +25,8 @@ public class PnlInicio extends JPanel {
     private static final Color BORDE = new Color(224, 229, 234);
 
     private final Perfil perfil;
+    private final Map<String, JLabel> indicadoresAdmin = new HashMap<>();
+    private final Map<String, DefaultTableModel> tablasAdmin = new HashMap<>();
 
     // Los cuatro perfiles se conservan como diseños referenciales, sin autenticar usuarios.
     public PnlInicio() {
@@ -158,8 +162,7 @@ public class PnlInicio extends JPanel {
         tarjeta.setLayout(new BoxLayout(tarjeta, BoxLayout.Y_AXIS));
         tarjeta.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDE),
-                new EmptyBorder(18, 18, 16, 18)
-        ));
+                new EmptyBorder(18, 18, 16, 18)));
 
         JLabel lblTitulo = new JLabel(titulo);
         lblTitulo.setForeground(TEXTO_SUAVE);
@@ -181,65 +184,41 @@ public class PnlInicio extends JPanel {
         switch (perfil) {
             case RESPONSABLE_CAPACITACIONES -> {
                 centro.add(crearPanelTabla(
-                        "Próximos vencimientos",
-                        new String[]{"Trabajador", "Curso", "Vencimiento", "Estado"},
-                        new Object[][]{
-                                {"Juan Pérez", "Formación Básica", "15/10/2026", "Próximo"},
-                                {"María Torres", "Protección Portuaria", "22/10/2026", "Próximo"},
-                                {"Carlos Rojas", "Perfeccionamiento", "30/10/2026", "Próximo"}
-                        }
-                ));
+                        "Próximos vencimientos", new String[]{"Trabajador", "Curso", "Vencimiento", "Estado"},
+                        new Object[][]{{"Juan Pérez", "Formación Básica", "15/10/2026", "Próximo"}, {"María Torres",
+                                "Protección Portuaria", "22/10/2026", "Próximo"}, {"Carlos Rojas", "Perfeccionamiento"
+                                , "30/10/2026", "Próximo"}}));
                 centro.add(Box.createVerticalStrut(18));
                 centro.add(crearPanelTabla(
-                        "Capacitaciones programadas",
-                        new String[]{"Curso", "Fecha", "Horario", "Participantes"},
-                        new Object[][]{
-                                {"Formación Básica", "28/09/2026", "09:00 - 13:00", "18"},
-                                {"Protección Portuaria", "02/10/2026", "08:30 - 12:30", "12"},
-                                {"Perfeccionamiento", "06/10/2026", "14:00 - 18:00", "15"}
-                        }
-                ));
+                        "Capacitaciones programadas", new String[]{"Curso", "Fecha", "Horario", "Participantes"},
+                        new Object[][]{{"Formación Básica", "28/09/2026", "09:00 - 13:00", "18"}, {"Protección " +
+                                "Portuaria", "02/10/2026", "08:30 - 12:30", "12"}, {"Perfeccionamiento", "06/10/2026"
+                                , "14:00 - 18:00", "15"}}));
             }
             case SUPERVISOR_OPERACIONES -> {
                 centro.add(crearPanelTabla(
-                        "Seguimiento de vigencias",
-                        new String[]{"Trabajador", "Curso", "Vencimiento", "Estado"},
-                        new Object[][]{
-                                {"Juan Pérez", "Formación Básica", "15/10/2026", "Próximo"},
-                                {"María Torres", "Protección Portuaria", "22/10/2026", "Próximo"},
-                                {"Carlos Rojas", "Perfeccionamiento", "05/09/2026", "Vencido"}
-                        }
-                ));
+                        "Seguimiento de vigencias", new String[]{"Trabajador", "Curso", "Vencimiento", "Estado"},
+                        new Object[][]{{"Juan Pérez", "Formación Básica", "15/10/2026", "Próximo"}, {"María Torres",
+                                "Protección Portuaria", "22/10/2026", "Próximo"}, {"Carlos Rojas", "Perfeccionamiento"
+                                , "05/09/2026", "Vencido"}}));
                 centro.add(Box.createVerticalStrut(18));
                 centro.add(crearPanelTabla(
                         "Estado de capacitación del personal",
                         new String[]{"Trabajador", "Asignadas", "Completadas", "Pendientes"},
-                        new Object[][]{
-                                {"Juan Pérez", "8", "7", "1"},
-                                {"María Torres", "6", "5", "1"},
-                                {"Carlos Rojas", "7", "5", "2"}
-                        }
-                ));
+                        new Object[][]{{"Juan Pérez", "8", "7", "1"}, {"María Torres", "6", "5", "1"}, {"Carlos " +
+                                "Rojas", "7", "5", "2"}}));
             }
             case TRABAJADOR -> {
                 centro.add(crearPanelTabla(
-                        "Mis próximas capacitaciones",
-                        new String[]{"Curso", "Fecha", "Horario", "Estado"},
-                        new Object[][]{
-                                {"Formación Básica", "28/09/2026", "09:00 - 13:00", "Programada"},
-                                {"Protección Portuaria", "02/10/2026", "08:30 - 12:30", "Pendiente"}
-                        }
-                ));
+                        "Mis próximas capacitaciones", new String[]{"Curso", "Fecha", "Horario", "Estado"},
+                        new Object[][]{{"Formación Básica", "28/09/2026", "09:00 - 13:00", "Programada"},
+                                {"Protecci" + "ón Portuaria", "02/10/2026", "08:30 - 12:30", "Pendiente"}}));
                 centro.add(Box.createVerticalStrut(18));
                 centro.add(crearPanelTabla(
-                        "Mis vigencias",
-                        new String[]{"Curso / Certificación", "Emisión", "Vencimiento", "Estado"},
-                        new Object[][]{
-                                {"Formación Básica", "15/10/2023", "15/10/2026", "Próximo"},
-                                {"Protección Portuaria", "12/03/2026", "12/03/2028", "Vigente"},
-                                {"Perfeccionamiento", "08/07/2025", "08/07/2027", "Vigente"}
-                        }
-                ));
+                        "Mis vigencias", new String[]{"Curso / Certificación", "Emisión", "Vencimiento", "Estado"},
+                        new Object[][]{{"Formación Básica", "15/10/2023", "15/10/2026", "Próximo"}, {"Protección " +
+                                "Portuaria", "12/03/2026", "12/03/2028", "Vigente"}, {"Perfeccionamiento", "08/07" +
+                                "/2025", "08/07/2027", "Vigente"}}));
             }
         }
     }
@@ -249,8 +228,7 @@ public class PnlInicio extends JPanel {
         panel.setBackground(BLANCO);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDE),
-                new EmptyBorder(16, 16, 16, 16)
-        ));
+                new EmptyBorder(16, 16, 16, 16)));
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 215));
         panel.setPreferredSize(new Dimension(850, 215));
 
@@ -285,6 +263,7 @@ public class PnlInicio extends JPanel {
         return panel;
     }
 
+
     private JPanel crearContenidoAdministrador() {
         JPanel contenedor = new JPanel(new BorderLayout());
         contenedor.setBackground(FONDO);
@@ -300,27 +279,17 @@ public class PnlInicio extends JPanel {
         centro.add(crearTarjetasAdministrador());
         centro.add(Box.createVerticalStrut(22));
 
-        centro.add(crearPanelTablaAdministrador(
-                "Próximos vencimientos",
-                new String[]{"Trabajador", "Curso", "Vencimiento", "Estado"},
-                new Object[][]{
-                        {"Juan Pérez", "Formación Básica", "15/10/2026", "Próximo"},
-                        {"María Torres", "Protección Portuaria", "22/10/2026", "Próximo"},
-                        {"Carlos Rojas", "Perfeccionamiento", "30/10/2026", "Próximo"}
-                }
-        ));
+        centro.add(
+                crearPanelTablaAdministrador(
+                        "Próximos vencimientos", new String[]{"Trabajador", "Curso", "Vencimiento", "Estado"},
+                        new Object[0][4]));
 
         centro.add(Box.createVerticalStrut(18));
 
-        centro.add(crearPanelTablaAdministrador(
-                "Capacitaciones programadas",
-                new String[]{"Curso", "Fecha", "Horario", "Participantes"},
-                new Object[][]{
-                        {"Formación Básica", "28/09/2026", "09:00 - 13:00", "18"},
-                        {"Protección Portuaria", "02/10/2026", "08:30 - 12:30", "12"},
-                        {"Perfeccionamiento", "06/10/2026", "14:00 - 18:00", "15"}
-                }
-        ));
+        centro.add(
+                crearPanelTablaAdministrador(
+                        "Capacitaciones programadas", new String[]{"Curso", "Fecha", "Horario", "Participantes"},
+                        new Object[0][4]));
 
         JScrollPane scroll = new JScrollPane(centro);
         scroll.setBorder(null);
@@ -331,6 +300,7 @@ public class PnlInicio extends JPanel {
         contenedor.add(scroll, BorderLayout.CENTER);
         return contenedor;
     }
+
 
     private JPanel crearCabeceraAdministrador() {
         JPanel cabecera = new JPanel(new BorderLayout());
@@ -381,10 +351,10 @@ public class PnlInicio extends JPanel {
         tarjetas.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
         tarjetas.setPreferredSize(new Dimension(800, 110));
 
-        tarjetas.add(crearTarjetaAdministrador("Programadas", "12"));
-        tarjetas.add(crearTarjetaAdministrador("Pendientes", "8"));
-        tarjetas.add(crearTarjetaAdministrador("Próximas a vencer", "5"));
-        tarjetas.add(crearTarjetaAdministrador("Vencidas", "3"));
+        tarjetas.add(crearTarjetaAdministrador("Programadas", "—"));
+        tarjetas.add(crearTarjetaAdministrador("Pendientes", "—"));
+        tarjetas.add(crearTarjetaAdministrador("Próximas a vencer", "—"));
+        tarjetas.add(crearTarjetaAdministrador("Vencidas", "—"));
 
         return tarjetas;
     }
@@ -395,8 +365,7 @@ public class PnlInicio extends JPanel {
         tarjeta.setLayout(new BoxLayout(tarjeta, BoxLayout.Y_AXIS));
         tarjeta.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDE),
-                new EmptyBorder(18, 18, 16, 18)
-        ));
+                new EmptyBorder(18, 18, 16, 18)));
 
         JLabel lblTitulo = new JLabel(titulo);
         lblTitulo.setForeground(TEXTO_SUAVE);
@@ -407,6 +376,7 @@ public class PnlInicio extends JPanel {
         lblValor.setForeground(TEXTO);
         lblValor.setFont(new Font("Segoe UI", Font.BOLD, 28));
         lblValor.setAlignmentX(Component.LEFT_ALIGNMENT);
+        indicadoresAdmin.put(titulo, lblValor);
 
         tarjeta.add(lblTitulo);
         tarjeta.add(Box.createVerticalStrut(8));
@@ -420,8 +390,7 @@ public class PnlInicio extends JPanel {
         panel.setBackground(BLANCO);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDE),
-                new EmptyBorder(16, 16, 16, 16)
-        ));
+                new EmptyBorder(16, 16, 16, 16)));
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 215));
         panel.setPreferredSize(new Dimension(850, 215));
 
@@ -436,6 +405,8 @@ public class PnlInicio extends JPanel {
                 return false;
             }
         };
+
+        tablasAdmin.put(titulo, modelo);
 
         JTable tabla = new JTable(modelo);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -455,5 +426,123 @@ public class PnlInicio extends JPanel {
         panel.add(scroll, BorderLayout.CENTER);
 
         return panel;
+    }
+
+    public void cargarResumen(InicioControlador controlador) {
+        if (perfil != Perfil.ADMINISTRADOR) {
+            return;
+        }
+
+        java.util.Objects.requireNonNull(controlador);
+
+        new SwingWorker<InicioDAO.Resumen, Void>() {
+
+            @Override
+            protected InicioDAO.Resumen doInBackground() {
+                return controlador.obtenerResumen();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    InicioDAO.Resumen resumen = get();
+
+                    indicadoresAdmin.get("Programadas").setText(String.valueOf(resumen.programadas()));
+
+                    indicadoresAdmin.get("Pendientes").setText(String.valueOf(resumen.pendientes()));
+
+                    indicadoresAdmin.get("Próximas a vencer").setText(String.valueOf(resumen.proximasVencer()));
+
+                    indicadoresAdmin.get("Vencidas").setText(String.valueOf(resumen.vencidas()));
+                    cargarTablasAdministrador(controlador);
+
+                } catch (Exception ex) {
+                    if (ex instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+
+                    indicadoresAdmin.values().forEach(etiqueta -> etiqueta.setText("Error"));
+
+                    JOptionPane.showMessageDialog(
+                            PnlInicio.this, "No se pudieron cargar los indicadores desde MySQL.",
+                            "Error al cargar el resumen", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
+    }
+
+    private void cargarTablasAdministrador(InicioControlador controlador) {
+
+        new SwingWorker<Void, Void>() {
+
+            private java.util.List<InicioDAO.CapacitacionProgramada> programadas;
+            private java.util.List<InicioDAO.ProximoVencimiento> vencimientos;
+
+            @Override
+            protected Void doInBackground() {
+                programadas = controlador.listarProgramadas();
+                vencimientos = controlador.listarProximosVencimientos();
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+
+                    var formatoFecha = java.time.format.DateTimeFormatter
+                            .ofPattern("dd/MM/yyyy");
+
+                    var formatoHora = java.time.format.DateTimeFormatter
+                            .ofPattern("HH:mm");
+
+                    DefaultTableModel tablaProgramadas =
+                            tablasAdmin.get("Capacitaciones programadas");
+
+                    tablaProgramadas.setRowCount(0);
+
+                    for (InicioDAO.CapacitacionProgramada dato : programadas) {
+                        tablaProgramadas.addRow(new Object[]{
+                                dato.curso(),
+                                dato.fecha().format(formatoFecha),
+                                dato.horaInicio().format(formatoHora)
+                                        + " - "
+                                        + dato.horaFin().format(formatoHora),
+                                dato.participantes()
+                        });
+                    }
+
+                    DefaultTableModel tablaVencimientos =
+                            tablasAdmin.get("Próximos vencimientos");
+
+                    tablaVencimientos.setRowCount(0);
+
+                    for (InicioDAO.ProximoVencimiento dato : vencimientos) {
+                        tablaVencimientos.addRow(new Object[]{
+                                dato.trabajador(),
+                                dato.curso(),
+                                dato.vencimiento().format(formatoFecha),
+                                dato.estado()
+                        });
+                    }
+
+                } catch (Exception ex) {
+                    if (ex instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+
+                    Throwable causa = ex.getCause() != null
+                            ? ex.getCause() : ex;
+
+                    JOptionPane.showMessageDialog(
+                            PnlInicio.this,
+                            "No se pudieron cargar las tablas:\n"
+                                    + causa.getMessage(),
+                            "Error de consulta MySQL",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        }.execute();
     }
 }

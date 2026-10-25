@@ -19,6 +19,7 @@ public class PnlPersonal extends JPanel {
     private static final Color BORDE = new Color(224, 229, 234);
 
     private final PersonalControlador controlador;
+    private final String rolActual;
     private final JTabbedPane tabs = new JTabbedPane();
     private final JTextField dni = new JTextField(18), nombres = new JTextField(18), apellidos = new JTextField(
             18), cargo = new JTextField(18), buscar = new JTextField();
@@ -27,7 +28,12 @@ public class PnlPersonal extends JPanel {
     private int idEdicion;
 
     public PnlPersonal(PersonalControlador controlador) {
+        this(controlador, "");
+    }
+
+    public PnlPersonal(PersonalControlador controlador, String rolActual) {
         this.controlador = controlador;
+        this.rolActual = java.util.Objects.requireNonNull(rolActual);
         setLayout(new BorderLayout());
         add(crearContenido(), BorderLayout.CENTER);
         refrescar();
@@ -57,7 +63,7 @@ public class PnlPersonal extends JPanel {
         titulos.add(Box.createVerticalStrut(4));
         titulos.add(subtitulo);
 
-        JLabel usuario = new JLabel("Responsable de capacitaciones");
+        JLabel usuario = new JLabel(rolActual);
         usuario.setForeground(TEXTO);
         usuario.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
@@ -214,7 +220,7 @@ public class PnlPersonal extends JPanel {
         try {
             Trabajador trabajador = new Trabajador(
                     idEdicion, dni.getText(), nombres.getText(), apellidos.getText(),
-                    cargo.getText(), (String) estado.getSelectedItem());
+                                                   cargo.getText(), (String) estado.getSelectedItem());
             if (idEdicion == 0) controlador.registrarTrabajador(trabajador);
             else controlador.actualizarTrabajador(trabajador);
             limpiar();

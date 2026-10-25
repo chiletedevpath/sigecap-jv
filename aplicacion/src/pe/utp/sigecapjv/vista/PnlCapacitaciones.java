@@ -25,6 +25,7 @@ public class PnlCapacitaciones extends JPanel {
 
     private final CapacitacionControlador controlador;
     private final PersonalControlador personal;
+    private final String rolActual;
     private final JTabbedPane tabs = new JTabbedPane();
     private final JTextField buscar = new JTextField(20), fecha = new JTextField(16), horario = new JTextField(16);
     private final JComboBox<Curso> curso = new JComboBox<>();
@@ -38,13 +39,19 @@ public class PnlCapacitaciones extends JPanel {
     private PnlEvaluacion resultados, certificados;
 
     public PnlCapacitaciones(CapacitacionControlador controlador, PersonalControlador personal) {
-        this(controlador, personal, null);
+        this(controlador, personal, null, "");
     }
 
     public PnlCapacitaciones(CapacitacionControlador controlador, PersonalControlador personal,
                              SeguimientoControlador seguimiento) {
+        this(controlador, personal, seguimiento, "");
+    }
+
+    public PnlCapacitaciones(CapacitacionControlador controlador, PersonalControlador personal,
+                             SeguimientoControlador seguimiento, String rolActual) {
         this.controlador = controlador;
         this.personal = personal;
+        this.rolActual = java.util.Objects.requireNonNull(rolActual);
         if (seguimiento != null) {
             asistencia = new PnlAsistencia(controlador, seguimiento);
             resultados = new PnlEvaluacion(controlador, seguimiento, false);
@@ -85,7 +92,7 @@ public class PnlCapacitaciones extends JPanel {
         titulos.add(Box.createVerticalStrut(4));
         titulos.add(subtitulo);
 
-        JLabel usuario = new JLabel("Responsable de capacitaciones");
+        JLabel usuario = new JLabel(rolActual);
         usuario.setForeground(TEXTO);
         usuario.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
@@ -288,8 +295,8 @@ public class PnlCapacitaciones extends JPanel {
             refrescar();
             return true;
         } catch (IllegalArgumentException | IllegalStateException | java.time.DateTimeException ex) {
-            String mensaje = ex instanceof java.time.format.DateTimeParseException
-                    ? "Revise la fecha (AAAA-MM-DD) y el horario (HH:mm - HH:mm)." : ex.getMessage();
+            String mensaje = ex instanceof java.time.format.DateTimeParseException ? "Revise la fecha (AAAA-MM-DD) y "
+                    + "el horario (HH:mm - HH:mm)." : ex.getMessage();
             JOptionPane.showMessageDialog(this, mensaje, "Revisar datos", JOptionPane.WARNING_MESSAGE);
             return false;
         }
@@ -314,7 +321,8 @@ public class PnlCapacitaciones extends JPanel {
         agregarCampo(form, g, 0, 2, "Estado", estado);
         while (JOptionPane.showConfirmDialog(
                 this, form, actual == null ? "Nuevo curso" : "Editar curso",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION) {
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION) {
             try {
                 Integer meses = vigencia.getText().isBlank() ? null : Integer.valueOf(vigencia.getText().trim());
                 Curso c = new Curso(
@@ -400,7 +408,8 @@ public class PnlCapacitaciones extends JPanel {
         }
         Trabajador t = (Trabajador) JOptionPane.showInputDialog(
                 this, "Trabajador", "Asignar trabajador",
-                JOptionPane.PLAIN_MESSAGE, null, trabajadores, trabajadores[0]);
+                JOptionPane.PLAIN_MESSAGE, null, trabajadores,
+                trabajadores[0]);
         if (t != null && ejecutar(() -> controlador.asignarTrabajador(t, seleccionada)))
             JOptionPane.showMessageDialog(this, "Trabajador asignado correctamente.");
     }
@@ -511,8 +520,7 @@ public class PnlCapacitaciones extends JPanel {
         if (campo instanceof JTextField tf) {
             tf.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(BORDE),
-                    new EmptyBorder(0, 9, 0, 9)
-            ));
+                    new EmptyBorder(0, 9, 0, 9)));
         }
 
         bloque.add(label);
@@ -529,10 +537,8 @@ public class PnlCapacitaciones extends JPanel {
         JTextField campo = new JTextField(columnas);
         campo.setPreferredSize(new Dimension(260, 38));
         campo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        campo.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDE),
-                new EmptyBorder(0, 9, 0, 9)
-        ));
+        campo.setBorder(
+                BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(BORDE), new EmptyBorder(0, 9, 0, 9)));
         return campo;
     }
 
@@ -554,8 +560,7 @@ public class PnlCapacitaciones extends JPanel {
         b.setFocusPainted(false);
         b.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDE),
-                new EmptyBorder(9, 14, 9, 14)
-        ));
+                new EmptyBorder(9, 14, 9, 14)));
         return b;
     }
 }
