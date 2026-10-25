@@ -44,7 +44,8 @@ public final class PruebaAcceso {
         rechazo(() -> sesion.exigirPermiso("usuarios", "consultar"));
         comprobar(!login.autenticar("sinPermisos", clave).puede("usuarios", "consultar"));
         String mensaje = rechazo(() -> login.autenticar("activo", "incorrecta".toCharArray()));
-        comprobar(mensaje.equals(rechazo(() -> login.autenticar("inactivo", clave))));
+        comprobar(rechazo(() -> login.autenticar("inactivo", clave)).contains("inactiva"));
+        comprobar(mensaje.equals(rechazo(() -> login.autenticar("inactivo", "incorrecta".toCharArray()))));
         comprobar(mensaje.equals(rechazo(() -> login.autenticar("ausente", clave))));
         comprobar(mensaje.equals(rechazo(() -> login.autenticar("", clave))));
         java.util.Arrays.fill(clave, '\0');
