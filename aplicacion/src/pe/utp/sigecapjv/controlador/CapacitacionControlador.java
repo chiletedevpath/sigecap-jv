@@ -56,22 +56,21 @@ public class CapacitacionControlador {
     }
 
     private Curso buscarCurso(int id) {
-        return cursos.stream().filter(c -> c.getIdCurso() == id).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("El curso no está registrado."));
+        return cursos.stream().filter(c -> c.getIdCurso() == id).findFirst().orElseThrow(
+                () -> new IllegalArgumentException("El curso no está registrado."));
     }
 
     private Capacitacion buscarCapacitacion(int id) {
-        return capacitaciones.stream().filter(c -> c.getIdCapacitacion() == id).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("La capacitación no está registrada."));
+        return capacitaciones.stream().filter(c -> c.getIdCapacitacion() == id).findFirst().orElseThrow(
+                () -> new IllegalArgumentException("La capacitación no está registrada."));
     }
 
     public void programarCapacitacion(Capacitacion capacitacion) {
         Validador.requerido(capacitacion, "Capacitación");
         Validador.requerido(capacitacion.getCurso(), "Curso");
         Capacitacion nueva = new Capacitacion(
-                0, capacitacion.getFecha(), capacitacion.getHoraInicio(),
-                capacitacion.getHoraFin(), capacitacion.getModalidad(), null,
-                buscarCurso(capacitacion.getCurso().getIdCurso()));
+                0, capacitacion.getFecha(), capacitacion.getHoraInicio(), capacitacion.getHoraFin(),
+                capacitacion.getModalidad(), null, buscarCurso(capacitacion.getCurso().getIdCurso()));
         if (capacitacion.getEstado() != null && !capacitacion.getEstado().isBlank()) {
             throw new IllegalArgumentException("Para programar, use una capacitación nueva sin estado.");
         }
@@ -87,9 +86,8 @@ public class CapacitacionControlador {
         Validador.requerido(datos.getCurso(), "Curso");
         Capacitacion actual = buscarCapacitacion(datos.getIdCapacitacion());
         Capacitacion candidata = new Capacitacion(
-                actual.getIdCapacitacion(), datos.getFecha(), datos.getHoraInicio(),
-                datos.getHoraFin(), datos.getModalidad(), actual.getEstado(),
-                buscarCurso(datos.getCurso().getIdCurso()));
+                actual.getIdCapacitacion(), datos.getFecha(), datos.getHoraInicio(), datos.getHoraFin(),
+                datos.getModalidad(), actual.getEstado(), buscarCurso(datos.getCurso().getIdCurso()));
         candidata.actualizar();
         actual.setCurso(candidata.getCurso());
         actual.setFecha(candidata.getFecha());

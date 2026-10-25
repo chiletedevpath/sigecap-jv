@@ -49,7 +49,7 @@ public class Participacion {
     Participacion copiaPara(Capacitacion copiaCapacitacion) {
         return new Participacion(
                 idParticipacion, fechaAsignacion, estado,
-                trabajador == null ? null : trabajador.copia(), copiaCapacitacion);
+                                 trabajador == null ? null : trabajador.copia(), copiaCapacitacion);
     }
 
     public Participacion copia() {

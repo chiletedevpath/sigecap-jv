@@ -12,8 +12,14 @@ import java.util.List;
  */
 public class PersonalJdbcControlador extends PersonalControlador {
     private final SesionUsuario sesion;
-    public PersonalJdbcControlador() { this(null); }
-    public PersonalJdbcControlador(SesionUsuario sesion) { this.sesion = sesion; }
+
+    public PersonalJdbcControlador() {
+        this(null);
+    }
+
+    public PersonalJdbcControlador(SesionUsuario sesion) {
+        this.sesion = sesion;
+    }
 
     private final TrabajadorDAO dao = new TrabajadorDAO();
 
