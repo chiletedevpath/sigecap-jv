@@ -34,10 +34,10 @@ public class FrmPrincipal extends JFrame {
         if (sesion == null) {
             throw new SecurityException("Debe iniciar sesión.");
         }
-        PnlPersonal pnlPersonal = sesion == null || sesion.puede("personal", "consultar") ? new PnlPersonal(
-                personal) : null;
-        PnlCapacitaciones pnlCapacitaciones = sesion == null || sesion.puede(
-                "capacitaciones", "consultar") ? new PnlCapacitaciones(capacitaciones, personal, seguimiento) : null;
+        PnlPersonal pnlPersonal = sesion.puede("personal", "consultar") ? new PnlPersonal(
+                personal, sesion.getRol()) : null;
+        PnlCapacitaciones pnlCapacitaciones = sesion.puede("capacitaciones", "consultar") ? new PnlCapacitaciones(
+                capacitaciones, personal, seguimiento, sesion.getRol()) : null;
         CardLayout tarjetas = new CardLayout();
         JPanel contenido = new JPanel(tarjetas);
         PnlInicio.Perfil perfilInicio = PnlInicio.Perfil.ADMINISTRADOR;
@@ -52,7 +52,13 @@ public class FrmPrincipal extends JFrame {
             };
         }
 
-        contenido.add(new PnlInicio(perfilInicio), "Inicio");
+        PnlInicio pnlInicio = new PnlInicio(perfilInicio);
+        contenido.add(pnlInicio, "Inicio");
+
+        if (perfilInicio == PnlInicio.Perfil.ADMINISTRADOR) {
+            InicioControlador inicioControlador = new InicioControlador(sesion);
+            pnlInicio.cargarResumen(inicioControlador);
+        }
         if (pnlPersonal != null) contenido.add(pnlPersonal, "Personal");
         if (pnlCapacitaciones != null) contenido.add(pnlCapacitaciones, "Capacitaciones");
         PnlUsuarios usuarios = sesion != null && "Administrador".equals(sesion.getRol()) && sesion.puede(
@@ -82,10 +88,24 @@ public class FrmPrincipal extends JFrame {
         menu.add(Box.createVerticalStrut(30));
         for (String nombre : new String[]{"Inicio", "Personal", "Capacitaciones", "Seguimiento", "Reportes",
                 "Usuarios"}) {
+            if (nombre.equals("Seguimiento") || nombre.equals("Reportes")) {
+                continue;
+            }
+
+            if (nombre.equals("Personal") && pnlPersonal == null) {
+                continue;
+            }
+
+            if (nombre.equals("Capacitaciones") && pnlCapacitaciones == null) {
+                continue;
+            }
+
             if (nombre.equals("Usuarios") && usuarios == null) {
                 continue;
             }
+
             JButton boton = new JButton(nombre);
+
             boton.setAlignmentX(Component.LEFT_ALIGNMENT);
             boton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
             boton.setHorizontalAlignment(SwingConstants.LEFT);
