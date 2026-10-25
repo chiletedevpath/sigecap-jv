@@ -74,6 +74,28 @@ public final class PruebaUsuariosMySql {
                 String propiedad=System.getProperty("sigecap.pruebas");
                 try { System.clearProperty("sigecap.pruebas"); rechazar(()->new PersonalJdbcControlador().listarTrabajadores()); }
                 finally { if(propiedad!=null) System.setProperty("sigecap.pruebas",propiedad); }
+                int responsable=gestion.roles().stream().filter(r->r.nombre().equals("Responsable de capacitaciones")).findFirst().orElseThrow().idRol();
+                gestion.guardar(datos(0,responsable,null,"responsable_prueba","ACTIVO"),clave);
+                try (SesionUsuario responsableSesion=login.autenticar("responsable_prueba",clave)) {
+                    comprobar(responsableSesion.puede("personal","gestionar") && responsableSesion.puede("capacitaciones","gestionar"));
+                    comprobar(new PersonalJdbcControlador(responsableSesion).listarTrabajadores()!=null);
+                    rechazar(()->new UsuarioControlador(responsableSesion).listar());
+                    rechazar(()->new RolControlador(responsableSesion).listar());
+                }
+                int idTrabajador=pe.utp.sigecapjv.dao.Jdbc.transaccion(c -> {
+                    try(var p=c.prepareStatement("SELECT idTrabajador FROM trabajador ORDER BY idTrabajador LIMIT 1");var r=p.executeQuery()) {
+                        if(!r.next()) throw new AssertionError("Falta trabajador de prueba.");
+                        return r.getInt(1);
+                    }
+                });
+                gestion.guardar(datos(0,trabajador,idTrabajador,"trabajador_prueba","ACTIVO"),clave);
+                try (SesionUsuario trabajadorSesion=login.autenticar("trabajador_prueba",clave)) {
+                    comprobar(trabajadorSesion.getIdTrabajador().equals(idTrabajador));
+                    comprobar(!trabajadorSesion.puede("personal","consultar") && !trabajadorSesion.puede("usuarios","gestionar"));
+                    rechazar(()->new PersonalJdbcControlador(trabajadorSesion).listarTrabajadores());
+                    rechazar(()->new UsuarioControlador(trabajadorSesion).listar());
+                    rechazar(()->new SeguimientoControlador(trabajadorSesion).registrarAsistencia(1,"ASISTIO"));
+                }
             }
             System.out.println("OK: "+total+" comprobaciones de administración y autorización MySQL.");
         } finally { java.util.Arrays.fill(clave,'\0'); }
