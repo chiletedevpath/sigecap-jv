@@ -1,14 +1,8 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="SIGECAP MySQL" type="Application" factoryName="Application">
-    <envs>
-      <env name="SIGECAP_DB_USER" value="root" />
-      <env name="SIGECAP_DB_PASSWORD" value="Maricielo09" />
-    </envs>
     <option name="MAIN_CLASS_NAME" value="pe.utp.sigecapjv.vista.FrmPrincipal" />
     <module name="aplicacion" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/aplicacion" />
-    <method v="2">
-      <option name="Make" enabled="true" />
-    </method>
+    <method v="2"><option name="Make" enabled="true" /></method>
   </configuration>
 </component>

@@ -17,8 +17,8 @@ public final class PruebaResultadosMySql {
         try { accion.run(); } catch (IllegalArgumentException | IllegalStateException ex) { total++; return; }
         throw new AssertionError("La operación inválida fue aceptada.");
     }
-    public static void verificar(PersonalJdbcControlador personal, CapacitacionJdbcControlador gestion) throws Exception {
-        SeguimientoControlador s = new SeguimientoControlador();
+    public static void verificar(PersonalJdbcControlador personal, CapacitacionJdbcControlador gestion, SesionUsuario admin) throws Exception {
+        SeguimientoControlador s = new SeguimientoControlador(admin);
         Trabajador t = new Trabajador(0,"22223333","Evaluacion","Prueba","Operaciones","ACTIVO");
         personal.registrarTrabajador(t);
         Curso curso = new Curso(0,"EVALUACION","Evaluación","Interno",12,"ACTIVO"); gestion.registrarCurso(curso);

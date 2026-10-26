@@ -2,622 +2,68 @@ package pe.utp.sigecapjv.vista;
 
 import pe.utp.sigecapjv.controlador.NotificacionesControlador;
 import pe.utp.sigecapjv.modelo.Notificacion;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.util.List;
+
+/** Consulta global autorizada; todos los valores proceden de MySQL. */
 public class PnlAlertas extends JPanel {
+    private final NotificacionesControlador controlador;
+    private final DefaultTableModel modelo = new DefaultTableModel(
+            new String[]{"ID", "Trabajador (ID)", "Fecha", "Tipo", "Detalle", "Estado"}, 0) {
+        @Override public boolean isCellEditable(int fila, int columna) { return false; }
+    };
+    private final JTable tabla = new JTable(modelo);
+    private final JComboBox<String> tipo = new JComboBox<>(new String[]{"Todos", "POR_VENCER", "VENCIDO"});
+    private final JComboBox<String> estado = new JComboBox<>(new String[]{"Todos", "PENDIENTE", "LEIDA"});
+    private final JLabel mensaje = new JLabel("Pulse Consultar para cargar las alertas.");
 
-    private static final Color AZUL = new Color(28, 48, 71);
-    private static final Color AZUL_CLARO = new Color(46, 102, 158);
-    private static final Color FONDO = new Color(245, 247, 249);
-    private static final Color BLANCO = Color.WHITE;
-    private static final Color TEXTO = new Color(42, 49, 57);
-    private static final Color TEXTO_SUAVE = new Color(104, 116, 130);
-    private static final Color BORDE = new Color(224, 229, 234);
-    private NotificacionesControlador controlador = new NotificacionesControlador();
-    private DefaultTableModel modeloTabla;
-
-    // Diseño conservado para la siguiente etapa; todavía utiliza datos de ejemplo.
-    public PnlAlertas() {
-        setLayout(new BorderLayout());
-        add(crearContenido(), BorderLayout.CENTER);
-    }
-
-    private JPanel crearContenido() {
-        JPanel contenedor = new JPanel(
-                new BorderLayout()
-        );
-
-        contenedor.setBackground(FONDO);
-
-        contenedor.setBorder(
-                new EmptyBorder(24, 28, 26, 28)
-        );
-
-        contenedor.add(
-                crearCabecera(),
-                BorderLayout.NORTH
-        );
-
-        JPanel centro = new JPanel();
-
-        centro.setOpaque(false);
-
-        centro.setLayout(
-                new BoxLayout(
-                        centro,
-                        BoxLayout.Y_AXIS
-                )
-        );
-
-        centro.add(
-                Box.createVerticalStrut(22)
-        );
-
-        centro.add(crearTarjetas());
-
-        centro.add(
-                Box.createVerticalStrut(22)
-        );
-
-        centro.add(crearPanelAlertas());
-
-        JScrollPane scroll =
-                new JScrollPane(centro);
-
-        scroll.setBorder(null);
-        scroll.setOpaque(false);
-
-        scroll.getViewport().setOpaque(false);
-
-        scroll.getVerticalScrollBar()
-                .setUnitIncrement(16);
-
-        contenedor.add(
-                scroll,
-                BorderLayout.CENTER
-        );
-
-        return contenedor;
-    }
-
-    private JPanel crearCabecera() {
-        JPanel cabecera =
-                new JPanel(new BorderLayout());
-
+    public PnlAlertas(NotificacionesControlador controlador) {
+        this.controlador = controlador;
+        setLayout(new BorderLayout(0, 18));
+        setBackground(new Color(245,247,249));
+        setBorder(new EmptyBorder(24,28,26,28));
+        JPanel cabecera = new JPanel(new BorderLayout());
         cabecera.setOpaque(false);
-
-        JPanel izquierda = new JPanel();
-        izquierda.setOpaque(false);
-
-        izquierda.setLayout(
-                new BoxLayout(
-                        izquierda,
-                        BoxLayout.Y_AXIS
-                )
-        );
-
-        JLabel titulo =
-                new JLabel("Alertas");
-
-        titulo.setForeground(TEXTO);
-
-        titulo.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        26
-                )
-        );
-
-        JLabel subtitulo =
-                new JLabel(
-                        "Consulta de alertas relacionadas con mis capacitaciones"
-                );
-
-        subtitulo.setForeground(TEXTO_SUAVE);
-
-        subtitulo.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        13
-                )
-        );
-
-        izquierda.add(titulo);
-
-        izquierda.add(
-                Box.createVerticalStrut(4)
-        );
-
-        izquierda.add(subtitulo);
-
-        JPanel usuario = new JPanel();
-
-        usuario.setOpaque(false);
-
-        usuario.setLayout(
-                new BoxLayout(
-                        usuario,
-                        BoxLayout.Y_AXIS
-                )
-        );
-
-        JLabel nombre =
-                new JLabel(
-                        "Trabajador del área de Operaciones"
-                );
-
-        nombre.setForeground(TEXTO);
-
-        nombre.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        13
-                )
-        );
-
-        nombre.setAlignmentX(
-                Component.RIGHT_ALIGNMENT
-        );
-
-        JLabel estado =
-                new JLabel("Usuario activo");
-
-        estado.setForeground(TEXTO_SUAVE);
-
-        estado.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        12
-                )
-        );
-
-        estado.setAlignmentX(
-                Component.RIGHT_ALIGNMENT
-        );
-
-        usuario.add(nombre);
-        usuario.add(estado);
-
-        cabecera.add(
-                izquierda,
-                BorderLayout.WEST
-        );
-
-        cabecera.add(
-                usuario,
-                BorderLayout.EAST
-        );
-
-        return cabecera;
-    }
-
-    private JPanel crearTarjetas() {
-        JPanel tarjetas =
-                new JPanel(
-                        new GridLayout(
-                                1,
-                                3,
-                                14,
-                                0
-                        )
-                );
-
-        tarjetas.setOpaque(false);
-
-        tarjetas.setMaximumSize(
-                new Dimension(
-                        Integer.MAX_VALUE,
-                        110
-                )
-        );
-
-        tarjetas.setPreferredSize(
-                new Dimension(
-                        800,
-                        110
-                )
-        );
-
-        tarjetas.add(
-                crearTarjeta(
-                        "Nuevas asignaciones",
-                        "1"
-                )
-        );
-
-        tarjetas.add(
-                crearTarjeta(
-                        "Recordatorios",
-                        "1"
-                )
-        );
-
-        tarjetas.add(
-                crearTarjeta(
-                        "Próximas a vencer",
-                        "1"
-                )
-        );
-
-        return tarjetas;
-    }
-
-    private JPanel crearTarjeta(
-            String titulo,
-            String valor
-    ) {
-
-        JPanel tarjeta = new JPanel();
-
-        tarjeta.setBackground(BLANCO);
-
-        tarjeta.setLayout(
-                new BoxLayout(
-                        tarjeta,
-                        BoxLayout.Y_AXIS
-                )
-        );
-
-        tarjeta.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory
-                                .createLineBorder(BORDE),
-
-                        new EmptyBorder(
-                                18,
-                                18,
-                                16,
-                                18
-                        )
-                )
-        );
-
-        JLabel lblTitulo =
-                new JLabel(titulo);
-
-        lblTitulo.setForeground(
-                TEXTO_SUAVE
-        );
-
-        lblTitulo.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        13
-                )
-        );
-
-        lblTitulo.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
-
-        JLabel lblValor =
-                new JLabel(valor);
-
-        lblValor.setForeground(TEXTO);
-
-        lblValor.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        28
-                )
-        );
-
-        lblValor.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
-
-        tarjeta.add(lblTitulo);
-
-        tarjeta.add(
-                Box.createVerticalStrut(8)
-        );
-
-        tarjeta.add(lblValor);
-
-        return tarjeta;
-    }
-
-    private JPanel crearPanelAlertas() {
-
-        JPanel panel =
-                new JPanel(
-                        new BorderLayout()
-                );
-
-        panel.setBackground(BLANCO);
-
-        panel.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory
-                                .createLineBorder(BORDE),
-
-                        new EmptyBorder(
-                                16,
-                                16,
-                                16,
-                                16
-                        )
-                )
-        );
-
-        panel.setMaximumSize(
-                new Dimension(
-                        Integer.MAX_VALUE,
-                        360
-                )
-        );
-
-        panel.setPreferredSize(
-                new Dimension(
-                        850,
-                        360
-                )
-        );
-
-        JPanel superior =
-                new JPanel(
-                        new BorderLayout()
-                );
-
-        superior.setOpaque(false);
-
-        JLabel titulo =
-                new JLabel(
-                        "Listado de alertas"
-                );
-
-        titulo.setForeground(TEXTO);
-
-        titulo.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        16
-                )
-        );
-
-        JPanel filtros =
-                new JPanel(
-                        new FlowLayout(
-                                FlowLayout.RIGHT,
-                                8,
-                                0
-                        )
-                );
-
+        JLabel titulo = new JLabel("Vigencias y notificaciones");
+        titulo.setFont(new Font("Segoe UI",Font.BOLD,26));
+        cabecera.add(titulo,BorderLayout.NORTH);
+        JPanel filtros = new JPanel(new FlowLayout(FlowLayout.LEFT));
         filtros.setOpaque(false);
-
-        JLabel lblTipo =
-                new JLabel("Tipo:");
-
-        lblTipo.setForeground(TEXTO);
-
-        lblTipo.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        13
-                )
-        );
-
-        JComboBox<String> cboTipo =
-                new JComboBox<>(
-                        new String[]{
-                                "Todas",
-                                "Nueva asignación",
-                                "Recordatorio",
-                                "Próximo vencimiento"
-                        }
-                );
-
-        cboTipo.setPreferredSize(
-                new Dimension(
-                        190,
-                        32
-                )
-        );
-
-        cboTipo.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        13
-                )
-        );
-
-        JButton consultar =
-                new JButton("Consultar");
-
-        consultar.setBackground(
-                AZUL_CLARO
-        );
-
-        consultar.setForeground(
-                BLANCO
-        );
-
-        consultar.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        13
-                )
-        );
-
-        consultar.setFocusPainted(false);
-
-        consultar.setBorder(
-                new EmptyBorder(
-                        8,
-                        14,
-                        8,
-                        14
-                )
-        );
-        consultar.addActionListener((ActionEvent e) -> cargarDatosReales());
-
-        filtros.add(lblTipo);
-        filtros.add(cboTipo);
-        filtros.add(consultar);
-
-        superior.add(
-                titulo,
-                BorderLayout.WEST
-        );
-
-        superior.add(
-                filtros,
-                BorderLayout.EAST
-        );
-
-        String[] columnas = {
-                "Fecha",
-                "Tipo",
-                "Capacitación",
-                "Detalle",
-                "Estado"
-        };
-
-        modeloTabla = new DefaultTableModel(columnas, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        cargarDatosReales();
-
-        JTable tabla = new JTable(modeloTabla);
-
-        tabla.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        13
-                )
-        );
-
-        tabla.setRowHeight(31);
-
-        tabla.setForeground(TEXTO);
-
-        tabla.setGridColor(
-                new Color(
-                        232,
-                        235,
-                        239
-                )
-        );
-
-        tabla.setSelectionBackground(
-                new Color(
-                        224,
-                        235,
-                        246
-                )
-        );
-
-        tabla.getTableHeader()
-                .setFont(
-                        new Font(
-                                "Segoe UI",
-                                Font.BOLD,
-                                12
-                        )
-                );
-
-        tabla.getTableHeader()
-                .setBackground(
-                        new Color(
-                                239,
-                                243,
-                                247
-                        )
-                );
-
-        tabla.getTableHeader()
-                .setForeground(TEXTO);
-
-        tabla.setFillsViewportHeight(true);
-
-        /*
-         * Ajustamos las columnas para que
-         * "Detalle" tenga mayor espacio.
-         */
-        tabla.getColumnModel()
-                .getColumn(0)
-                .setPreferredWidth(90);
-
-        tabla.getColumnModel()
-                .getColumn(1)
-                .setPreferredWidth(150);
-
-        tabla.getColumnModel()
-                .getColumn(2)
-                .setPreferredWidth(160);
-
-        tabla.getColumnModel()
-                .getColumn(3)
-                .setPreferredWidth(280);
-
-        tabla.getColumnModel()
-                .getColumn(4)
-                .setPreferredWidth(90);
-
-        JScrollPane scroll =
-                new JScrollPane(tabla);
-
-        scroll.setBorder(
-                BorderFactory.createLineBorder(
-                        new Color(
-                                232,
-                                235,
-                                239
-                        )
-                )
-        );
-
-        panel.add(
-                superior,
-                BorderLayout.NORTH
-        );
-
-        panel.add(
-                scroll,
-                BorderLayout.CENTER
-        );
-
-        return panel;
+        filtros.add(new JLabel("Tipo")); filtros.add(tipo);
+        filtros.add(new JLabel("Estado")); filtros.add(estado);
+        JButton consultar = new JButton("Consultar");
+        consultar.addActionListener(e -> refrescar()); filtros.add(consultar);
+        JButton leida = new JButton("Marcar como leída");
+        leida.setEnabled(controlador.puedeGestionar());
+        leida.addActionListener(e -> {
+            int fila = tabla.getSelectedRow();
+            if (fila < 0) { mensaje.setText("Seleccione una notificación."); return; }
+            try {
+                controlador.marcarComoLeida((Integer) modelo.getValueAt(tabla.convertRowIndexToModel(fila),0));
+                refrescar();
+            } catch (IllegalArgumentException | IllegalStateException ex) { mensaje.setText(ex.getMessage()); }
+        });
+        filtros.add(leida);
+        cabecera.add(filtros,BorderLayout.CENTER);
+        add(cabecera,BorderLayout.NORTH);
+        tabla.setRowHeight(30); tabla.setFillsViewportHeight(true);
+        tabla.getColumnModel().getColumn(4).setPreferredWidth(440);
+        add(new JScrollPane(tabla),BorderLayout.CENTER);
+        add(mensaje,BorderLayout.SOUTH);
     }
 
-    private void cargarDatosReales() {
-            modeloTabla.setRowCount(0);
-
-            List<Notificacion> lista = controlador.obtenerAlertasActualizadas();
-            System.out.println("Registros encontrados para la tabla: " + lista.size());
-
-        for (Notificacion n : lista) {
-            modeloTabla.addRow(new Object[]{
-                    n.getFechaGeneracion(),
-                    n.getTipo(),
-                    n.getMensaje(),
-                    n.getEstado()
-            });
-        }
-        modeloTabla.fireTableDataChanged();
-    }
     public void refrescar() {
-        cargarDatosReales();
+        modelo.setRowCount(0);
+        try {
+            for (Notificacion n : controlador.obtenerAlertasActualizadas()) {
+                if (tipo.getSelectedIndex()>0 && !tipo.getSelectedItem().equals(n.getTipo())) continue;
+                if (estado.getSelectedIndex()>0 && !estado.getSelectedItem().equals(n.getEstado())) continue;
+                modelo.addRow(new Object[]{n.getIdNotificacion(),n.getIdTrabajador(),n.getFechaGeneracion(),n.getTipo(),n.getMensaje(),n.getEstado()});
+            }
+            mensaje.setText(modelo.getRowCount()==0 ? "No existen alertas para los filtros seleccionados."
+                    : modelo.getRowCount()+" notificación(es).");
+        } catch (IllegalStateException ex) { mensaje.setText(ex.getMessage()); }
     }
 }
