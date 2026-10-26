@@ -1,10 +1,14 @@
 package pe.utp.sigecapjv.vista;
 
+import pe.utp.sigecapjv.controlador.NotificacionesControlador;
+import pe.utp.sigecapjv.modelo.Notificacion;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-
+import java.awt.event.ActionEvent;
+import java.util.List;
 public class PnlAlertas extends JPanel {
 
     private static final Color AZUL = new Color(28, 48, 71);
@@ -14,6 +18,8 @@ public class PnlAlertas extends JPanel {
     private static final Color TEXTO = new Color(42, 49, 57);
     private static final Color TEXTO_SUAVE = new Color(104, 116, 130);
     private static final Color BORDE = new Color(224, 229, 234);
+    private NotificacionesControlador controlador = new NotificacionesControlador();
+    private DefaultTableModel modeloTabla;
 
     // Diseño conservado para la siguiente etapa; todavía utiliza datos de ejemplo.
     public PnlAlertas() {
@@ -459,6 +465,7 @@ public class PnlAlertas extends JPanel {
                         14
                 )
         );
+        consultar.addActionListener((ActionEvent e) -> cargarDatosReales());
 
         filtros.add(lblTipo);
         filtros.add(cboTipo);
@@ -482,51 +489,16 @@ public class PnlAlertas extends JPanel {
                 "Estado"
         };
 
-        Object[][] datos = {
-
-                {
-                        "24/09/2026",
-                        "Próximo vencimiento",
-                        "Formación Básica",
-                        "Vence el 15/10/2026",
-                        "Generada"
-                },
-
-                {
-                        "23/09/2026",
-                        "Recordatorio",
-                        "Protección Portuaria",
-                        "Programada para el 02/10/2026",
-                        "Generada"
-                },
-
-                {
-                        "20/09/2026",
-                        "Nueva asignación",
-                        "Formación Básica",
-                        "Asignada para el 28/09/2026",
-                        "Generada"
-                }
-
+        modeloTabla = new DefaultTableModel(columnas, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
 
-        DefaultTableModel modelo =
-                new DefaultTableModel(
-                        datos,
-                        columnas
-                ) {
+        cargarDatosReales();
 
-                    @Override
-                    public boolean isCellEditable(
-                            int row,
-                            int column
-                    ) {
-                        return false;
-                    }
-                };
-
-        JTable tabla =
-                new JTable(modelo);
+        JTable tabla = new JTable(modeloTabla);
 
         tabla.setFont(
                 new Font(
@@ -627,5 +599,25 @@ public class PnlAlertas extends JPanel {
         );
 
         return panel;
+    }
+
+    private void cargarDatosReales() {
+            modeloTabla.setRowCount(0);
+
+            List<Notificacion> lista = controlador.obtenerAlertasActualizadas();
+            System.out.println("Registros encontrados para la tabla: " + lista.size());
+
+        for (Notificacion n : lista) {
+            modeloTabla.addRow(new Object[]{
+                    n.getFechaGeneracion(),
+                    n.getTipo(),
+                    n.getMensaje(),
+                    n.getEstado()
+            });
+        }
+        modeloTabla.fireTableDataChanged();
+    }
+    public void refrescar() {
+        cargarDatosReales();
     }
 }

@@ -29,10 +29,14 @@ public class FrmPrincipal extends JFrame {
         super("SIGECAP J&V");
         PnlPersonal pnlPersonal = new PnlPersonal(personal);
         PnlCapacitaciones pnlCapacitaciones = new PnlCapacitaciones(capacitaciones, personal, seguimiento);
+        PnlAlertas pnlAlertas = new PnlAlertas();
+
         CardLayout tarjetas = new CardLayout();
         JPanel contenido = new JPanel(tarjetas);
+
         contenido.add(pnlPersonal, "Personal");
         contenido.add(pnlCapacitaciones, "Capacitaciones");
+        contenido.add(pnlAlertas, "Alertas");
         JPanel menu = new JPanel();
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
         Color azul = new Color(28, 48, 71), seleccionado = new Color(46, 102, 158);
@@ -50,8 +54,7 @@ public class FrmPrincipal extends JFrame {
         area.setAlignmentX(Component.LEFT_ALIGNMENT);
         menu.add(area);
         menu.add(Box.createVerticalStrut(30));
-        for (String nombre : new String[]{"Inicio", "Personal", "Capacitaciones", "Seguimiento", "Reportes",
-                "Usuarios"}) {
+        for (String nombre : new String[]{"Inicio", "Personal", "Capacitaciones", "Seguimiento", "Reportes", "Usuarios", "Alertas"}) {
             JButton boton = new JButton(nombre);
             boton.setAlignmentX(Component.LEFT_ALIGNMENT);
             boton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
@@ -61,12 +64,13 @@ public class FrmPrincipal extends JFrame {
             boton.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             boton.setFocusPainted(false);
             boton.setBorder(new EmptyBorder(0, 12, 0, 10));
-            boolean disponible = nombre.equals("Personal") || nombre.equals("Capacitaciones");
+            boolean disponible = nombre.equals("Personal") || nombre.equals("Capacitaciones") || nombre.equals("Alertas");
             boton.setEnabled(disponible);
             if (!disponible) boton.setToolTipText("Funcionalidad pendiente de implementación");
             boton.addActionListener(e -> {
                 pnlPersonal.refrescar();
                 pnlCapacitaciones.refrescar();
+                pnlAlertas.refrescar();
                 tarjetas.show(contenido, nombre);
                 for (Component c : menu.getComponents())
                     if (c instanceof JButton b)
