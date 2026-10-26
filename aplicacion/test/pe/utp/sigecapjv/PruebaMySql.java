@@ -69,6 +69,7 @@ public class PruebaMySql {
                 PruebaAccesoMySql.verificarPersistencia();
                 // Al final: agrega datos propios que alterarían los conteos anteriores.
                 PruebaReportesMySql.verificar();
+                PruebaNotificacionesMySql.verificar();
                 return;
             }
 

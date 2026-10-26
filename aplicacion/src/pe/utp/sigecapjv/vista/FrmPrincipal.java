@@ -80,6 +80,9 @@ public class FrmPrincipal extends JFrame {
             if (pnlCapacitaciones != null && !sesion.puede("capacitaciones", "gestionar"))
                 soloConsulta(pnlCapacitaciones);
         }
+        PnlAlertas alertas = sesion.puede("capacitaciones", "consultar")
+                ? new PnlAlertas(new NotificacionesControlador(sesion)) : null;
+        if (alertas != null) contenido.add(alertas, "Alertas");
         JPanel menu = new JPanel();
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
         Color azul = new Color(28, 48, 71), seleccionado = new Color(46, 102, 158);
@@ -98,7 +101,7 @@ public class FrmPrincipal extends JFrame {
         menu.add(area);
         menu.add(Box.createVerticalStrut(30));
         for (String nombre : new String[]{"Inicio", "Personal", "Capacitaciones", "Seguimiento", "Reportes",
-                "Usuarios"}) {
+                "Usuarios", "Alertas"}) {
             if (nombre.equals("Seguimiento")) {
                 continue;
             }
@@ -115,6 +118,7 @@ public class FrmPrincipal extends JFrame {
                 continue;
             }
 
+            if (nombre.equals("Alertas") && alertas == null) continue;
             JButton boton = new JButton(nombre);
 
             boton.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -129,7 +133,8 @@ public class FrmPrincipal extends JFrame {
                     || nombre.equals("Personal") && pnlPersonal != null
                     || nombre.equals("Capacitaciones") && pnlCapacitaciones != null
                     || nombre.equals("Usuarios") && usuarios != null
-                    || nombre.equals("Reportes") && reportesPanel != null;
+                    || nombre.equals("Reportes") && reportesPanel != null
+                    || nombre.equals("Alertas") && alertas != null;
 
             boton.setEnabled(disponible);
 
@@ -144,6 +149,7 @@ public class FrmPrincipal extends JFrame {
                 if (nombre.equals("Capacitaciones")) pnlCapacitaciones.refrescar();
                 if (nombre.equals("Usuarios")) usuarios.refrescar();
                 if (nombre.equals("Reportes")) reportesPanel.refrescar();
+                if (nombre.equals("Alertas")) alertas.refrescar();
                 tarjetas.show(contenido, nombre);
                 for (Component c : menu.getComponents())
                     if (c instanceof JButton b) b.setBackground(b == boton ? seleccionado : azul);

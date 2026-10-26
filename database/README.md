@@ -6,7 +6,7 @@ La aplicación funcional requiere Java 17 o superior y MySQL 8.4. Los mockups de
 
 `001-esquema.sql` conserva el diseño físico entregado: 12 tablas InnoDB y la vista `vw_control_vigencias`. Ejecútalo una sola vez en una base nueva desde MySQL Workbench. Si ya creaste las tablas, no vuelvas a ejecutarlo: no es una migración incremental ni borra registros existentes.
 
-El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participacion`, `asistencia`, `resultado` y `certificado`. Las demás tablas están preparadas para etapas posteriores. La vista obtiene el estado actual por fecha; el umbral de próximo vencimiento todavía debe definirse. El estado de vigencia se calcula al consultar las fechas; `estadoVigencia` se guarda como NULL para evitar estados desactualizados.
+El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participacion`, `asistencia`, `resultado` y `certificado`. Las demás tablas están preparadas para etapas posteriores. La vista obtiene el estado actual por fecha; las alertas preventivas usan un umbral de 30 días. El estado de vigencia se calcula al consultar las fechas; `estadoVigencia` se guarda como NULL para evitar estados desactualizados.
 
 ## Conexión local
 
@@ -58,7 +58,7 @@ El segundo comando crea un MySQL 8.4 aislado con puerto aleatorio enlazado solo 
 - Las participaciones se reconstruyen al leer las capacitaciones, sin ejecutar otra vez la asignación del modelo.
 - `DATE` se mapea a `LocalDate`, `TIME` a `LocalTime` y `vigenciaMeses` permite NULL. `DATETIME` se mapea a `LocalDateTime` y las notas `DECIMAL` a `BigDecimal` (0 a 20, hasta dos decimales).
 
-La autenticación usa las cuentas de `usuario`, sus roles y permisos. El primer administrador se crea desde el login solo cuando no existe ninguna cuenta; no hay claves predeterminadas. Si ya tienes usuarios, utiliza una cuenta con un hash PBKDF2 compatible; no se aceptan contraseñas en texto plano. Las notificaciones siguen pendientes.
+La autenticación usa las cuentas de `usuario`, sus roles y permisos. El primer administrador se crea desde el login solo cuando no existe ninguna cuenta; no hay claves predeterminadas. Si ya tienes usuarios, utiliza una cuenta con un hash PBKDF2 compatible; no se aceptan contraseñas en texto plano. Las notificaciones se consultan desde Alertas con autorización de Capacitaciones; su generación requiere gestionar ese módulo.
 
 Registrar un resultado marca la participación como COMPLETADA en la misma transacción, incluso si fue desaprobado. Resultados y certificados pueden registrarse o corregirse tras cerrar la capacitación. Las capacitaciones con seguimiento no se pueden reprogramar ni cancelar. Un resultado existente bloquea el cambio a inasistencia; un certificado existente bloquea el cambio a resultado desfavorable. El vencimiento se toma del documento recibido: vacío significa que no aplica. El día del vencimiento todavía es vigente.
 
