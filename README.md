@@ -55,3 +55,20 @@ Desde la raíz del proyecto:
 Las pruebas de MySQL crean su propia base y eliminan el contenedor al terminar. No deben ejecutarse sobre datos reales.
 
 Las credenciales, los archivos `.env`, las preferencias personales del editor y el contenido de `privado/` quedan fuera de Git. `privado/` es solo almacenamiento local: no tiene respaldo en este repositorio.
+
+---
+
+## Módulo de Control de Vigencias y Notificaciones (HU-009 / HU-010)
+
+Este módulo gestiona el control dinámico de vencimientos de capacitaciones y certificados del personal, generando alertas preventivas y mostrándolas en tiempo real en la interfaz del sistema.
+
+## Cambios e Implementaciones Realizadas
+
+1. **Base de Datos (MySQL)**:
+    * **Vista `vw_control_vigencias`**: Se utilizó para evaluar los días restantes (`diasRestantes <= 30`) calculados dinámicamente desde los certificados y participaciones de los trabajadores.
+
+2. **Capa Modelo / Datos (Java - DAO)**:
+    * **`NotificacionDAO.java`**: Se actualizó el método `generarAlertasVencimiento()` usando `INSERT ... SELECT` sobre `vw_control_vigencias` y aplicando `NOT EXISTS` mediante `claveEvento` para evitar duplicados. Se añadió control de excepciones con `SQLException`.
+
+3. **Capa Vista / Interfaz de Usuario (Swing)**:
+    * **`PnlAlertas.java`**: Se conectó el botón **Consultar** con `cargarDatosReales()`, refrescando el `JTable` mediante `modeloTabla.fireTableDataChanged()` y mapeando los getters reales de la entidad `Notificacion`.
