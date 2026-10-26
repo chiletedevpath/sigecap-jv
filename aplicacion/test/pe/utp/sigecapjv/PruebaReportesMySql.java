@@ -52,9 +52,16 @@ public final class PruebaReportesMySql {
     }
 
     public static void verificar() throws Exception {
-        PersonalJdbcControlador personal = new PersonalJdbcControlador();
-        CapacitacionJdbcControlador gestion = new CapacitacionJdbcControlador(personal);
-        SeguimientoControlador s = new SeguimientoControlador();
+        // Reportes exige sesión: se usa el administrador que crean las pruebas de usuarios.
+        try (SesionUsuario admin = new LoginControlador().autenticar("admin_prueba", "Clave-usuarios-prueba-2026".toCharArray())) {
+            verificar(admin);
+        }
+    }
+
+    private static void verificar(SesionUsuario admin) throws Exception {
+        PersonalJdbcControlador personal = new PersonalJdbcControlador(admin);
+        CapacitacionJdbcControlador gestion = new CapacitacionJdbcControlador(personal, admin);
+        SeguimientoControlador s = new SeguimientoControlador(admin);
         Trabajador alfa = new Trabajador(0, "70000001", "Reporte", "Alfa", "Agente", "ACTIVO");
         Trabajador beta = new Trabajador(0, "70000002", "Reporte", "Beta", "Agente", "ACTIVO");
         personal.registrarTrabajador(alfa); personal.registrarTrabajador(beta);
@@ -79,8 +86,9 @@ public final class PruebaReportesMySql {
         s.registrarAsistencia(pBeta, "ASISTIO"); s.registrarResultado(pBeta, "APTO", null);
         s.registrarCertificado(pBeta, "REP-VIGENTE", enero, LocalDate.now().plusYears(1), null);
 
-        ReporteControlador r = new ReporteControlador();
+        ReporteControlador r = new ReporteControlador(admin);
         LocalDate inicio = LocalDate.of(2020, 1, 1), fin = LocalDate.of(2020, 12, 31);
+        rechazar(() -> generar(new ReporteControlador(), inicio, fin, null, null, null, null));
         Reporte anual = generar(r, inicio, fin, null, null, null, null);
         comprobar(anual.getFilas().equals(List.of(
                 new Reporte.Fila("Reporte Alfa", "Reporte básico", enero, "COMPLETADA", "APROBADO", "VENCIDO"),
@@ -103,6 +111,7 @@ public final class PruebaReportesMySql {
 
         Path archivo = Files.createTempFile("sigecap-reporte-mysql", ".pdf");
         try {
+            rechazar(() -> r.exportarPdf(new Reporte(null, null, null, null, null, null), archivo));
             rechazar(() -> r.exportarPdf(vacio, archivo));
             r.exportarPdf(anual, archivo);
             byte[] pdf = Files.readAllBytes(archivo);
@@ -112,13 +121,6 @@ public final class PruebaReportesMySql {
                     && texto.contains("(Reporte portuario)") && texto.contains("(SIN_CERTIFICADO)"),
                     "El PDF conserva filtros y filas generadas");
         } finally { Files.deleteIfExists(archivo); }
-
-        try (SesionUsuario admin = new LoginControlador().autenticar("admin_prueba", "Clave-usuarios-prueba-2026".toCharArray())) {
-            ReporteControlador autorizado = new ReporteControlador(admin);
-            comprobar(generar(autorizado, inicio, fin, null, null, null, null).getFilas().size() == 3, "Acceso con sesión autorizada");
-            admin.close();
-            rechazar(() -> generar(autorizado, inicio, fin, null, null, null, null));
-        }
 
         SwingUtilities.invokeAndWait(() -> {
             PnlReportes panel = new PnlReportes(r);
@@ -153,6 +155,11 @@ public final class PruebaReportesMySql {
             boton(panel, "Generar reporte").doClick();
             comprobar(tabla.getRowCount() >= 4, "Sin filtros muestra todos los registros");
         });
+
+        // Al final: cerrada la sesión, el mismo controlador deja de responder.
+        comprobar(generar(r, inicio, fin, null, null, null, null).getFilas().size() == 3, "Acceso con sesión autorizada");
+        admin.close();
+        rechazar(() -> generar(r, inicio, fin, null, null, null, null));
         System.out.println("OK: " + total + " comprobaciones MySQL del módulo Reportes.");
     }
 

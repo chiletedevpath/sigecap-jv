@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import pe.utp.sigecapjv.controlador.ReporteControlador;
 import pe.utp.sigecapjv.modelo.*;
+import pe.utp.sigecapjv.util.ReportePdf;
 
 public final class PruebaReportes {
     private static int total;
@@ -53,20 +54,22 @@ public final class PruebaReportes {
         comprobar(filtros.equals(List.of("Periodo: desde 2026-09-01", "Curso: C-1 - Formación Básica",
                 "Trabajador: Todos", "Estado: PENDIENTE", "Vigencia: Todas")), "Descripción de filtros");
 
-        ReporteControlador controlador = new ReporteControlador();
+        // Las precondiciones de exportación del controlador exigen sesión y MySQL: se prueban en PruebaReportesMySql.
         Path archivo = Files.createTempFile("sigecap-reporte", ".pdf");
         try {
-            rechazar(() -> controlador.exportarPdf(new Reporte(null, null, null, null, null, null), archivo));
-            Reporte vacio = new Reporte(null, null, null, null, null, null);
-            vacio.generar(List.of());
-            rechazar(() -> controlador.exportarPdf(vacio, archivo));
-
             List<Reporte.Fila> filas = new ArrayList<>();
             filas.add(fila("José Pérez (Soto) \\ Ñuñoa", "VIGENTE"));
             for (int i = 1; i < 60; i++) filas.add(fila("Trabajador " + i, "VIGENTE"));
             Reporte completo = new Reporte(null, null, curso, null, null, "VIGENTE");
             completo.generar(filas);
-            controlador.exportarPdf(completo, archivo);
+            // Sin sesión se deniega antes de abrir cualquier conexión JDBC.
+            try {
+                new ReporteControlador().exportarPdf(completo, archivo);
+                throw new AssertionError("Se exportó un reporte sin sesión.");
+            } catch (SecurityException esperado) {
+                total++;
+            }
+            ReportePdf.escribir(completo, archivo);
             byte[] pdf = Files.readAllBytes(archivo);
             comprobarPdf(pdf, 3);
             String texto = new String(pdf, Charset.forName("windows-1252"));
