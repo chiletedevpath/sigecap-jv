@@ -35,6 +35,7 @@ public class PruebaFlujo {
         PruebaAsistencia.verificar();
         PruebaResultados.verificar();
         PruebaPantallaAsistencia.verificar();
+        PruebaReportes.verificar();
         if (args.length > 0 && args[0].equals("--ventana")) {
             SwingUtilities.invokeAndWait(() -> verificarVentana());
             System.out.println("OK: ventana principal creada y navegación Personal/Capacitaciones verificada.");

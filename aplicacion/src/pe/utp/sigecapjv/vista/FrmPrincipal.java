@@ -16,7 +16,8 @@ public class FrmPrincipal extends JFrame {
     }
 
     private FrmPrincipal(PersonalJdbcControlador personal, SesionUsuario sesion) {
-        this(personal, new CapacitacionJdbcControlador(personal, sesion), new SeguimientoControlador(sesion), sesion);
+        this(personal, new CapacitacionJdbcControlador(personal, sesion), new SeguimientoControlador(sesion),
+                new ReporteControlador(sesion), sesion);
     }
 
     public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones) {
@@ -25,11 +26,17 @@ public class FrmPrincipal extends JFrame {
 
     public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
                         pe.utp.sigecapjv.controlador.SeguimientoControlador seguimiento) {
-        this(personal, capacitaciones, seguimiento, null);
+        this(personal, capacitaciones, seguimiento, (ReporteControlador) null);
+    }
+
+    // Reportes consulta MySQL directamente; sin controlador el módulo queda deshabilitado.
+    public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
+                        SeguimientoControlador seguimiento, ReporteControlador reportes) {
+        this(personal, capacitaciones, seguimiento, reportes, null);
     }
 
     private FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
-                         SeguimientoControlador seguimiento, SesionUsuario sesion) {
+                         SeguimientoControlador seguimiento, ReporteControlador reportes, SesionUsuario sesion) {
         super("SIGECAP J&V");
         if (sesion == null) {
             throw new SecurityException("Debe iniciar sesión.");
@@ -61,9 +68,13 @@ public class FrmPrincipal extends JFrame {
         }
         if (pnlPersonal != null) contenido.add(pnlPersonal, "Personal");
         if (pnlCapacitaciones != null) contenido.add(pnlCapacitaciones, "Capacitaciones");
-        PnlUsuarios usuarios = sesion != null && "Administrador".equals(sesion.getRol()) && sesion.puede(
+        PnlUsuarios usuarios = "Administrador".equals(sesion.getRol()) && sesion.puede(
                 "usuarios", "consultar") ? new PnlUsuarios(new UsuarioControlador(sesion)) : null;
         if (usuarios != null) contenido.add(usuarios, "Usuarios");
+
+        PnlReportes reportesPanel = reportes != null && sesion.puede(
+                "capacitaciones", "consultar") ? new PnlReportes(reportes) : null;
+        if (reportesPanel != null) contenido.add(reportesPanel, "Reportes");
         if (sesion != null) {
             if (pnlPersonal != null && !sesion.puede("personal", "gestionar")) soloConsulta(pnlPersonal);
             if (pnlCapacitaciones != null && !sesion.puede("capacitaciones", "gestionar"))
@@ -91,7 +102,7 @@ public class FrmPrincipal extends JFrame {
         menu.add(Box.createVerticalStrut(30));
         for (String nombre : new String[]{"Inicio", "Personal", "Capacitaciones", "Seguimiento", "Reportes",
                 "Usuarios", "Alertas"}) {
-            if (nombre.equals("Seguimiento") || nombre.equals("Reportes")) {
+            if (nombre.equals("Seguimiento")) {
                 continue;
             }
 
@@ -118,16 +129,26 @@ public class FrmPrincipal extends JFrame {
             boton.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             boton.setFocusPainted(false);
             boton.setBorder(new EmptyBorder(0, 12, 0, 10));
-            boolean disponible = nombre.equals("Inicio") || nombre.equals(
-                    "Personal") && pnlPersonal != null || nombre.equals(
-                    "Capacitaciones") && pnlCapacitaciones != null || nombre.equals("Usuarios") && usuarios != null || nombre.equals("Alertas") && alertas != null;
+            boolean disponible = nombre.equals("Inicio")
+                    || nombre.equals("Personal") && pnlPersonal != null
+                    || nombre.equals("Capacitaciones") && pnlCapacitaciones != null
+                    || nombre.equals("Usuarios") && usuarios != null
+                    || nombre.equals("Reportes") && reportesPanel != null
+                    || nombre.equals("Alertas") && alertas != null;
+
             boton.setEnabled(disponible);
-            if (!disponible) boton.setToolTipText(java.util.Set.of("Personal", "Capacitaciones", "Usuarios").contains(
-                    nombre) ? "Sin acceso para su rol" : "Funcionalidad pendiente de implementación");
+
+            if (!disponible) {
+                boton.setToolTipText(
+                        java.util.Set.of("Personal", "Capacitaciones", "Usuarios", "Reportes").contains(nombre)
+                                ? "Sin acceso para su rol"
+                                : "Funcionalidad pendiente de implementación");
+            }
             boton.addActionListener(e -> {
                 if (nombre.equals("Personal")) pnlPersonal.refrescar();
                 if (nombre.equals("Capacitaciones")) pnlCapacitaciones.refrescar();
                 if (nombre.equals("Usuarios")) usuarios.refrescar();
+                if (nombre.equals("Reportes")) reportesPanel.refrescar();
                 if (nombre.equals("Alertas")) alertas.refrescar();
                 tarjetas.show(contenido, nombre);
                 for (Component c : menu.getComponents())

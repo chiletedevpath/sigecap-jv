@@ -1,9 +1,24 @@
 package pe.utp.sigecapjv.vista;
 
+import pe.utp.sigecapjv.controlador.ReporteControlador;
+import pe.utp.sigecapjv.modelo.Curso;
+import pe.utp.sigecapjv.modelo.Reporte;
+import pe.utp.sigecapjv.modelo.Trabajador;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+import java.util.List;
+import java.util.Locale;
 
 public class PnlReportes extends JPanel {
 
@@ -14,11 +29,32 @@ public class PnlReportes extends JPanel {
     private static final Color TEXTO = new Color(42, 49, 57);
     private static final Color TEXTO_SUAVE = new Color(104, 116, 130);
     private static final Color BORDE = new Color(224, 229, 234);
+    private static final String INDICACION = "Seleccione los filtros y pulse Generar reporte.";
+    // STRICT rechaza fechas inexistentes como 31/02/2026.
+    private static final DateTimeFormatter FORMATO_FECHA =
+            DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
 
-    // Diseño conservado para la siguiente etapa; todavía utiliza datos de ejemplo.
-    public PnlReportes() {
+    private final ReporteControlador controlador;
+    private final JTextField desde = new JTextField(), hasta = new JTextField();
+    private final JComboBox<Object> curso = new JComboBox<>(), trabajador = new JComboBox<>();
+    private final JComboBox<String> estado = opciones("Todos", Reporte.ESTADOS);
+    private final JComboBox<String> vigencia = opciones("Todas", Reporte.VIGENCIAS);
+    private final JLabel mensaje = new JLabel(INDICACION);
+    private final DefaultTableModel modelo = new DefaultTableModel(
+            new String[]{"Trabajador", "Curso", "Fecha", "Estado", "Resultado", "Vigencia"}, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+    private JButton exportar;
+    private Reporte reporte;
+
+    public PnlReportes(ReporteControlador controlador) {
+        this.controlador = controlador;
         setLayout(new BorderLayout());
         add(crearContenido(), BorderLayout.CENTER);
+        refrescar();
     }
 
     private JPanel crearContenido() {
@@ -45,7 +81,7 @@ public class PnlReportes extends JPanel {
         titulos.add(Box.createVerticalStrut(4));
         titulos.add(subtitulo);
 
-        JLabel usuario = new JLabel("Administrador");
+        JLabel usuario = new JLabel(controlador.rolActual());
         usuario.setForeground(TEXTO);
         usuario.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
@@ -82,30 +118,22 @@ public class PnlReportes extends JPanel {
         g.anchor = GridBagConstraints.WEST;
         g.weightx = 1;
 
-        agregarCampo(panel, g, 0, 0, "Desde", new JTextField("01/09/2026"));
-        agregarCampo(panel, g, 1, 0, "Hasta", new JTextField("30/09/2026"));
-        agregarCampo(
-                panel, g, 2, 0, "Curso", new JComboBox<>(new String[]{
-                        "Todos", "Formación Básica", "Perfeccionamiento", "Protección Portuaria"
-                }));
+        agregarCampo(panel, g, 0, 0, "Desde (DD/MM/AAAA)", desde);
+        agregarCampo(panel, g, 1, 0, "Hasta (DD/MM/AAAA)", hasta);
+        agregarCampo(panel, g, 2, 0, "Curso", curso);
+        agregarCampo(panel, g, 0, 1, "Trabajador", trabajador);
+        agregarCampo(panel, g, 1, 1, "Estado", estado);
+        agregarCampo(panel, g, 2, 1, "Vigencia", vigencia);
 
-        agregarCampo(
-                panel, g, 0, 1, "Trabajador", new JComboBox<>(new String[]{
-                        "Todos", "Juan Carlos Pérez Soto", "María Elena Torres Ruiz", "Carlos Alberto Rojas Díaz"
-                }));
-        agregarCampo(
-                panel, g, 1, 1, "Estado", new JComboBox<>(new String[]{
-                        "Todos", "Programada", "Pendiente", "Completada"
-                }));
-        agregarCampo(
-                panel, g, 2, 1, "Vigencia", new JComboBox<>(new String[]{
-                        "Todas", "Vigente", "Próxima a vencer", "Vencida"
-                }));
+        JButton limpiar = botonSecundario("Limpiar");
+        JButton generar = botonPrimario("Generar reporte");
+        limpiar.addActionListener(e -> limpiar());
+        generar.addActionListener(e -> generar());
 
         JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         acciones.setOpaque(false);
-        acciones.add(botonSecundario("Limpiar"));
-        acciones.add(botonPrimario("Generar reporte"));
+        acciones.add(limpiar);
+        acciones.add(generar);
 
         g.gridx = 0;
         g.gridy = 2;
@@ -131,28 +159,16 @@ public class PnlReportes extends JPanel {
         titulo.setForeground(TEXTO);
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
 
-        JButton exportar = botonPrimario("Exportar PDF");
+        exportar = botonPrimario("Exportar PDF");
+        exportar.setEnabled(false);
+        exportar.addActionListener(e -> exportar());
+
+        mensaje.setForeground(TEXTO_SUAVE);
+        mensaje.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
         superior.add(titulo, BorderLayout.WEST);
         superior.add(exportar, BorderLayout.EAST);
-
-        String[] columnas = {
-                "Trabajador", "Curso", "Fecha", "Estado", "Resultado", "Vigencia"
-        };
-
-        Object[][] datos = {
-                {"Juan Carlos Pérez Soto", "Formación Básica", "12/04/2026", "Completada", "Aprobado", "Vigente"},
-                {"María Elena Torres Ruiz", "Protección Portuaria", "20/06/2026", "Completada", "Apto", "Vigente"},
-                {"Carlos Alberto Rojas Díaz", "Perfeccionamiento", "05/09/2026", "Completada", "Aprobado", "Vencida"},
-                {"Ana Lucía Vásquez León", "Formación Básica", "28/09/2026", "Programada", "-", "Pendiente"}
-        };
-
-        DefaultTableModel modelo = new DefaultTableModel(datos, columnas) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        superior.add(mensaje, BorderLayout.SOUTH);
 
         JTable tabla = new JTable(modelo);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -164,6 +180,9 @@ public class PnlReportes extends JPanel {
         tabla.getTableHeader().setBackground(new Color(239, 243, 247));
         tabla.getTableHeader().setForeground(TEXTO);
         tabla.setFillsViewportHeight(true);
+        // Más espacio para nombres de trabajador y curso; las demás columnas tienen valores cortos.
+        int[] anchos = {250, 200, 95, 110, 105, 135};
+        for (int i = 0; i < anchos.length; i++) tabla.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]);
 
         JScrollPane scroll = new JScrollPane(tabla);
         scroll.setBorder(BorderFactory.createLineBorder(BORDE));
@@ -172,6 +191,101 @@ public class PnlReportes extends JPanel {
         panel.add(scroll, BorderLayout.CENTER);
 
         return panel;
+    }
+
+    /** Recarga cursos y trabajadores registrados conservando la selección actual. */
+    public void refrescar() {
+        try {
+            recargar(curso, controlador.listarCursos());
+            recargar(trabajador, controlador.listarTrabajadores());
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            mensaje.setText(ex.getMessage());
+        }
+    }
+
+    private void recargar(JComboBox<Object> combo, List<?> datos) {
+        String anterior = String.valueOf(combo.getSelectedItem());
+        combo.removeAllItems();
+        combo.addItem("Todos");
+        for (Object dato : datos) {
+            combo.addItem(dato);
+            if (dato.toString().equals(anterior)) combo.setSelectedItem(dato);
+        }
+    }
+
+    private void generar() {
+        try {
+            Reporte filtros = new Reporte(
+                    fecha(desde), fecha(hasta), seleccion(curso, Curso.class), seleccion(trabajador, Trabajador.class),
+                    estado.getSelectedIndex() <= 0 ? null : (String) estado.getSelectedItem(),
+                    vigencia.getSelectedIndex() <= 0 ? null : (String) vigencia.getSelectedItem());
+            mostrar(controlador.generar(filtros));
+        } catch (DateTimeParseException ex) {
+            mostrar(null);
+            mensaje.setText("Use fechas válidas con formato DD/MM/AAAA.");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            mostrar(null);
+            mensaje.setText(ex.getMessage());
+        }
+    }
+
+    private void mostrar(Reporte generado) {
+        reporte = generado;
+        modelo.setRowCount(0);
+        exportar.setEnabled(generado != null && !generado.getFilas().isEmpty());
+        if (generado == null) return;
+        for (Reporte.Fila f : generado.getFilas()) {
+            modelo.addRow(new Object[]{f.trabajador(), f.curso(), f.fecha(), f.estado(), f.resultado(), f.vigencia()});
+        }
+        mensaje.setText(generado.getFilas().isEmpty()
+                ? "No existen registros para los filtros seleccionados."
+                : generado.getFilas().size() + " registro(s) encontrados.");
+    }
+
+    private void limpiar() {
+        desde.setText("");
+        hasta.setText("");
+        for (JComboBox<?> combo : List.of(curso, trabajador, estado, vigencia))
+            if (combo.getItemCount() > 0) combo.setSelectedIndex(0);
+        mostrar(null);
+        mensaje.setText(INDICACION);
+    }
+
+    private void exportar() {
+        JFileChooser dialogo = new JFileChooser();
+        dialogo.setFileFilter(new FileNameExtensionFilter("Documento PDF", "pdf"));
+        // En Docker, ~/reportes está enlazada a la carpeta reportes/ del proyecto.
+        File carpeta = new File(System.getProperty("user.home"), "reportes");
+        dialogo.setSelectedFile(new File(carpeta.isDirectory() ? carpeta : dialogo.getCurrentDirectory(),
+                "reporte-capacitaciones-" + LocalDate.now() + ".pdf"));
+        if (dialogo.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        Path destino = dialogo.getSelectedFile().toPath();
+        if (!destino.toString().toLowerCase(Locale.ROOT).endsWith(".pdf")) destino = Path.of(destino + ".pdf");
+        if (Files.exists(destino) && JOptionPane.showConfirmDialog(
+                this, "El archivo ya existe. ¿Desea reemplazarlo?", "Exportar PDF",
+                JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) return;
+        try {
+            controlador.exportarPdf(reporte, destino);
+            mensaje.setText("Reporte exportado en " + destino);
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            mensaje.setText(ex.getMessage());
+        }
+    }
+
+    private static LocalDate fecha(JTextField campo) {
+        return campo.getText().isBlank() ? null : LocalDate.parse(campo.getText().trim(), FORMATO_FECHA);
+    }
+
+    private static <T> T seleccion(JComboBox<Object> combo, Class<T> tipo) {
+        Object elegido = combo.getSelectedItem();
+        return tipo.isInstance(elegido) ? tipo.cast(elegido) : null;
+    }
+
+    private static JComboBox<String> opciones(String todos, String[] valores) {
+        JComboBox<String> combo = new JComboBox<>();
+        combo.addItem(todos);
+        for (String valor : valores) combo.addItem(valor);
+        return combo;
     }
 
     private void agregarCampo(JPanel panel, GridBagConstraints g, int col, int fila, String etiqueta,
