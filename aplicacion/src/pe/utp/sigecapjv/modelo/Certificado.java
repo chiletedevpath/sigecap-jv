@@ -1,7 +1,8 @@
 package pe.utp.sigecapjv.modelo;
 
-import java.time.LocalDate;
 import pe.utp.sigecapjv.util.Validador;
+
+import java.time.LocalDate;
 
 public class Certificado {
     private int idCertificado;
@@ -34,12 +35,15 @@ public class Certificado {
     }
 
     private void validar() {
-        if (idParticipacion <= 0 || idTrabajador <= 0) throw new IllegalArgumentException("Participación o trabajador inválido.");
+        if (idParticipacion <= 0 || idTrabajador <= 0)
+            throw new IllegalArgumentException("Participación o trabajador inválido.");
         numero = Validador.texto(numero, "Número de certificado");
         if (numero.length() > 80) throw new IllegalArgumentException("El número admite hasta 80 caracteres.");
-        if (!validarFechas()) throw new IllegalArgumentException("Revise las fechas: emisión no futura y vencimiento igual o posterior a emisión.");
+        if (!validarFechas()) throw new IllegalArgumentException(
+                "Revise las fechas: emisión no futura y vencimiento igual o posterior a emisión.");
         rutaEvidencia = rutaEvidencia == null || rutaEvidencia.isBlank() ? null : rutaEvidencia.trim();
-        if (rutaEvidencia != null && rutaEvidencia.length() > 500) throw new IllegalArgumentException("La ruta admite hasta 500 caracteres.");
+        if (rutaEvidencia != null && rutaEvidencia.length() > 500)
+            throw new IllegalArgumentException("La ruta admite hasta 500 caracteres.");
     }
 
     public boolean validarFechas() {
@@ -47,7 +51,9 @@ public class Certificado {
                 && (fechaVencimiento == null || !fechaVencimiento.isBefore(fechaEmision));
     }
 
-    public String calcularEstadoVigencia() { return calcularEstadoVigencia(LocalDate.now()); }
+    public String calcularEstadoVigencia() {
+        return calcularEstadoVigencia(LocalDate.now());
+    }
 
     public String calcularEstadoVigencia(LocalDate hoy) {
         Validador.requerido(hoy, "Fecha de consulta");
@@ -57,13 +63,39 @@ public class Certificado {
         return "VIGENTE";
     }
 
-    public int getIdCertificado() { return idCertificado; }
-    public void setIdCertificado(int id) { idCertificado = id; }
-    public int getIdParticipacion() { return idParticipacion; }
-    public int getIdTrabajador() { return idTrabajador; }
-    public String getNumero() { return numero; }
-    public LocalDate getFechaEmision() { return fechaEmision; }
-    public LocalDate getFechaVencimiento() { return fechaVencimiento; }
-    public String getRutaEvidencia() { return rutaEvidencia; }
-    public String getEstadoVigencia() { return calcularEstadoVigencia(); }
+    public int getIdCertificado() {
+        return idCertificado;
+    }
+
+    public void setIdCertificado(int id) {
+        idCertificado = id;
+    }
+
+    public int getIdParticipacion() {
+        return idParticipacion;
+    }
+
+    public int getIdTrabajador() {
+        return idTrabajador;
+    }
+
+    public String getNumero() {
+        return numero;
+    }
+
+    public LocalDate getFechaEmision() {
+        return fechaEmision;
+    }
+
+    public LocalDate getFechaVencimiento() {
+        return fechaVencimiento;
+    }
+
+    public String getRutaEvidencia() {
+        return rutaEvidencia;
+    }
+
+    public String getEstadoVigencia() {
+        return calcularEstadoVigencia();
+    }
 }

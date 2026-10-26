@@ -33,9 +33,9 @@ if ($Probar -or $ProbarMySql) {
     & $compilador --release 17 -encoding UTF-8 -cp $salida -d $salida @pruebas
     if ($LASTEXITCODE -ne 0) { throw 'Falló la compilación de pruebas.' }
     if ($ProbarMySql) {
-        & $java '-Djava.awt.headless=true' -cp $classpath pe.utp.sigecapjv.PruebaMySql
+        & $java '-Dsigecap.pruebas=true' '-Djava.awt.headless=true' -cp $classpath pe.utp.sigecapjv.PruebaMySql
     } else {
-        & $java '-Djava.awt.headless=true' -cp $classpath pe.utp.sigecapjv.PruebaFlujo
+        & $java '-Dsigecap.pruebas=true' '-Djava.awt.headless=true' -cp $classpath pe.utp.sigecapjv.PruebaFlujo
     }
 } else {
     & $java -cp $classpath pe.utp.sigecapjv.vista.FrmPrincipal

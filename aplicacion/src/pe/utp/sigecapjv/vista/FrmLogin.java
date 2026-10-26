@@ -3,9 +3,10 @@ package pe.utp.sigecapjv.vista;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import pe.utp.sigecapjv.controlador.*;
 
 /**
- * Diseño de acceso pendiente de autenticación real.
+ * Acceso a las ventanas mediante una cuenta activa de MySQL.
  */
 public class FrmLogin extends JFrame {
 
@@ -17,6 +18,7 @@ public class FrmLogin extends JFrame {
 
     private final JTextField txtUsuario = new JTextField();
     private final JPasswordField txtContrasena = new JPasswordField();
+    private final JButton inicial = new JButton("Crear primer administrador");
 
     public FrmLogin() {
         setTitle("SIGECAP J&V");
@@ -29,9 +31,105 @@ public class FrmLogin extends JFrame {
         principal.add(crearPanelIdentidad(), BorderLayout.WEST);
         principal.add(crearPanelLogin(), BorderLayout.CENTER);
 
+        ampliarEtiquetas(principal);
         setContentPane(principal);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowOpened(java.awt.event.WindowEvent e) { verificarConfiguracionInicial(); }
+        });
     }
 
+    private void verificarConfiguracionInicial() {
+        inicial.setVisible(false);
+        new SwingWorker<Boolean,Void>() {
+            @Override protected Boolean doInBackground() {
+                return requiereAdministradorInicial();
+            }
+            @Override protected void done() {
+                if (!isDisplayable()) return;
+                try { inicial.setVisible(get()); }
+                catch (Exception ex) {
+                    inicial.setVisible(false);
+                    JOptionPane.showMessageDialog(FrmLogin.this,
+                            "No se pudo verificar la conexión. Revise MySQL y vuelva a abrir el login.",
+                            "Conexión", JOptionPane.WARNING_MESSAGE);
+                }
+                getContentPane().revalidate(); getContentPane().repaint();
+            }
+        }.execute();
+    }
+
+    protected boolean requiereAdministradorInicial() {
+        return UsuarioControlador.requiereAdministradorInicial();
+    }
+
+    private static void ampliarEtiquetas(Container contenedor) {
+        for (Component c : contenedor.getComponents()) {
+            if (c instanceof JLabel etiqueta) {
+                Dimension d=etiqueta.getPreferredSize();
+                etiqueta.setPreferredSize(new Dimension(d.width+16,d.height));
+                etiqueta.setMaximumSize(new Dimension(Integer.MAX_VALUE,d.height));
+            }
+            if (c instanceof Container hijo) ampliarEtiquetas(hijo);
+        }
+    }
+    private void ingresar(JButton boton) {
+        char[] clave = txtContrasena.getPassword();
+        String usuario = txtUsuario.getText();
+        boton.setEnabled(false);
+        new SwingWorker<SesionUsuario, Void>() {
+            @Override protected SesionUsuario doInBackground() {
+                try { return new LoginControlador().autenticar(usuario,clave); }
+                finally { java.util.Arrays.fill(clave,'\0'); }
+            }
+            @Override protected void done() {
+                boton.setEnabled(true); txtContrasena.setText("");
+                SesionUsuario sesion = null;
+                try {
+                    sesion = get();
+                    if (!isDisplayable()) { sesion.close(); return; }
+                    new FrmPrincipal(sesion).setVisible(true); dispose();
+                } catch (Exception ex) {
+                    if (sesion != null) sesion.close();
+                    mostrarError(ex);
+                }
+            }
+        }.execute();
+    }
+
+    private void prepararAdministrador(JButton boton) {
+        JTextField nombre = new JTextField(), usuario = new JTextField(), correo = new JTextField();
+        JPasswordField clave = new JPasswordField(), confirmar = new JPasswordField();
+        Object[] campos = {"Solo para una base sin usuarios.","Nombre completo",nombre,"Usuario",usuario,
+                "Correo de contacto (no se usa para ingresar)",correo,"Contraseña (12 a 128 caracteres)",clave,"Confirmar contraseña",confirmar};
+        if (JOptionPane.showConfirmDialog(this,campos,"Primer administrador",JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+        char[] valor = clave.getPassword(), repetida = confirmar.getPassword();
+        boolean iguales = java.util.Arrays.equals(valor,repetida);
+        java.util.Arrays.fill(repetida,'\0'); clave.setText(""); confirmar.setText("");
+        if (!iguales) { java.util.Arrays.fill(valor,'\0'); JOptionPane.showMessageDialog(this,"Las contraseñas no coinciden."); return; }
+        String n=nombre.getText(), u=usuario.getText(), c=correo.getText();
+        boton.setEnabled(false);
+        new SwingWorker<Void,Void>() {
+            @Override protected Void doInBackground() {
+                try { UsuarioControlador.crearAdministradorInicial(n,u,c,valor); return null; }
+                finally { java.util.Arrays.fill(valor,'\0'); }
+            }
+            @Override protected void done() {
+                boton.setEnabled(true);
+                try {
+                    get(); inicial.setVisible(false); txtUsuario.setText(u);
+                    JOptionPane.showMessageDialog(FrmLogin.this,"Administrador creado. Ingrese con su nombre de usuario y contraseña.");
+                    txtContrasena.requestFocusInWindow();
+                }
+                catch (Exception ex) { mostrarError(ex); }
+                finally { verificarConfiguracionInicial(); }
+            }
+        }.execute();
+    }
+    private void mostrarError(Exception ex) {
+        Throwable causa = ex instanceof java.util.concurrent.ExecutionException ? ex.getCause() : ex;
+        JOptionPane.showMessageDialog(this, causa instanceof IllegalArgumentException || causa instanceof IllegalStateException || causa instanceof SecurityException
+                ? causa.getMessage() : "No se pudo completar el acceso.","Acceso",JOptionPane.WARNING_MESSAGE);
+    }
     private JPanel crearPanelIdentidad() {
         JPanel panel = new JPanel();
         panel.setPreferredSize(new Dimension(330, 540));
@@ -97,13 +195,16 @@ public class FrmLogin extends JFrame {
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
         titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel lblUsuario = crearEtiqueta("Usuario");
+        JLabel lblUsuario = crearEtiqueta("Nombre de usuario");
+        txtUsuario.setToolTipText("Ingrese el nombre de usuario registrado, no el correo de contacto.");
         configurarCampo(txtUsuario);
 
         JLabel lblContrasena = crearEtiqueta("Contraseña");
         configurarCampo(txtContrasena);
 
         JButton btnIngresar = new JButton("Ingresar");
+        btnIngresar.addActionListener(e -> ingresar(btnIngresar));
+        getRootPane().setDefaultButton(btnIngresar);
         btnIngresar.setAlignmentX(Component.LEFT_ALIGNMENT);
         btnIngresar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         btnIngresar.setPreferredSize(new Dimension(300, 44));
@@ -138,8 +239,16 @@ public class FrmLogin extends JFrame {
         formulario.add(btnIngresar);
         formulario.add(Box.createVerticalStrut(12));
         formulario.add(btnSalir);
+        inicial.setVisible(false);
+        inicial.setToolTipText("Disponible únicamente si aún no existen usuarios en la base de datos.");
+        inicial.addActionListener(e -> prepararAdministrador(inicial));
 
-        fondo.add(formulario);
+
+        GridBagConstraints posicion = new GridBagConstraints();
+        posicion.gridx = 0; posicion.gridy = 0;
+        fondo.add(formulario, posicion);
+        posicion.gridy = 1; posicion.insets = new Insets(8,0,0,0);
+        fondo.add(inicial, posicion);
         return fondo;
     }
 

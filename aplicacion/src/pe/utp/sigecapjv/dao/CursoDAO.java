@@ -13,7 +13,8 @@ public class CursoDAO {
     public int insertar(Connection c, Curso dato) throws SQLException {
         return Jdbc.insertar(
                 c, "INSERT INTO curso (codigo,nombre,tipo,vigenciaMeses,estado) VALUES (?,?,?,?,?)",
-                dato.getCodigo(), dato.getNombre(), dato.getTipo(), dato.getVigenciaMeses(), dato.getEstado());
+                dato.getCodigo(), dato.getNombre(), dato.getTipo(), dato.getVigenciaMeses(),
+                dato.getEstado());
     }
 
     public void actualizar(Connection c, Curso dato) throws SQLException {
@@ -36,8 +37,8 @@ public class CursoDAO {
 
     public List<Curso> listar(Connection c) throws SQLException {
         List<Curso> datos = new ArrayList<>();
-        try (PreparedStatement p = c.prepareStatement("SELECT * FROM curso ORDER BY idCurso");
-             ResultSet r = p.executeQuery()) {
+        try (PreparedStatement p = c.prepareStatement(
+                "SELECT * FROM curso ORDER BY idCurso"); ResultSet r = p.executeQuery()) {
             while (r.next()) datos.add(mapear(r));
         }
         return datos;
@@ -46,6 +47,6 @@ public class CursoDAO {
     private Curso mapear(ResultSet r) throws SQLException {
         return new Curso(
                 r.getInt("idCurso"), r.getString("codigo"), r.getString("nombre"), r.getString("tipo"),
-                (Integer) r.getObject("vigenciaMeses"), r.getString("estado"));
+                         (Integer) r.getObject("vigenciaMeses"), r.getString("estado"));
     }
 }

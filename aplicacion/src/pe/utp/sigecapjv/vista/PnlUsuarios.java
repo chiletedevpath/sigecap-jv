@@ -4,6 +4,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import pe.utp.sigecapjv.controlador.UsuarioControlador;
+import pe.utp.sigecapjv.modelo.*;
 
 public class PnlUsuarios extends JPanel {
 
@@ -15,12 +17,74 @@ public class PnlUsuarios extends JPanel {
     private static final Color TEXTO_SUAVE = new Color(104, 116, 130);
     private static final Color BORDE = new Color(224, 229, 234);
 
-    // Diseño conservado para la siguiente etapa; todavía utiliza datos de ejemplo.
-    public PnlUsuarios() {
+    private final UsuarioControlador controlador;
+    private java.util.List<Usuario> usuarios = java.util.List.of();
+    private final DefaultTableModel listado = new DefaultTableModel(new String[]{"Usuario","Nombre","Rol","Estado"},0) {
+        @Override public boolean isCellEditable(int r,int c) { return false; }
+    };
+    private final JTable tabla = new JTable(listado);
+    private final JTextField buscar = new JTextField(28), login = new JTextField(18), nombre = new JTextField(18), correo = new JTextField(18), trabajador = new JTextField(18);
+    private final JPasswordField clave = new JPasswordField(18);
+    private final JComboBox<Rol> roles = new JComboBox<>();
+    private final JComboBox<String> estado = new JComboBox<>(new String[]{"ACTIVO","INACTIVO"});
+    private final JTabbedPane tabs = new JTabbedPane();
+    private int editando;
+    public PnlUsuarios(UsuarioControlador controlador) {
+        this.controlador = java.util.Objects.requireNonNull(controlador);
+        for (Rol rol : controlador.roles()) roles.addItem(rol);
+        limpiar();
         setLayout(new BorderLayout());
-        add(crearContenido(), BorderLayout.CENTER);
+        add(crearContenido(),BorderLayout.CENTER);
+        ampliarEtiquetas(this);
+        refrescar();
     }
-
+    public void refrescar() {
+        usuarios = controlador.listar(); listado.setRowCount(0);
+        String filtro = buscar.getText().strip().toLowerCase(java.util.Locale.ROOT);
+        for (Usuario u : usuarios) if ((u.nombreUsuario()+" "+u.nombreCompleto()).toLowerCase(java.util.Locale.ROOT).contains(filtro))
+            listado.addRow(new Object[]{u.nombreUsuario(),u.nombreCompleto(),nombreRol(u.idRol()),u.estado()});
+    }
+    private String nombreRol(int id) {
+        for (int i=0;i<roles.getItemCount();i++) if (roles.getItemAt(i).idRol()==id) return roles.getItemAt(i).nombre();
+        return "Rol " + id;
+    }
+    private void editar() {
+        int fila=tabla.getSelectedRow();
+        if (fila<0) { JOptionPane.showMessageDialog(this,"Seleccione un usuario."); return; }
+        String seleccionado=String.valueOf(tabla.getValueAt(fila,0));
+        Usuario u=usuarios.stream().filter(x -> x.nombreUsuario().equals(seleccionado)).findFirst().orElseThrow();
+        editando=u.idUsuario(); login.setText(u.nombreUsuario()); nombre.setText(u.nombreCompleto()); correo.setText(u.correo());
+        trabajador.setText(u.idTrabajador()==null ? "" : u.idTrabajador().toString()); clave.setText(""); estado.setSelectedItem(u.estado());
+        for(int i=0;i<roles.getItemCount();i++) if(roles.getItemAt(i).idRol()==u.idRol()) roles.setSelectedIndex(i);
+        tabs.setSelectedIndex(1);
+    }
+    private void limpiar() {
+        editando=0; login.setText(""); nombre.setText(""); correo.setText(""); trabajador.setText(""); clave.setText(""); estado.setSelectedIndex(0);
+        for (int i=0;i<roles.getItemCount();i++) if (roles.getItemAt(i).nombre().equals("Trabajador")) roles.setSelectedIndex(i);
+    }
+    private void guardar(JButton boton) {
+        char[] password=clave.getPassword();
+        try {
+            Rol rol=(Rol)roles.getSelectedItem();
+            if (rol==null) throw new IllegalArgumentException("Seleccione un rol.");
+            Usuario u=new Usuario(editando,rol.idRol(),trabajador.getText().isBlank()?null:Integer.valueOf(trabajador.getText().strip()),
+                    nombre.getText(),login.getText(),correo.getText(),(String)estado.getSelectedItem());
+            boton.setEnabled(false);
+            new SwingWorker<Integer,Void>() {
+                @Override protected Integer doInBackground() {
+                    try { return controlador.guardar(u,password); } finally { java.util.Arrays.fill(password,'\0'); }
+                }
+                @Override protected void done() {
+                    boton.setEnabled(true); clave.setText("");
+                    try { get(); limpiar(); refrescar(); tabs.setSelectedIndex(0); }
+                    catch(Exception ex) { error(ex instanceof java.util.concurrent.ExecutionException ? ex.getCause() : ex); }
+                }
+            }.execute();
+        } catch(RuntimeException ex) { java.util.Arrays.fill(password,'\0'); error(ex); }
+    }
+    private void error(Throwable ex) {
+        JOptionPane.showMessageDialog(this, ex instanceof NumberFormatException ? "El ID del trabajador debe ser un número." : ex.getMessage(),"Usuarios",JOptionPane.WARNING_MESSAGE);
+    }
     private JPanel crearContenido() {
         JPanel contenedor = new JPanel(new BorderLayout());
         contenedor.setBackground(FONDO);
@@ -45,19 +109,20 @@ public class PnlUsuarios extends JPanel {
         titulos.add(Box.createVerticalStrut(4));
         titulos.add(subtitulo);
 
-        JLabel usuario = new JLabel("Administrador");
+        JLabel usuario = new JLabel(controlador.rolActual());
         usuario.setForeground(TEXTO);
         usuario.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
         cabecera.add(titulos, BorderLayout.WEST);
         cabecera.add(usuario, BorderLayout.EAST);
 
-        JTabbedPane tabs = new JTabbedPane();
+
         tabs.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabs.setBackground(BLANCO);
         tabs.addTab("Listado", crearListado());
         tabs.addTab("Registrar usuario", crearRegistro());
         tabs.addTab("Roles y permisos", crearRoles());
+        tabs.setEnabledAt(1, controlador.puedeGestionar());
 
         JPanel centro = new JPanel(new BorderLayout());
         centro.setOpaque(false);
@@ -71,44 +136,18 @@ public class PnlUsuarios extends JPanel {
     }
 
     private JPanel crearListado() {
-        JPanel panel = panelBase();
-
-        JPanel superior = new JPanel(new BorderLayout(10, 0));
-        superior.setOpaque(false);
-
-        JPanel buscador = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        buscador.setOpaque(false);
-        buscador.add(new JLabel("Buscar:"));
-
-        JTextField txtBuscar = campoTexto(28);
-        buscador.add(txtBuscar);
-        buscador.add(botonSecundario("Buscar"));
-
-        JButton nuevo = botonPrimario("Nuevo usuario");
-
-        superior.add(buscador, BorderLayout.WEST);
-        superior.add(nuevo, BorderLayout.EAST);
-
-        String[] columnas = {"Usuario", "Nombre", "Rol", "Estado"};
-        Object[][] datos = {
-                {"apisco", "Adrián Pisco", "Administrador", "Activo"},
-                {"jcamac", "Jorge Sacha", "Responsable de capacitaciones", "Activo"},
-                {"lmachaca", "Lijhoan Machaca", "Supervisor de Operaciones", "Activo"},
-                {"cchirihuana", "Christopher Chirihuana", "Trabajador", "Inactivo"}
-        };
-
-        panel.add(superior, BorderLayout.NORTH);
-        panel.add(scrollTabla(datos, columnas), BorderLayout.CENTER);
-
-        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        acciones.setOpaque(false);
-        acciones.add(botonSecundario("Editar"));
-        acciones.add(botonSecundario("Desactivar"));
-        panel.add(acciones, BorderLayout.SOUTH);
-
+        JPanel panel=panelBase(), superior=new JPanel(new FlowLayout(FlowLayout.LEFT));
+        superior.setOpaque(false); superior.add(new JLabel("Buscar:")); superior.add(buscar);
+        JButton consultar=botonSecundario("Buscar"), nuevo=botonPrimario("Nuevo usuario"), editar=botonSecundario("Editar / cambiar estado");
+        nuevo.setEnabled(controlador.puedeGestionar()); editar.setEnabled(controlador.puedeGestionar());
+        consultar.addActionListener(e -> refrescar()); nuevo.addActionListener(e -> { limpiar(); tabs.setSelectedIndex(1); }); editar.addActionListener(e -> editar());
+        superior.add(consultar); superior.add(nuevo);
+        tabla.setFont(new Font("Segoe UI",Font.PLAIN,13)); tabla.setRowHeight(31); tabla.setFillsViewportHeight(true);
+        tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        panel.add(superior,BorderLayout.NORTH); panel.add(new JScrollPane(tabla),BorderLayout.CENTER);
+        JPanel acciones=new JPanel(new FlowLayout(FlowLayout.RIGHT)); acciones.setOpaque(false); acciones.add(editar); panel.add(acciones,BorderLayout.SOUTH);
         return panel;
     }
-
     private JPanel crearRegistro() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(BLANCO);
@@ -123,29 +162,21 @@ public class PnlUsuarios extends JPanel {
         g.anchor = GridBagConstraints.WEST;
         g.weightx = 1;
 
-        agregarCampo(formulario, g, 0, 0, "Usuario", campoTexto(18));
-        agregarCampo(formulario, g, 1, 0, "Nombre completo", campoTexto(18));
-        agregarCampo(formulario, g, 0, 1, "Correo", campoTexto(18));
-        agregarCampo(formulario, g, 1, 1, "Contraseña", new JPasswordField(18));
+        agregarCampo(formulario, g, 0, 0, "Usuario", login);
+        agregarCampo(formulario, g, 1, 0, "Nombre completo", nombre);
+        agregarCampo(formulario, g, 0, 1, "Correo", correo);
+        agregarCampo(formulario, g, 1, 1, "Contraseña (opcional al editar)", clave);
 
-        JComboBox<String> rol = new JComboBox<>(new String[]{
-                "Administrador",
-                "Responsable de capacitaciones",
-                "Supervisor de Operaciones",
-                "Trabajador"
-        });
-        agregarCampo(formulario, g, 0, 2, "Rol", rol);
-
-        JComboBox<String> estado = new JComboBox<>(new String[]{"Activo", "Inactivo"});
-        agregarCampo(formulario, g, 1, 2, "Estado", estado);
-
+        agregarCampo(formulario,g,0,2,"Rol",roles);
+        agregarCampo(formulario,g,1,2,"Estado",estado);
+        agregarCampo(formulario,g,0,3,"ID trabajador (opcional)",trabajador);
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         botones.setOpaque(false);
-        botones.add(botonSecundario("Cancelar"));
-        botones.add(botonPrimario("Guardar"));
+        JButton cancelar=botonSecundario("Cancelar"); cancelar.addActionListener(e -> { limpiar(); tabs.setSelectedIndex(0); }); botones.add(cancelar);
+        JButton guardar=botonPrimario("Guardar"); guardar.addActionListener(e -> guardar(guardar)); botones.add(guardar);
 
         g.gridx = 0;
-        g.gridy = 3;
+        g.gridy = 4;
         g.gridwidth = 2;
         g.insets = new Insets(22, 8, 8, 8);
         formulario.add(botones, g);
@@ -155,59 +186,19 @@ public class PnlUsuarios extends JPanel {
     }
 
     private JPanel crearRoles() {
-        JPanel panel = panelBase();
-
-        JPanel superior = new JPanel(new GridBagLayout());
-        superior.setOpaque(false);
-
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(8, 8, 8, 8);
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.anchor = GridBagConstraints.WEST;
-        g.weightx = 1;
-
-        JComboBox<String> usuario = new JComboBox<>(new String[]{
-                "apisco - Adrián Pisco",
-                "jcamac - Jorge Sacha",
-                "lmachaca - Lijhoan Machaca",
-                "cchirihuana - Christopher Chirihuana"
-        });
-
-        JComboBox<String> rol = new JComboBox<>(new String[]{
-                "Administrador",
-                "Responsable de capacitaciones",
-                "Supervisor de Operaciones",
-                "Trabajador"
-        });
-
-        agregarCampo(superior, g, 0, 0, "Usuario", usuario);
-        agregarCampo(superior, g, 1, 0, "Rol asignado", rol);
-
-        JPanel accion = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        accion.setOpaque(false);
-        accion.add(botonPrimario("Actualizar rol"));
-
-        g.gridx = 0;
-        g.gridy = 1;
-        g.gridwidth = 2;
-        g.insets = new Insets(16, 8, 8, 8);
-        superior.add(accion, g);
-
-        String[] columnas = {"Funcionalidad", "Administrador", "Responsable", "Supervisor", "Trabajador"};
-        Object[][] datos = {
-                {"Personal", "Sí", "Sí", "Consulta", "No"},
-                {"Capacitaciones", "Sí", "Sí", "Consulta", "Consulta propia"},
-                {"Seguimiento", "Sí", "Sí", "Sí", "Consulta propia"},
-                {"Reportes", "Sí", "No", "Sí", "No"},
-                {"Usuarios", "Sí", "No", "No", "No"}
-        };
-
-        panel.add(superior, BorderLayout.NORTH);
-        panel.add(scrollTabla(datos, columnas), BorderLayout.CENTER);
-
-        return panel;
+        return new PnlPermisos(controlador.controladorRoles());
     }
 
+    private static void ampliarEtiquetas(Container contenedor) {
+        for (Component c : contenedor.getComponents()) {
+            if (c instanceof JLabel etiqueta) {
+                Dimension d=etiqueta.getPreferredSize();
+                etiqueta.setPreferredSize(new Dimension(d.width+16,d.height));
+                etiqueta.setMaximumSize(new Dimension(Integer.MAX_VALUE,d.height));
+            }
+            if (c instanceof Container hijo) ampliarEtiquetas(hijo);
+        }
+    }
     private JPanel panelBase() {
         JPanel panel = new JPanel(new BorderLayout(0, 16));
         panel.setBackground(BLANCO);

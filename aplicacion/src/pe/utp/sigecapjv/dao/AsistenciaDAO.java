@@ -17,7 +17,8 @@ public class AsistenciaDAO {
                 if (!fila.next()) return null;
                 return new Asistencia(
                         fila.getInt("idAsistencia"), fila.getInt("idParticipacion"),
-                        fila.getString("condicion"), fila.getObject("fechaRegistro", LocalDateTime.class));
+                                      fila.getString("condicion"),
+                                      fila.getObject("fechaRegistro", LocalDateTime.class));
             }
         }
     }

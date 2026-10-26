@@ -10,16 +10,24 @@ import pe.utp.sigecapjv.util.Validador;
 import java.util.List;
 
 public class CapacitacionJdbcControlador extends CapacitacionControlador {
+    private final SesionUsuario sesion;
+
     private final CursoDAO cursos = new CursoDAO();
     private final CapacitacionDAO capacitaciones = new CapacitacionDAO();
     private final ParticipacionDAO participaciones = new ParticipacionDAO();
 
     public CapacitacionJdbcControlador(PersonalJdbcControlador personal) {
+        this(personal, null);
+    }
+
+    public CapacitacionJdbcControlador(PersonalJdbcControlador personal, SesionUsuario sesion) {
         super(personal);
+        this.sesion = sesion;
     }
 
     @Override
     public void registrarCurso(Curso curso) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(curso, "Curso");
         Curso nuevo = curso.copia();
         nuevo.registrar();
@@ -28,6 +36,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public void actualizarCurso(Curso curso) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(curso, "Curso");
         Curso nuevo = curso.copia();
         nuevo.actualizar();
@@ -40,13 +49,14 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public void programarCapacitacion(Capacitacion datos) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(datos, "Capacitación");
         Validador.requerido(datos.getCurso(), "Curso");
         Capacitacion guardada = Jdbc.transaccion(c -> {
             Curso curso = cursos.buscar(c, datos.getCurso().getIdCurso(), true);
             Capacitacion nueva = new Capacitacion(
-                    0, datos.getFecha(), datos.getHoraInicio(),
-                    datos.getHoraFin(), datos.getModalidad(), datos.getEstado(), curso);
+                    0, datos.getFecha(), datos.getHoraInicio(), datos.getHoraFin(),
+                                                  datos.getModalidad(), datos.getEstado(), curso);
             nueva.programar();
             nueva.setIdCapacitacion(capacitaciones.insertar(c, nueva));
             return nueva;
@@ -57,6 +67,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public void actualizarCapacitacion(Capacitacion datos) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(datos, "Capacitación");
         Validador.requerido(datos.getCurso(), "Curso");
         Jdbc.transaccion(c -> {
@@ -64,8 +75,8 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
             verificarSinSeguimiento(c, actual.getIdCapacitacion());
             Curso curso = cursos.buscar(c, datos.getCurso().getIdCurso(), true);
             Capacitacion nueva = new Capacitacion(
-                    actual.getIdCapacitacion(), datos.getFecha(),
-                    datos.getHoraInicio(), datos.getHoraFin(), datos.getModalidad(), actual.getEstado(), curso);
+                    actual.getIdCapacitacion(), datos.getFecha(), datos.getHoraInicio(),
+                                                  datos.getHoraFin(), datos.getModalidad(), actual.getEstado(), curso);
             nueva.actualizar();
             capacitaciones.actualizar(c, nueva);
             return null;
@@ -74,11 +85,13 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public void cancelarCapacitacion(int id) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         cambiarEstado(id, false);
     }
 
     @Override
     public void cerrarCapacitacion(int id) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         cambiarEstado(id, true);
     }
 
@@ -93,19 +106,17 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
         });
     }
 
-    private void verificarSinSeguimiento(
-            java.sql.Connection conexion,
-            int id) throws java.sql.SQLException {
+    private void verificarSinSeguimiento(java.sql.Connection conexion, int id) throws java.sql.SQLException {
 
         if (capacitaciones.tieneSeguimiento(conexion, id)) {
             throw new IllegalStateException(
-                    "La capacitación tiene seguimiento registrado; "
-                            + "no se puede reprogramar ni cancelar.");
+                    "La capacitación tiene seguimiento registrado; " + "no se puede reprogramar ni cancelar.");
         }
     }
 
     @Override
     public Participacion asignarTrabajador(Trabajador trabajador, Capacitacion capacitacion) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(trabajador, "Trabajador");
         Validador.requerido(capacitacion, "Capacitación");
         return Jdbc.transaccion(c -> {
@@ -120,17 +131,19 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public List<Curso> listarCursos() {
+        AccesoControlador.exigir(sesion, "capacitaciones", "consultar");
         return Jdbc.transaccion(cursos::listar);
     }
 
     @Override
     public List<Capacitacion> listarCapacitaciones() {
+        AccesoControlador.exigir(sesion, "capacitaciones", "consultar");
         return Jdbc.transaccion(c -> {
             List<Capacitacion> lista = capacitaciones.listar(c);
             List<Participacion> asignaciones = participaciones.listar(c);
             for (Capacitacion capacitacion : lista) {
-                capacitacion.restaurarParticipaciones(asignaciones.stream()
-                                                              .filter(p -> p.getCapacitacion().getIdCapacitacion() == capacitacion.getIdCapacitacion()).toList());
+                capacitacion.restaurarParticipaciones(asignaciones.stream().filter(
+                        p -> p.getCapacitacion().getIdCapacitacion() == capacitacion.getIdCapacitacion()).toList());
             }
             return lista;
         });
@@ -138,6 +151,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public List<Participacion> listarParticipaciones() {
+        AccesoControlador.exigir(sesion, "capacitaciones", "consultar");
         return Jdbc.transaccion(participaciones::listar);
     }
 }

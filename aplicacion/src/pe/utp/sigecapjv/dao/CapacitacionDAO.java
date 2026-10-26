@@ -41,8 +41,8 @@ public class CapacitacionDAO {
 
     public List<Capacitacion> listar(Connection c) throws SQLException {
         List<Capacitacion> datos = new ArrayList<>();
-        try (PreparedStatement p = c.prepareStatement("SELECT * FROM capacitacion ORDER BY idCapacitacion");
-             ResultSet r = p.executeQuery()) {
+        try (PreparedStatement p = c.prepareStatement(
+                "SELECT * FROM capacitacion ORDER BY idCapacitacion"); ResultSet r = p.executeQuery()) {
             while (r.next()) datos.add(mapear(c, r));
         }
         return datos;
@@ -52,26 +52,14 @@ public class CapacitacionDAO {
         return new Capacitacion(
                 r.getInt("idCapacitacion"), r.getObject("fecha", LocalDate.class),
                 r.getObject("horaInicio", LocalTime.class), r.getObject("horaFin", LocalTime.class),
-                r.getString("modalidad"), r.getString("estado"),
-                new CursoDAO().buscar(c, r.getInt("idCurso"), false));
+                r.getString("modalidad"), r.getString("estado"), new CursoDAO().buscar(c, r.getInt("idCurso"), false));
     }
 
-    public boolean tieneSeguimiento(Connection c, int idCapacitacion)
-            throws SQLException {
+    public boolean tieneSeguimiento(Connection c, int idCapacitacion) throws SQLException {
 
-        String sql =
-                "SELECT 1 FROM participacion p "
-                        + "LEFT JOIN asistencia a "
-                        + "ON a.idParticipacion = p.idParticipacion "
-                        + "LEFT JOIN resultado r "
-                        + "ON r.idParticipacion = p.idParticipacion "
-                        + "LEFT JOIN certificado ce "
-                        + "ON ce.idParticipacion = p.idParticipacion "
-                        + "WHERE p.idCapacitacion = ? "
-                        + "AND (a.idAsistencia IS NOT NULL "
-                        + "OR r.idResultado IS NOT NULL "
-                        + "OR ce.idCertificado IS NOT NULL) "
-                        + "LIMIT 1";
+        String sql = "SELECT 1 FROM participacion p " + "LEFT JOIN asistencia a " + "ON a.idParticipacion = p" +
+                ".idParticipacion " + "LEFT JOIN resultado r " + "ON r.idParticipacion = p.idParticipacion " + "LEFT " +
+                "JOIN certificado ce " + "ON ce.idParticipacion = p.idParticipacion " + "WHERE p.idCapacitacion = ? " + "AND (a.idAsistencia IS NOT NULL " + "OR r.idResultado IS NOT NULL " + "OR ce.idCertificado IS NOT NULL) " + "LIMIT 1";
 
         try (PreparedStatement p = c.prepareStatement(sql)) {
             p.setInt(1, idCapacitacion);
