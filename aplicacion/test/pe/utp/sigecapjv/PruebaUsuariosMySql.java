@@ -18,7 +18,7 @@ public final class PruebaUsuariosMySql {
     private static Usuario datos(int id,int rol,Integer trabajador,String login,String estado) {
         return new Usuario(id,rol,trabajador,"Persona de prueba",login,login+"@example.test",estado);
     }
-    public static void verificar() throws Exception {
+    public static void inicializar() throws Exception {
         char[] clave="Clave-usuarios-prueba-2026".toCharArray();
         try {
             comprobar(UsuarioControlador.requiereAdministradorInicial());
@@ -33,6 +33,11 @@ public final class PruebaUsuariosMySql {
                 Future<Boolean> uno=pool.submit(crear),dos=pool.submit(crear); inicio.countDown();
                 comprobar((uno.get(30,TimeUnit.SECONDS)?1:0)+(dos.get(30,TimeUnit.SECONDS)?1:0)==1);
             } finally { pool.shutdownNow(); }
+        } finally { java.util.Arrays.fill(clave, '\0'); }
+    }
+    public static void verificar() throws Exception {
+        char[] clave="Clave-usuarios-prueba-2026".toCharArray();
+        try {
             comprobar(!UsuarioControlador.requiereAdministradorInicial());
             LoginControlador login=new LoginControlador();
             try (SesionUsuario admin=login.autenticar("admin_prueba",clave)) {
