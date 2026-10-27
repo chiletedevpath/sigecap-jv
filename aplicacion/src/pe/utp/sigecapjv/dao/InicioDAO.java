@@ -19,29 +19,31 @@ public class InicioDAO {
     public record ProximoVencimiento(String trabajador, String curso, LocalDate vencimiento, String estado) {
     }
 
-    public Resumen obtenerResumen(Connection conexion) throws SQLException {
+    public Resumen obtenerResumen(Connection conexion) throws SQLException { return obtenerResumen(conexion, null); }
+
+    public Resumen obtenerResumen(Connection conexion, Integer trabajador) throws SQLException {
 
         String sql = """
                 SELECT
                     (SELECT COUNT(*)
                      FROM capacitacion
                      WHERE estado = 'PROGRAMADA'
-                       AND fecha >= CURDATE()) AS programadas,
+                       AND fecha >= CURDATE() AND (? IS NULL OR EXISTS (SELECT 1 FROM participacion px WHERE px.idCapacitacion=capacitacion.idCapacitacion AND px.idTrabajador=? AND px.estado<>'CANCELADA'))) AS programadas,
                     (SELECT COUNT(*)
                      FROM participacion p
                      INNER JOIN capacitacion c
                          ON c.idCapacitacion = p.idCapacitacion
                      WHERE p.estado = 'PENDIENTE'
-                       AND c.estado <> 'CANCELADA') AS pendientes,
+                       AND c.estado <> 'CANCELADA' AND (? IS NULL OR p.idTrabajador=?)) AS pendientes,
                     (SELECT COUNT(*)
                      FROM vw_control_vigencias
-                     WHERE diasRestantes BETWEEN 0 AND 30) AS proximas,
+                     WHERE diasRestantes BETWEEN 0 AND 30 AND (? IS NULL OR idTrabajador=?)) AS proximas,
                     (SELECT COUNT(*)
                      FROM vw_control_vigencias
-                     WHERE estadoActual = 'VENCIDO') AS vencidas
+                     WHERE estadoActual = 'VENCIDO' AND (? IS NULL OR idTrabajador=?)) AS vencidas
                 """;
 
-        try (var sentencia = conexion.prepareStatement(sql); var resultado = sentencia.executeQuery()) {
+        try (var sentencia = preparar(conexion, sql, trabajador, 8); var resultado = sentencia.executeQuery()) {
 
             if (resultado.next()) {
                 return new Resumen(
@@ -53,7 +55,9 @@ public class InicioDAO {
         }
     }
 
-    public List<CapacitacionProgramada> listarProgramadas(Connection conexion) throws SQLException {
+    public List<CapacitacionProgramada> listarProgramadas(Connection conexion) throws SQLException { return listarProgramadas(conexion, null); }
+
+    public List<CapacitacionProgramada> listarProgramadas(Connection conexion, Integer trabajador) throws SQLException {
 
         String sql = """
                 SELECT
@@ -67,9 +71,9 @@ public class InicioDAO {
                     ON cu.idCurso = c.idCurso
                 LEFT JOIN participacion p
                     ON p.idCapacitacion = c.idCapacitacion
-                    AND p.estado <> 'CANCELADA'
+                    AND p.estado <> 'CANCELADA' AND (? IS NULL OR p.idTrabajador=?)
                 WHERE c.estado = 'PROGRAMADA'
-                    AND c.fecha >= CURDATE()
+                    AND c.fecha >= CURDATE() AND (? IS NULL OR EXISTS (SELECT 1 FROM participacion px WHERE px.idCapacitacion=c.idCapacitacion AND px.idTrabajador=? AND px.estado<>'CANCELADA'))
                 GROUP BY
                     c.idCapacitacion,
                     cu.nombre,
@@ -82,7 +86,7 @@ public class InicioDAO {
 
         List<CapacitacionProgramada> datos = new ArrayList<>();
 
-        try (var sentencia = conexion.prepareStatement(sql); var resultado = sentencia.executeQuery()) {
+        try (var sentencia = preparar(conexion, sql, trabajador, 4); var resultado = sentencia.executeQuery()) {
 
             while (resultado.next()) {
                 datos.add(new CapacitacionProgramada(
@@ -95,7 +99,9 @@ public class InicioDAO {
         return datos;
     }
 
-    public List<ProximoVencimiento> listarProximosVencimientos(Connection conexion) throws SQLException {
+    public List<ProximoVencimiento> listarProximosVencimientos(Connection conexion) throws SQLException { return listarProximosVencimientos(conexion, null); }
+
+    public List<ProximoVencimiento> listarProximosVencimientos(Connection conexion, Integer trabajador) throws SQLException {
 
         String sql = """
                 SELECT
@@ -103,14 +109,14 @@ public class InicioDAO {
                     nombreCurso AS curso,
                     fechaVencimiento
                 FROM vw_control_vigencias
-                WHERE diasRestantes BETWEEN 0 AND 30
+                WHERE diasRestantes BETWEEN 0 AND 30 AND (? IS NULL OR idTrabajador=?)
                 ORDER BY fechaVencimiento, idCertificado
                 LIMIT 20
                 """;
 
         List<ProximoVencimiento> datos = new ArrayList<>();
 
-        try (var sentencia = conexion.prepareStatement(sql); var resultado = sentencia.executeQuery()) {
+        try (var sentencia = preparar(conexion, sql, trabajador, 2); var resultado = sentencia.executeQuery()) {
 
             while (resultado.next()) {
                 datos.add(new ProximoVencimiento(
@@ -120,5 +126,10 @@ public class InicioDAO {
         }
 
         return datos;
+    }
+    private static java.sql.PreparedStatement preparar(Connection c, String sql, Integer trabajador, int cantidad) throws SQLException {
+        var p=c.prepareStatement(sql);
+        try { for(int i=1;i<=cantidad;i++) p.setObject(i,trabajador); return p; }
+        catch(SQLException ex) { p.close(); throw ex; }
     }
 }
