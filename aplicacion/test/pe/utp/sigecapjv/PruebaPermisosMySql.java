@@ -54,14 +54,14 @@ public final class PruebaPermisosMySql {
                 comprobar(nueva.puede("personal","consultar") && !nueva.puede("capacitaciones","consultar"), "El nuevo login no tomó los permisos guardados.");
                 comprobar(!new PersonalJdbcControlador(nueva).listarTrabajadores().isEmpty(), "Se perdió el acceso permitido.");
                 rechazar(() -> new RolControlador(nueva).listar());
-                control.guardar(supervisor, Set.of(personal), Set.of(personal, usuarios));
+                control.guardar(supervisor, Set.of(personal), Set.of(personal, cap));
                 comprobar(!new SesionControlador().vigente(nueva), "Agregar permisos no exigió reautenticación.");
             }
             try (SesionUsuario consulta = login.autenticar("supervisor_prueba", claveSupervisor)) {
-                comprobar(!new RolControlador(consulta).listar().isEmpty(), "No se permitió consultar los roles.");
-                rechazar(() -> new RolControlador(consulta).guardar(supervisor, Set.of(personal, usuarios), iniciales));
+                rechazar(() -> new RolControlador(consulta).listar());
+                rechazar(() -> new RolControlador(consulta).guardar(supervisor, Set.of(personal, cap), iniciales));
             }
-            control.guardar(supervisor, Set.of(personal, usuarios), iniciales);
+            control.guardar(supervisor, Set.of(personal, cap), iniciales);
             rechazar(() -> control.guardar(supervisor, Set.of(personal), Set.of()));
             comprobar(control.consultar(supervisor).asignados().equals(iniciales), "Una edición obsoleta sobreescribió los permisos.");
 

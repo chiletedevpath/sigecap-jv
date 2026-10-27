@@ -16,7 +16,8 @@ public class FrmPrincipal extends JFrame {
     }
 
     private FrmPrincipal(PersonalJdbcControlador personal, SesionUsuario sesion) {
-        this(personal, new CapacitacionJdbcControlador(personal, sesion), new SeguimientoControlador(sesion), sesion);
+        this(personal, new CapacitacionJdbcControlador(personal, sesion), new SeguimientoControlador(sesion),
+                new ReporteControlador(sesion), sesion);
     }
 
     public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones) {
@@ -25,11 +26,17 @@ public class FrmPrincipal extends JFrame {
 
     public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
                         pe.utp.sigecapjv.controlador.SeguimientoControlador seguimiento) {
-        this(personal, capacitaciones, seguimiento, null);
+        this(personal, capacitaciones, seguimiento, (ReporteControlador) null);
+    }
+
+    // Reportes consulta MySQL directamente; sin controlador el módulo queda deshabilitado.
+    public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
+                        SeguimientoControlador seguimiento, ReporteControlador reportes) {
+        this(personal, capacitaciones, seguimiento, reportes, null);
     }
 
     private FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
-                         SeguimientoControlador seguimiento, SesionUsuario sesion) {
+                         SeguimientoControlador seguimiento, ReporteControlador reportes, SesionUsuario sesion) {
         super("SIGECAP J&V");
         if (sesion == null) {
             throw new SecurityException("Debe iniciar sesión.");
@@ -61,14 +68,21 @@ public class FrmPrincipal extends JFrame {
         }
         if (pnlPersonal != null) contenido.add(pnlPersonal, "Personal");
         if (pnlCapacitaciones != null) contenido.add(pnlCapacitaciones, "Capacitaciones");
-        PnlUsuarios usuarios = sesion != null && "Administrador".equals(sesion.getRol()) && sesion.puede(
+        PnlUsuarios usuarios = "Administrador".equals(sesion.getRol()) && sesion.puede(
                 "usuarios", "consultar") ? new PnlUsuarios(new UsuarioControlador(sesion)) : null;
         if (usuarios != null) contenido.add(usuarios, "Usuarios");
+
+        PnlReportes reportesPanel = reportes != null && sesion.puede(
+                "capacitaciones", "consultar") ? new PnlReportes(reportes) : null;
+        if (reportesPanel != null) contenido.add(reportesPanel, "Reportes");
         if (sesion != null) {
             if (pnlPersonal != null && !sesion.puede("personal", "gestionar")) soloConsulta(pnlPersonal);
             if (pnlCapacitaciones != null && !sesion.puede("capacitaciones", "gestionar"))
                 soloConsulta(pnlCapacitaciones);
         }
+        PnlAlertas alertas = sesion.puede("capacitaciones", "consultar")
+                ? new PnlAlertas(new NotificacionesControlador(sesion)) : null;
+        if (alertas != null) contenido.add(alertas, "Alertas");
         JPanel menu = new JPanel();
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
         Color azul = new Color(28, 48, 71), seleccionado = new Color(46, 102, 158);
@@ -87,8 +101,8 @@ public class FrmPrincipal extends JFrame {
         menu.add(area);
         menu.add(Box.createVerticalStrut(30));
         for (String nombre : new String[]{"Inicio", "Personal", "Capacitaciones", "Seguimiento", "Reportes",
-                "Usuarios"}) {
-            if (nombre.equals("Seguimiento") || nombre.equals("Reportes")) {
+                "Usuarios", "Alertas"}) {
+            if (nombre.equals("Seguimiento")) {
                 continue;
             }
 
@@ -104,6 +118,7 @@ public class FrmPrincipal extends JFrame {
                 continue;
             }
 
+            if (nombre.equals("Alertas") && alertas == null) continue;
             JButton boton = new JButton(nombre);
 
             boton.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -114,16 +129,27 @@ public class FrmPrincipal extends JFrame {
             boton.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             boton.setFocusPainted(false);
             boton.setBorder(new EmptyBorder(0, 12, 0, 10));
-            boolean disponible = nombre.equals("Inicio") || nombre.equals(
-                    "Personal") && pnlPersonal != null || nombre.equals(
-                    "Capacitaciones") && pnlCapacitaciones != null || nombre.equals("Usuarios") && usuarios != null;
+            boolean disponible = nombre.equals("Inicio")
+                    || nombre.equals("Personal") && pnlPersonal != null
+                    || nombre.equals("Capacitaciones") && pnlCapacitaciones != null
+                    || nombre.equals("Usuarios") && usuarios != null
+                    || nombre.equals("Reportes") && reportesPanel != null
+                    || nombre.equals("Alertas") && alertas != null;
+
             boton.setEnabled(disponible);
-            if (!disponible) boton.setToolTipText(java.util.Set.of("Personal", "Capacitaciones", "Usuarios").contains(
-                    nombre) ? "Sin acceso para su rol" : "Funcionalidad pendiente de implementación");
+
+            if (!disponible) {
+                boton.setToolTipText(
+                        java.util.Set.of("Personal", "Capacitaciones", "Usuarios", "Reportes").contains(nombre)
+                                ? "Sin acceso para su rol"
+                                : "Funcionalidad pendiente de implementación");
+            }
             boton.addActionListener(e -> {
                 if (nombre.equals("Personal")) pnlPersonal.refrescar();
                 if (nombre.equals("Capacitaciones")) pnlCapacitaciones.refrescar();
                 if (nombre.equals("Usuarios")) usuarios.refrescar();
+                if (nombre.equals("Reportes")) reportesPanel.refrescar();
+                if (nombre.equals("Alertas")) alertas.refrescar();
                 tarjetas.show(contenido, nombre);
                 for (Component c : menu.getComponents())
                     if (c instanceof JButton b) b.setBackground(b == boton ? seleccionado : azul);
@@ -204,6 +230,9 @@ public class FrmPrincipal extends JFrame {
                     JOptionPane.showMessageDialog(null, ex.getMessage(), "Acceso", JOptionPane.WARNING_MESSAGE);
                 } catch (IllegalStateException ex) {
                     if (!(ex.getCause() instanceof java.sql.SQLException)) throw ex;
+                    // Registrar códigos de diagnóstico sin publicar SQL ni datos de los registros.
+                    java.sql.SQLException sql = (java.sql.SQLException) ex.getCause();
+                    System.err.printf("MySQL: SQLState=%s, codigo=%d%n", sql.getSQLState(), sql.getErrorCode());
                     JOptionPane.showMessageDialog(null, ex.getMessage(), "MySQL", JOptionPane.ERROR_MESSAGE);
                 }
             }
