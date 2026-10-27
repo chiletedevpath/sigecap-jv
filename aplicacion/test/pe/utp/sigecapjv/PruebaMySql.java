@@ -70,6 +70,7 @@ public class PruebaMySql {
                 // Al final: agrega datos propios que alterarían los conteos anteriores.
                 PruebaReportesMySql.verificar();
                 PruebaNotificacionesMySql.verificar();
+                PruebaHistorialMySql.verificar();
                 return;
             }
 

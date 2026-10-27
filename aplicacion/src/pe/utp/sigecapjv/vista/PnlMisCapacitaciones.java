@@ -15,10 +15,20 @@ public class PnlMisCapacitaciones extends JPanel {
     private static final Color TEXTO_SUAVE = new Color(104, 116, 130);
     private static final Color BORDE = new Color(224, 229, 234);
 
-    // Diseño conservado para la siguiente etapa; todavía utiliza datos de ejemplo.
-    public PnlMisCapacitaciones() {
+    private final pe.utp.sigecapjv.controlador.HistorialControlador controlador;
+    private final java.util.Map<String, JLabel> indicadores = new java.util.HashMap<>();
+    private final JComboBox<String> cboEstado = new JComboBox<>(new String[]{"Todas", "Pendientes", "Completadas", "Canceladas"});
+    private final JLabel mensaje = new JLabel("Pulse Consultar para cargar sus capacitaciones.");
+    private DefaultTableModel modelo;
+    private int carga;
+
+    public PnlMisCapacitaciones(pe.utp.sigecapjv.controlador.HistorialControlador controlador) {
+        this.controlador = controlador;
         setLayout(new BorderLayout());
         add(crearContenido(), BorderLayout.CENTER);
+    }
+    public PnlMisCapacitaciones() {
+        this(null);
     }
 
     private JPanel crearContenido() {
@@ -44,6 +54,7 @@ public class PnlMisCapacitaciones extends JPanel {
         scroll.getVerticalScrollBar().setUnitIncrement(16);
 
         contenedor.add(scroll, BorderLayout.CENTER);
+        contenedor.add(mensaje, BorderLayout.SOUTH);
 
         return contenedor;
     }
@@ -99,9 +110,9 @@ public class PnlMisCapacitaciones extends JPanel {
         tarjetas.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
         tarjetas.setPreferredSize(new Dimension(800, 110));
 
-        tarjetas.add(crearTarjeta("Asignadas", "1"));
-        tarjetas.add(crearTarjeta("Pendientes", "1"));
-        tarjetas.add(crearTarjeta("Completadas", "2"));
+        tarjetas.add(crearTarjeta("Total", "—"));
+        tarjetas.add(crearTarjeta("Pendientes", "—"));
+        tarjetas.add(crearTarjeta("Completadas", "—"));
 
         return tarjetas;
     }
@@ -126,6 +137,7 @@ public class PnlMisCapacitaciones extends JPanel {
         lblValor.setFont(new Font("Segoe UI", Font.BOLD, 28));
         lblValor.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        indicadores.put(titulo, lblValor);
         tarjeta.add(lblTitulo);
         tarjeta.add(Box.createVerticalStrut(8));
         tarjeta.add(lblValor);
@@ -161,13 +173,6 @@ public class PnlMisCapacitaciones extends JPanel {
         lblEstado.setForeground(TEXTO);
         lblEstado.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        JComboBox<String> cboEstado = new JComboBox<>(new String[]{
-                "Todas",
-                "Asignadas",
-                "Pendientes",
-                "Completadas"
-        });
-
         cboEstado.setPreferredSize(new Dimension(150, 32));
         cboEstado.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
@@ -181,6 +186,7 @@ public class PnlMisCapacitaciones extends JPanel {
         filtros.add(lblEstado);
         filtros.add(cboEstado);
         filtros.add(consultar);
+        consultar.addActionListener(e -> refrescar());
 
         superior.add(titulo, BorderLayout.WEST);
         superior.add(filtros, BorderLayout.EAST);
@@ -194,54 +200,14 @@ public class PnlMisCapacitaciones extends JPanel {
                 "Vigencia"
         };
 
-        Object[][] datos = {
-                {
-                        "Formación Básica",
-                        "28/09/2026",
-                        "Asignada",
-                        "Pendiente",
-                        "Pendiente",
-                        "No aplica"
-                },
-                {
-                        "Protección Portuaria",
-                        "02/10/2026",
-                        "Pendiente",
-                        "Pendiente",
-                        "Pendiente",
-                        "No aplica"
-                },
-                {
-                        "Perfeccionamiento",
-                        "08/07/2025",
-                        "Completada",
-                        "Aprobado",
-                        "Registrado",
-                        "08/07/2027"
-                },
-                {
-                        "Formación Básica",
-                        "15/10/2023",
-                        "Completada",
-                        "Aprobado",
-                        "Registrado",
-                        "15/10/2026"
-                }
+        modelo = new DefaultTableModel(columnas, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
         };
 
-        DefaultTableModel modelo =
-                new DefaultTableModel(datos, columnas) {
-
-                    @Override
-                    public boolean isCellEditable(
-                            int row,
-                            int column
-                    ) {
-                        return false;
-                    }
-                };
-
         JTable tabla = new JTable(modelo);
+        tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        int[] anchos = {210, 105, 125, 125, 160, 270};
+        for (int i=0;i<anchos.length;i++) tabla.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(31);
         tabla.setForeground(TEXTO);
@@ -274,4 +240,39 @@ public class PnlMisCapacitaciones extends JPanel {
 
         return panel;
     }
+    public void refrescar() {
+        int solicitud = ++carga;
+        modelo.setRowCount(0);
+        indicadores.values().forEach(l -> l.setText("—"));
+        if (controlador == null) { mensaje.setText("Inicie sesión para consultar."); return; }
+        String filtro = switch (cboEstado.getSelectedIndex()) {
+            case 1 -> "PENDIENTE"; case 2 -> "COMPLETADA"; case 3 -> "CANCELADA"; default -> null;
+        };
+        mensaje.setText("Consultando capacitaciones…");
+        new SwingWorker<java.util.List<pe.utp.sigecapjv.modelo.HistorialCapacitacion>, Void>() {
+            @Override protected java.util.List<pe.utp.sigecapjv.modelo.HistorialCapacitacion> doInBackground() {
+                return controlador.consultarMisCapacitaciones();
+            }
+            @Override protected void done() {
+                if (solicitud != carga) return;
+                try {
+                    var filas = get();
+                    indicadores.get("Total").setText(String.valueOf(filas.size()));
+                    indicadores.get("Pendientes").setText(String.valueOf(filas.stream().filter(f -> f.estado().equals("PENDIENTE")).count()));
+                    indicadores.get("Completadas").setText(String.valueOf(filas.stream().filter(f -> f.estado().equals("COMPLETADA")).count()));
+                    var formato = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    for (var f : filas) if (filtro == null || filtro.equals(f.estado())) modelo.addRow(new Object[]{
+                            f.curso(), f.fecha().format(formato), f.estado(), f.resultado() == null ? "Pendiente" : f.resultado(),
+                            f.certificado() == null ? "Pendiente" : f.certificado(),
+                            f.vencimiento() == null ? f.vigencia() : f.vencimiento().format(formato) + " · " + f.vigencia()});
+                    mensaje.setText(modelo.getRowCount() == 0 ? "No hay capacitaciones para esta consulta." : "Consulta actualizada. Las tarjetas resumen todo su historial.");
+                } catch (Exception ex) {
+                    modelo.setRowCount(0);
+                    indicadores.values().forEach(l -> l.setText("—"));
+                    mensaje.setText("No se pudo consultar. Revise la conexión o inicie sesión nuevamente.");
+                }
+            }
+        }.execute();
+    }
+
 }

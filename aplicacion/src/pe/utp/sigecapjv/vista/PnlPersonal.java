@@ -26,12 +26,23 @@ public class PnlPersonal extends JPanel {
     private final JComboBox<String> estado = new JComboBox<>(new String[]{"ACTIVO", "INACTIVO"});
     private JTable listado;
     private int idEdicion;
+    private final pe.utp.sigecapjv.controlador.HistorialControlador historial;
+    private final JComboBox<Trabajador> trabajadorHistorial = new JComboBox<>();
+    private final JLabel mensajeHistorial = new JLabel("Seleccione un trabajador y pulse Consultar.");
+    private JTable tablaHistorial;
+    private int cargaHistorial;
 
     public PnlPersonal(PersonalControlador controlador) {
         this(controlador, "");
     }
 
     public PnlPersonal(PersonalControlador controlador, String rolActual) {
+        this(controlador, rolActual, null);
+    }
+
+    public PnlPersonal(PersonalControlador controlador, String rolActual,
+                       pe.utp.sigecapjv.controlador.HistorialControlador historial) {
+        this.historial = historial;
         this.controlador = controlador;
         this.rolActual = java.util.Objects.requireNonNull(rolActual);
         setLayout(new BorderLayout());
@@ -75,8 +86,8 @@ public class PnlPersonal extends JPanel {
         tabs.addTab("Listado", crearListado());
         tabs.addTab("Registrar trabajador", crearRegistro());
         tabs.addTab("Historial", crearHistorial());
-        tabs.setEnabledAt(2, false);
-        tabs.setToolTipTextAt(2, "Pendiente: asistencia, resultados y certificados");
+        tabs.setEnabledAt(2, historial != null);
+        tabs.setToolTipTextAt(2, historial == null ? "Requiere consultar Personal y Capacitaciones" : "Historial guardado en MySQL");
 
         JPanel centro = new JPanel(new BorderLayout());
         centro.setOpaque(false);
@@ -184,7 +195,6 @@ public class PnlPersonal extends JPanel {
         return panel;
     }
 
-    // Diseño pendiente de conectar al historial real.
     private JPanel crearHistorial() {
         JPanel panel = new JPanel(new BorderLayout(0, 16));
         panel.setBackground(BLANCO);
@@ -197,23 +207,66 @@ public class PnlPersonal extends JPanel {
         lblTrabajador.setForeground(TEXTO);
         lblTrabajador.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        JComboBox<String> trabajador = new JComboBox<>();
-        trabajador.setPreferredSize(new Dimension(280, 36));
+        trabajadorHistorial.setPreferredSize(new Dimension(330, 36));
+        trabajadorHistorial.setRenderer(new DefaultListCellRenderer() {
+            @Override public Component getListCellRendererComponent(JList<?> lista, Object valor, int indice, boolean seleccionado, boolean foco) {
+                super.getListCellRendererComponent(lista, valor, indice, seleccionado, foco);
+                if (valor instanceof Trabajador t) setText(t.getDni() + " · " + t.getApellidos() + ", " + t.getNombres());
+                return this;
+            }
+        });
+        trabajadorHistorial.addActionListener(e -> {
+            ++cargaHistorial;
+            if (tablaHistorial != null) ((DefaultTableModel) tablaHistorial.getModel()).setRowCount(0);
+            mensajeHistorial.setText("Pulse Consultar para ver el historial seleccionado.");
+        });
 
         superior.add(lblTrabajador);
-        superior.add(trabajador);
-        superior.add(crearBotonSecundario("Consultar"));
+        superior.add(trabajadorHistorial);
+        JButton consultar = crearBotonSecundario("Consultar");
+        consultar.addActionListener(e -> consultarHistorial());
+        superior.add(consultar);
 
-        String[] columnas = {"Curso", "Fecha", "Resultado", "Vigencia"};
+        String[] columnas = {"Curso", "Fecha", "Estado", "Asistencia", "Resultado", "Nota", "Certificado", "Vencimiento", "Vigencia"};
         Object[][] datos = new Object[0][columnas.length];
 
-        JTable tabla = crearTabla(datos, columnas);
-        JScrollPane scroll = new JScrollPane(tabla);
+        tablaHistorial = crearTabla(datos, columnas);
+        tablaHistorial.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        for (int i=0;i<tablaHistorial.getColumnCount();i++) tablaHistorial.getColumnModel().getColumn(i).setPreferredWidth(i==0?210:125);
+        JScrollPane scroll = new JScrollPane(tablaHistorial);
         scroll.setBorder(BorderFactory.createLineBorder(BORDE));
 
         panel.add(superior, BorderLayout.NORTH);
         panel.add(scroll, BorderLayout.CENTER);
+        panel.add(mensajeHistorial, BorderLayout.SOUTH);
         return panel;
+    }
+
+    private void consultarHistorial() {
+        int solicitud = ++cargaHistorial;
+        var modelo = (DefaultTableModel) tablaHistorial.getModel();
+        modelo.setRowCount(0);
+        Trabajador seleccionado = (Trabajador) trabajadorHistorial.getSelectedItem();
+        if (historial == null || seleccionado == null) { mensajeHistorial.setText("Seleccione un trabajador con acceso autorizado."); return; }
+        int id = seleccionado.getIdTrabajador();
+        mensajeHistorial.setText("Consultando historial…");
+        new SwingWorker<java.util.List<pe.utp.sigecapjv.modelo.HistorialCapacitacion>, Void>() {
+            @Override protected java.util.List<pe.utp.sigecapjv.modelo.HistorialCapacitacion> doInBackground() { return historial.consultarTrabajador(id); }
+            @Override protected void done() {
+                if (solicitud != cargaHistorial) return;
+                try {
+                    var fecha = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    for (var f : get()) modelo.addRow(new Object[]{f.curso(),f.fecha().format(fecha),f.estado(),
+                            f.asistencia()==null?"Pendiente":f.asistencia(),f.resultado()==null?"Pendiente":f.resultado(),
+                            f.calificacion(),f.certificado()==null?"Pendiente":f.certificado(),
+                            f.vencimiento()==null?"—":f.vencimiento().format(fecha),f.vigencia()});
+                    mensajeHistorial.setText(modelo.getRowCount()==0?"El trabajador no tiene capacitaciones registradas.":"Historial actualizado.");
+                } catch (Exception ex) {
+                    modelo.setRowCount(0);
+                    mensajeHistorial.setText("No se pudo consultar. Revise la conexión o sus permisos.");
+                }
+            }
+        }.execute();
     }
 
     private void guardar() {
@@ -264,8 +317,11 @@ public class PnlPersonal extends JPanel {
     public void refrescar() {
         DefaultTableModel modelo = (DefaultTableModel) listado.getModel();
         modelo.setRowCount(0);
+        ++cargaHistorial;
+        trabajadorHistorial.removeAllItems();
         String filtro = buscar.getText().trim().toLowerCase(java.util.Locale.ROOT);
         for (Trabajador t : controlador.listarTrabajadores()) {
+            if (historial != null) trabajadorHistorial.addItem(t);
             if ((t.getDni() + " " + t.getApellidos() + " " + t.getNombres() + " " + t.getCargo()).toLowerCase(
                     java.util.Locale.ROOT).contains(filtro)) modelo.addRow(
                     new Object[]{t.getDni(), t.getApellidos() + ", " + t.getNombres(), t.getCargo(), t.getEstado()});
