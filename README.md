@@ -11,7 +11,9 @@ Ya se puede registrar personal y cursos, programar capacitaciones, asignar traba
 | Personal, cursos, programación y participantes | Implementado |
 | Asistencia: registro, consulta y actualización | Implementado |
 | Resultados y certificados | Implementado |
-| Historial y alertas del trabajador | Pendiente |
+| Inicio por perfil | Tarjetas y tablas conectadas a MySQL |
+| Historial y Mis capacitaciones del trabajador | Pendiente de integración |
+| Vigencias y notificaciones | Implementado: consulta, generación y lectura de alertas |
 | Usuarios, roles y acceso | Login, usuarios, permisos editables y control de sesiones implementados |
 | Reportes (HU-JVR-011) | Implementado: filtros, consolidado y exportación PDF |
 
@@ -19,9 +21,9 @@ Las clases y vistas de los módulos pendientes se conservan para continuar el de
 
 Al ejecutar se abre el login. Ingresa con tu **nombre de usuario y contraseña**; el correo se registra como dato de contacto y no se utiliza para autenticar. Si ya creaste tu cuenta, no tienes que registrarla otra vez. La opción **Crear primer administrador** solo aparece cuando se confirma que la base no tiene usuarios y se oculta después del registro. En una instalación nueva, define una contraseña de 12 a 128 caracteres. Después puedes registrar cuentas, asignar roles, cambiar su estado y renovar sus contraseñas desde Usuarios. No se permite desactivar ni quitar el rol al último administrador activo. Al editar, dejar la contraseña vacía conserva la actual. Si una cuenta está inactiva y la contraseña es correcta, el login indica que debe solicitar su activación; una contraseña incorrecta mantiene el mensaje genérico de acceso inválido.
 
-Inicialmente, el administrador gestiona Personal, Capacitaciones y Usuarios; el responsable gestiona Personal y Capacitaciones; el supervisor tiene acceso de consulta. En **Usuarios → Roles y permisos** puedes ajustar estos permisos y guardarlos para cada rol. Gestionar requiere consultar; el acceso administrativo no se puede quitar. Reportes está disponible para los roles que pueden consultar Capacitaciones. Los módulos propios del trabajador y las alertas siguen pendientes de integración. El rol Trabajador requiere asociar el ID de un trabajador existente. Cambiar el rol, sus permisos o el vínculo del trabajador invalida la sesión en la siguiente operación. La ventana también lo revisa cada 15 segundos y al recuperar el foco; si el acceso cambió, la cuenta fue desactivada o no se puede verificar la conexión, vuelve al login. Dos administradores no pueden sobrescribir permisos cargados antes del cambio del otro: hay que recargar primero.
+Inicialmente, el administrador gestiona Personal, Capacitaciones y Usuarios; el responsable gestiona Personal y Capacitaciones; el supervisor tiene acceso de consulta. En **Usuarios → Roles y permisos** puedes ajustar estos permisos y guardarlos para cada rol. Gestionar requiere consultar; el acceso administrativo no se puede quitar. Reportes está disponible para los roles que pueden consultar Capacitaciones. Historial y Mis capacitaciones del trabajador siguen pendientes de integración. El rol Trabajador requiere asociar el ID de un trabajador existente. Cambiar el rol, sus permisos o el vínculo del trabajador invalida la sesión en la siguiente operación. La ventana también lo revisa cada 15 segundos y al recuperar el foco; si el acceso cambió, la cuenta fue desactivada o no se puede verificar la conexión, vuelve al login. Dos administradores no pueden sobrescribir permisos cargados antes del cambio del otro: hay que recargar primero.
 
-Los resultados admiten notas opcionales de 0 a 20 y requieren asistencia. La condición (Aprobado, Desaprobado, Apto o No apto) se registra según la evaluación recibida. El certificado requiere un resultado favorable; se guardan su número, fechas y ruta de evidencia. La ruta referencia el archivo local, no lo copia ni lo publica. La vigencia se calcula al consultar; las alertas de próximo vencimiento corresponden al siguiente hito.
+Los resultados admiten notas opcionales de 0 a 20 y requieren asistencia. La condición (Aprobado, Desaprobado, Apto o No apto) se registra según la evaluación recibida. El certificado requiere un resultado favorable; se guardan su número, fechas y ruta de evidencia. La ruta referencia el archivo local, no lo copia ni lo publica. La vigencia se calcula al consultar; Alertas genera avisos al consultar con un rol autorizado.
 
 ## Reportes (HU-JVR-011)
 
@@ -35,6 +37,10 @@ Los resultados admiten notas opcionales de 0 a 20 y requieren asistencia. La con
 - Estructura: `PnlReportes` → `ReporteControlador` → `ReporteDAO`, que hace una consulta parametrizada de solo lectura. El modelo `Reporte` conserva los filtros y las filas, y `util/ReportePdf` genera el archivo.
 
 Para probarlo, inicia sesión con un rol que consulte Capacitaciones, abre **Reportes** y pulsa **Generar reporte** sin filtros; después combina filtros y exporta.
+
+## Inicio
+
+Inicio consulta MySQL al entrar y al volver a seleccionarlo. Las tarjetas cuentan capacitaciones programadas desde hoy, participaciones pendientes y certificados próximos a vencer (de hoy a 30 días) o vencidos. Las tablas muestran hasta 20 registros; las tarjetas cuentan el total. El trabajador ve únicamente datos vinculados a su cuenta. Los demás perfiles necesitan consultar Personal y Capacitaciones. Si falla la consulta, se informa el error sin sustituirlo por datos de ejemplo.
 
 ## Trabajo en equipo
 
@@ -99,13 +105,18 @@ Desde la raíz del proyecto:
 # Pruebas sin base de datos.
 .\aplicacion\ejecutar.ps1 -Probar
 
-# Pruebas con MySQL temporal; requiere Docker y Connector/J.
+# Regresión completa con MySQL temporal; requiere Docker y Connector/J.
 .\aplicacion\probar-mysql.ps1
+
+# Inicio con usuarios autenticados y MySQL temporal.
+.\aplicacion\probar-mysql.ps1 -Inicio
 ```
 
 Las pruebas de acceso comprueban los cuatro perfiles: administración completa, gestión del responsable, consulta del supervisor y aislamiento del trabajador frente a los módulos globales. Las consultas propias del trabajador se integrarán desde su rama.
 
 Las pruebas de MySQL crean su propia base y eliminan el contenedor al terminar. No deben ejecutarse sobre datos reales. Reportes se prueba en `PruebaReportes` (filtros y PDF, sin base) y `PruebaReportesMySql` (consultas, filtros, caso sin resultados, exportación, permisos y pantalla).
+La suite general `probar-mysql.ps1` ya utiliza sesiones autenticadas y valida también Reportes y Alertas.
+
 
 Las credenciales, los archivos `.env`, las preferencias personales del editor, los PDF de `reportes/` y el contenido de `privado/` quedan fuera de Git. `privado/` es solo almacenamiento local: no tiene respaldo en este repositorio.
 

@@ -31,13 +31,19 @@ public final class PruebaNotificacionesMySql {
         if (!"true".equals(System.getenv("SIGECAP_DB_TEST"))) throw new IllegalStateException("Solo base desechable");
         rechazar(() -> new NotificacionesControlador().obtenerAlertasActualizadas());
         int[] certificados = Jdbc.transaccion(c -> {
+            // Las reglas de vigencia usan la fecha de MySQL, que puede diferir de la del equipo.
+            LocalDate hoy;
+            try (var sentencia = c.createStatement(); var resultado = sentencia.executeQuery("SELECT CURDATE()")) {
+                resultado.next();
+                hoy = resultado.getDate(1).toLocalDate();
+            }
             int trabajador=Jdbc.insertar(c,"INSERT INTO trabajador(dni,nombres,apellidos,cargo) VALUES ('70001001','Alerta','Prueba','Agente')");
             int curso=Jdbc.insertar(c,"INSERT INTO curso(codigo,nombre,tipo,vigenciaMeses) VALUES ('ALERTA','Curso alertas','Interno',12)");
             int[] ids=new int[5]; Integer[] dias={-1,0,30,31,null};
             for (int i=0;i<dias.length;i++) {
                 int cap=Jdbc.insertar(c,"INSERT INTO capacitacion(idCurso,fecha,horaInicio,horaFin,modalidad) VALUES (?,CURDATE(),'08:00','09:00','Presencial')",curso);
                 int part=Jdbc.insertar(c,"INSERT INTO participacion(idTrabajador,idCapacitacion,fechaAsignacion) VALUES (?,?,CURDATE())",trabajador,cap);
-                ids[i]=Jdbc.insertar(c,"INSERT INTO certificado(idParticipacion,idTrabajador,numero,fechaEmision,fechaVencimiento) VALUES (?,?,?,CURDATE()-INTERVAL 1 YEAR,?)",part,trabajador,"ALERTA-"+i,dias[i]==null?null:LocalDate.now().plusDays(dias[i]));
+                ids[i]=Jdbc.insertar(c,"INSERT INTO certificado(idParticipacion,idTrabajador,numero,fechaEmision,fechaVencimiento) VALUES (?,?,?,CURDATE()-INTERVAL 1 YEAR,?)",part,trabajador,"ALERTA-"+i,dias[i]==null?null:hoy.plusDays(dias[i]));
             }
             return ids;
         });

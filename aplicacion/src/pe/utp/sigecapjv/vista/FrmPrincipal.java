@@ -62,10 +62,8 @@ public class FrmPrincipal extends JFrame {
         PnlInicio pnlInicio = new PnlInicio(perfilInicio);
         contenido.add(pnlInicio, "Inicio");
 
-        if (perfilInicio == PnlInicio.Perfil.ADMINISTRADOR) {
-            InicioControlador inicioControlador = new InicioControlador(sesion);
-            pnlInicio.cargarResumen(inicioControlador);
-        }
+        InicioControlador inicioControlador = new InicioControlador(sesion);
+        pnlInicio.cargarResumen(inicioControlador);
         if (pnlPersonal != null) contenido.add(pnlPersonal, "Personal");
         if (pnlCapacitaciones != null) contenido.add(pnlCapacitaciones, "Capacitaciones");
         PnlUsuarios usuarios = "Administrador".equals(sesion.getRol()) && sesion.puede(
@@ -145,6 +143,7 @@ public class FrmPrincipal extends JFrame {
                                 : "Funcionalidad pendiente de implementación");
             }
             boton.addActionListener(e -> {
+                if (nombre.equals("Inicio")) pnlInicio.cargarResumen(inicioControlador);
                 if (nombre.equals("Personal")) pnlPersonal.refrescar();
                 if (nombre.equals("Capacitaciones")) pnlCapacitaciones.refrescar();
                 if (nombre.equals("Usuarios")) usuarios.refrescar();
