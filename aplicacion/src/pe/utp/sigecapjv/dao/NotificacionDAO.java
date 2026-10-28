@@ -19,22 +19,38 @@ public class NotificacionDAO {
     }
 
     public List<Notificacion> listarNotificaciones(Connection c) throws SQLException {
+        return listar(c, null);
+    }
+
+    public List<Notificacion> listarPorTrabajador(Connection c, int trabajador) throws SQLException {
+        return listar(c, trabajador);
+    }
+
+    private List<Notificacion> listar(Connection c, Integer trabajador) throws SQLException {
         List<Notificacion> lista = new ArrayList<>();
-        try (PreparedStatement p = c.prepareStatement("SELECT idNotificacion,idTrabajador,tipo,mensaje,fechaGeneracion,estado,claveEvento FROM notificacion ORDER BY fechaGeneracion DESC,idNotificacion DESC");
-             ResultSet r = p.executeQuery()) {
-            while (r.next()) {
-                Notificacion n = new Notificacion();
-                n.setIdNotificacion(r.getInt("idNotificacion"));
-                n.setIdTrabajador(r.getInt("idTrabajador"));
-                n.setTipo(r.getString("tipo"));
-                n.setMensaje(r.getString("mensaje"));
-                n.setFechaGeneracion(r.getString("fechaGeneracion"));
-                n.setEstado(r.getString("estado"));
-                n.setClaveEvento(r.getString("claveEvento"));
-                lista.add(n);
+        try (PreparedStatement p = c.prepareStatement("SELECT idNotificacion,idTrabajador,tipo,mensaje,fechaGeneracion,estado,claveEvento FROM notificacion"
+                + (trabajador == null ? "" : " WHERE idTrabajador=?")
+                + " ORDER BY fechaGeneracion DESC,idNotificacion DESC")) {
+            if (trabajador != null) p.setInt(1, trabajador);
+            try (ResultSet r = p.executeQuery()) {
+                while (r.next()) {
+                    Notificacion n = new Notificacion();
+                    n.setIdNotificacion(r.getInt("idNotificacion"));
+                    n.setIdTrabajador(r.getInt("idTrabajador"));
+                    n.setTipo(r.getString("tipo"));
+                    n.setMensaje(r.getString("mensaje"));
+                    n.setFechaGeneracion(r.getString("fechaGeneracion"));
+                    n.setEstado(r.getString("estado"));
+                    n.setClaveEvento(r.getString("claveEvento"));
+                    lista.add(n);
+                }
             }
         }
         return lista;
+    }
+
+    public void marcarPropiaLeida(Connection c, int id, int trabajador) throws SQLException {
+        Jdbc.actualizar(c, "UPDATE notificacion SET estado='LEIDA' WHERE idNotificacion=? AND idTrabajador=?", id, trabajador);
     }
 
     public void marcarLeida(Connection c, int id) throws SQLException {

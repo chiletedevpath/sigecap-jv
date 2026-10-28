@@ -7,7 +7,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-/** Consulta global autorizada; todos los valores proceden de MySQL. */
+/** Consulta autorizada por sesión; todos los valores proceden de MySQL. */
 public class PnlAlertas extends JPanel {
     private final NotificacionesControlador controlador;
     private final DefaultTableModel modelo = new DefaultTableModel(
@@ -26,7 +26,7 @@ public class PnlAlertas extends JPanel {
         setBorder(new EmptyBorder(24,28,26,28));
         JPanel cabecera = new JPanel(new BorderLayout());
         cabecera.setOpaque(false);
-        JLabel titulo = new JLabel("Vigencias y notificaciones");
+        JLabel titulo = new JLabel(controlador.esTrabajador() ? "Mis alertas" : "Vigencias y notificaciones");
         titulo.setFont(new Font("Segoe UI",Font.BOLD,26));
         cabecera.add(titulo,BorderLayout.NORTH);
         JPanel filtros = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -36,14 +36,14 @@ public class PnlAlertas extends JPanel {
         JButton consultar = new JButton("Consultar");
         consultar.addActionListener(e -> refrescar()); filtros.add(consultar);
         JButton leida = new JButton("Marcar como leída");
-        leida.setEnabled(controlador.puedeGestionar());
+        leida.setEnabled(controlador.puedeMarcarLeida());
         leida.addActionListener(e -> {
             int fila = tabla.getSelectedRow();
             if (fila < 0) { mensaje.setText("Seleccione una notificación."); return; }
             try {
                 controlador.marcarComoLeida((Integer) modelo.getValueAt(tabla.convertRowIndexToModel(fila),0));
                 refrescar();
-            } catch (IllegalArgumentException | IllegalStateException ex) { mensaje.setText(ex.getMessage()); }
+            } catch (SecurityException | IllegalArgumentException | IllegalStateException ex) { modelo.setRowCount(0); mensaje.setText(ex.getMessage()); }
         });
         filtros.add(leida);
         cabecera.add(filtros,BorderLayout.CENTER);
@@ -64,6 +64,6 @@ public class PnlAlertas extends JPanel {
             }
             mensaje.setText(modelo.getRowCount()==0 ? "No existen alertas para los filtros seleccionados."
                     : modelo.getRowCount()+" notificación(es).");
-        } catch (IllegalStateException ex) { mensaje.setText(ex.getMessage()); }
+        } catch (SecurityException | IllegalStateException ex) { mensaje.setText(ex.getMessage()); }
     }
 }

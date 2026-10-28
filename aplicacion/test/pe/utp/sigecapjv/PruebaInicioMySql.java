@@ -47,11 +47,12 @@ public final class PruebaInicioMySql {
             });
             java.util.concurrent.atomic.AtomicBoolean listo=new java.util.concurrent.atomic.AtomicBoolean();
             for(int i=0;i<100 && !listo.get();i++) {
-                javax.swing.SwingUtilities.invokeAndWait(()->listo.set(tieneTexto(panel[0],"Datos de MySQL")));
+                javax.swing.SwingUtilities.invokeAndWait(()->listo.set(tieneTexto(panel[0],"0")));
                 if(!listo.get()) Thread.sleep(50);
             }
             comprobar(listo.get());
             javax.swing.SwingUtilities.invokeAndWait(()-> {
+                comprobar(!tieneTexto(panel[0],"Datos de MySQL"));
                 panel[0].setSize(995,680); distribuir(panel[0]);
                 var imagen=new java.awt.image.BufferedImage(995,680,java.awt.image.BufferedImage.TYPE_INT_RGB);
                 var g=imagen.createGraphics();panel[0].printAll(g);g.dispose();

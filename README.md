@@ -12,7 +12,7 @@ Ya se puede registrar personal y cursos, programar capacitaciones, asignar traba
 | Asistencia: registro, consulta y actualización | Implementado |
 | Resultados y certificados | Implementado |
 | Inicio por perfil | Tarjetas y tablas conectadas a MySQL |
-| Historial y Mis capacitaciones del trabajador | Pendiente de integración |
+| Historial y Mis capacitaciones del trabajador | Implementado: consultas MySQL con acceso por sesión |
 | Vigencias y notificaciones | Implementado: consulta, generación y lectura de alertas |
 | Usuarios, roles y acceso | Login, usuarios, permisos editables y control de sesiones implementados |
 | Reportes (HU-JVR-011) | Implementado: filtros, consolidado y exportación PDF |
@@ -21,7 +21,7 @@ Las clases y vistas de los módulos pendientes se conservan para continuar el de
 
 Al ejecutar se abre el login. Ingresa con tu **nombre de usuario y contraseña**; el correo se registra como dato de contacto y no se utiliza para autenticar. Si ya creaste tu cuenta, no tienes que registrarla otra vez. La opción **Crear primer administrador** solo aparece cuando se confirma que la base no tiene usuarios y se oculta después del registro. En una instalación nueva, define una contraseña de 12 a 128 caracteres. Después puedes registrar cuentas, asignar roles, cambiar su estado y renovar sus contraseñas desde Usuarios. No se permite desactivar ni quitar el rol al último administrador activo. Al editar, dejar la contraseña vacía conserva la actual. Si una cuenta está inactiva y la contraseña es correcta, el login indica que debe solicitar su activación; una contraseña incorrecta mantiene el mensaje genérico de acceso inválido.
 
-Inicialmente, el administrador gestiona Personal, Capacitaciones y Usuarios; el responsable gestiona Personal y Capacitaciones; el supervisor tiene acceso de consulta. En **Usuarios → Roles y permisos** puedes ajustar estos permisos y guardarlos para cada rol. Gestionar requiere consultar; el acceso administrativo no se puede quitar. Reportes está disponible para los roles que pueden consultar Capacitaciones. Historial y Mis capacitaciones del trabajador siguen pendientes de integración. El rol Trabajador requiere asociar el ID de un trabajador existente. Cambiar el rol, sus permisos o el vínculo del trabajador invalida la sesión en la siguiente operación. La ventana también lo revisa cada 15 segundos y al recuperar el foco; si el acceso cambió, la cuenta fue desactivada o no se puede verificar la conexión, vuelve al login. Dos administradores no pueden sobrescribir permisos cargados antes del cambio del otro: hay que recargar primero.
+Inicialmente, el administrador gestiona Personal, Capacitaciones y Usuarios; el responsable gestiona Personal y Capacitaciones; el supervisor tiene acceso de consulta. En **Usuarios → Roles y permisos** puedes ajustar estos permisos y guardarlos para cada rol. Gestionar requiere consultar; el acceso administrativo no se puede quitar. Reportes está disponible para los roles que pueden consultar Capacitaciones. Historial requiere consultar Personal y Capacitaciones; Mis capacitaciones muestra solo los registros del trabajador vinculado a la sesión. El rol Trabajador requiere asociar el ID de un trabajador existente. Cambiar el rol, sus permisos o el vínculo del trabajador invalida la sesión en la siguiente operación. La ventana también lo revisa cada 15 segundos y al recuperar el foco; si el acceso cambió, la cuenta fue desactivada o no se puede verificar la conexión, vuelve al login. Dos administradores no pueden sobrescribir permisos cargados antes del cambio del otro: hay que recargar primero.
 
 Los resultados admiten notas opcionales de 0 a 20 y requieren asistencia. La condición (Aprobado, Desaprobado, Apto o No apto) se registra según la evaluación recibida. El certificado requiere un resultado favorable; se guardan su número, fechas y ruta de evidencia. La ruta referencia el archivo local, no lo copia ni lo publica. La vigencia se calcula al consultar; Alertas genera avisos al consultar con un rol autorizado.
 
@@ -29,10 +29,10 @@ Los resultados admiten notas opcionales de 0 a 20 y requieren asistencia. La con
 
 **Reportes** muestra el estado consolidado de las capacitaciones guardadas en MySQL. Cada fila corresponde a una participación e indica trabajador, curso, fecha, estado, resultado y vigencia.
 
-- **Filtros:** periodo (Desde y Hasta en formato DD/MM/AAAA, según la fecha de la capacitación; vacío significa sin límite), curso, trabajador, estado (PENDIENTE, COMPLETADA o CANCELADA) y vigencia (VIGENTE, VENCIDO, NO_APLICA o SIN_CERTIFICADO). **Limpiar** restablece los filtros.
+- **Filtros:** periodo (Desde y Hasta en formato DD/MM/AAAA, según la fecha de la capacitación; vacío significa sin límite), curso, trabajador, estado (PENDIENTE, COMPLETADA o CANCELADA) y vigencia (VIGENTE, PROXIMO_A_VENCER, VENCIDO, NO_APLICA o SIN_CERTIFICADO). **Limpiar** restablece los filtros.
 - Si ningún registro cumple los filtros, se muestra "No existen registros para los filtros seleccionados." y la exportación queda deshabilitada.
 - **Exportar PDF** guarda el último reporte generado, con sus filtros, fecha de generación y total de registros. El PDF se escribe sin bibliotecas externas (texto en A4 horizontal).
-- Las participaciones de una capacitación cancelada aparecen como CANCELADA. La vigencia usa la misma regla que Certificados; el estado "próximo a vencer" se agregará con el módulo de vigencias (HU-009).
+- Las participaciones de una capacitación cancelada aparecen como CANCELADA. Reportes, Inicio e Historial usan la fecha de MySQL: de hoy a 30 días es PROXIMO_A_VENCER; después de 30 días, VIGENTE; antes de hoy, VENCIDO. Sin fecha de vencimiento es NO_APLICA y sin certificado, SIN_CERTIFICADO. El PDF muestra «Próximo a vencer».
 - Se exige el permiso de consulta de Capacitaciones, porque todavía no existe un permiso propio de reportes.
 - Estructura: `PnlReportes` → `ReporteControlador` → `ReporteDAO`, que hace una consulta parametrizada de solo lectura. El modelo `Reporte` conserva los filtros y las filas, y `util/ReportePdf` genera el archivo.
 
@@ -41,6 +41,14 @@ Para probarlo, inicia sesión con un rol que consulte Capacitaciones, abre **Rep
 ## Inicio
 
 Inicio consulta MySQL al entrar y al volver a seleccionarlo. Las tarjetas cuentan capacitaciones programadas desde hoy, participaciones pendientes y certificados próximos a vencer (de hoy a 30 días) o vencidos. Las tablas muestran hasta 20 registros; las tarjetas cuentan el total. El trabajador ve únicamente datos vinculados a su cuenta. Los demás perfiles necesitan consultar Personal y Capacitaciones. Si falla la consulta, se informa el error sin sustituirlo por datos de ejemplo.
+
+## Historial y Mis capacitaciones
+
+En **Personal → Historial**, selecciona un trabajador y pulsa **Consultar**. Se muestran sus cursos, fechas, estado, asistencia, resultado, nota y certificado, ordenados del más reciente al más antiguo. Administrador, Responsable y Supervisor necesitan los permisos de consulta de Personal y Capacitaciones.
+
+El perfil Trabajador dispone de **Mis capacitaciones**, con filtro por pendientes, completadas o canceladas. Las tarjetas muestran el total de participaciones, las pendientes y las completadas de todo su historial, independientemente del filtro. La base registra PENDIENTE desde la asignación; no se inventa un estado Asignada adicional. Las canceladas siguen visibles en el historial.
+
+La consulta usa el trabajador vinculado a la cuenta y valida la sesión en cada operación. Sin registros se muestra una tabla vacía; si falla la consulta se limpian los datos anteriores. Los certificados sin fecha de vencimiento muestran NO_APLICA y la ausencia de certificado, SIN_CERTIFICADO. Las vigencias se calculan con la fecha de MySQL.
 
 ## Trabajo en equipo
 
@@ -112,21 +120,21 @@ Desde la raíz del proyecto:
 .\aplicacion\probar-mysql.ps1 -Inicio
 ```
 
-Las pruebas de acceso comprueban los cuatro perfiles: administración completa, gestión del responsable, consulta del supervisor y aislamiento del trabajador frente a los módulos globales. Las consultas propias del trabajador se integrarán desde su rama.
+Las pruebas de acceso comprueban los cuatro perfiles: administración completa, gestión del responsable, consulta del supervisor y aislamiento del trabajador frente a los módulos globales. Las pruebas de Historial verifican que el trabajador no pueda consultar a otra persona.
 
 Las pruebas de MySQL crean su propia base y eliminan el contenedor al terminar. No deben ejecutarse sobre datos reales. Reportes se prueba en `PruebaReportes` (filtros y PDF, sin base) y `PruebaReportesMySql` (consultas, filtros, caso sin resultados, exportación, permisos y pantalla).
-La suite general `probar-mysql.ps1` ya utiliza sesiones autenticadas y valida también Reportes y Alertas.
+La suite general `probar-mysql.ps1` ya utiliza sesiones autenticadas y valida también Reportes, Alertas, Historial y Mis capacitaciones.
 
 
 Las credenciales, los archivos `.env`, las preferencias personales del editor, los PDF de `reportes/` y el contenido de `privado/` quedan fuera de Git. `privado/` es solo almacenamiento local: no tiene respaldo en este repositorio.
 
 ## Vigencias y notificaciones (HU-009 / HU-010)
 
-Alertas consulta las notificaciones guardadas en MySQL. Administrador y Responsable con permiso de gestión de Capacitaciones generan avisos al pulsar **Consultar**; Supervisor con permiso de consulta solo los lee. El módulo global no se muestra al Trabajador. Se conserva el login, los permisos y la vigilancia de sesión.
+Alertas consulta las notificaciones guardadas en MySQL. Administrador y Responsable con permiso de gestión de Capacitaciones generan avisos al pulsar **Consultar**; Supervisor con permiso de consulta solo los lee. El Trabajador ve **Mis alertas** dentro de Alertas: solo consulta las notificaciones de su cuenta y puede marcarlas como leídas. Su consulta no genera avisos; estos se generan cuando consulta Administrador o Responsable. Se conserva el login, los permisos y la vigilancia de sesión.
 
 - Se avisa desde 30 días antes del vencimiento, incluido el día de vencimiento; el certificado está vencido desde el día siguiente. Los certificados sin vencimiento no generan avisos.
 - La clave incluye certificado, fecha y etapa: consultar varias veces no duplica eventos y el paso a vencido genera su propio aviso. No hay tarea automática en segundo plano.
-- Los filtros Tipo y Estado se aplican a la tabla. **Marcar como leída** requiere gestionar Capacitaciones y conserva ese estado al volver a consultar.
+- Los filtros Tipo y Estado se aplican a la tabla. **Marcar como leída** requiere gestionar Capacitaciones en la consulta global; el trabajador solo puede actualizar sus propias notificaciones. El estado se conserva al volver a consultar.
 - Las tarjetas de ejemplo se sustituyeron por datos reales. Un fallo de MySQL se comunica como error.
 - En volúmenes Docker existentes, un administrador de MySQL debe conceder SELECT, INSERT y UPDATE sobre `sigecap_jv.notificacion` y SELECT sobre `sigecap_jv.vw_control_vigencias` a `sigecap_app`; el script de inicialización los concede en volúmenes nuevos. Conserve sus datos.
 - La configuración compartida de IntelliJ no guarda credenciales: configure las variables de conexión localmente. Toda contraseña previamente publicada debe rotarse; retirarla del archivo no la elimina del historial.

@@ -42,7 +42,7 @@ public class FrmPrincipal extends JFrame {
             throw new SecurityException("Debe iniciar sesión.");
         }
         PnlPersonal pnlPersonal = sesion.puede("personal", "consultar") ? new PnlPersonal(
-                personal, sesion.getRol()) : null;
+                personal, sesion.getRol(), sesion.puede("capacitaciones", "consultar") ? new HistorialControlador(sesion) : null) : null;
         PnlCapacitaciones pnlCapacitaciones = sesion.puede("capacitaciones", "consultar") ? new PnlCapacitaciones(
                 capacitaciones, personal, seguimiento, sesion.getRol()) : null;
         CardLayout tarjetas = new CardLayout();
@@ -78,9 +78,12 @@ public class FrmPrincipal extends JFrame {
             if (pnlCapacitaciones != null && !sesion.puede("capacitaciones", "gestionar"))
                 soloConsulta(pnlCapacitaciones);
         }
-        PnlAlertas alertas = sesion.puede("capacitaciones", "consultar")
+        PnlAlertas alertas = ("Trabajador".equals(sesion.getRol()) || sesion.puede("capacitaciones", "consultar"))
                 ? new PnlAlertas(new NotificacionesControlador(sesion)) : null;
         if (alertas != null) contenido.add(alertas, "Alertas");
+        PnlMisCapacitaciones misCapacitaciones = "Trabajador".equals(sesion.getRol())
+                ? new PnlMisCapacitaciones(new HistorialControlador(sesion)) : null;
+        if (misCapacitaciones != null) contenido.add(misCapacitaciones, "Mis capacitaciones");
         JPanel menu = new JPanel();
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
         Color azul = new Color(28, 48, 71), seleccionado = new Color(46, 102, 158);
@@ -99,7 +102,7 @@ public class FrmPrincipal extends JFrame {
         menu.add(area);
         menu.add(Box.createVerticalStrut(30));
         for (String nombre : new String[]{"Inicio", "Personal", "Capacitaciones", "Seguimiento", "Reportes",
-                "Usuarios", "Alertas"}) {
+                "Usuarios", "Alertas", "Mis capacitaciones"}) {
             if (nombre.equals("Seguimiento")) {
                 continue;
             }
@@ -117,6 +120,7 @@ public class FrmPrincipal extends JFrame {
             }
 
             if (nombre.equals("Alertas") && alertas == null) continue;
+            if (nombre.equals("Mis capacitaciones") && misCapacitaciones == null) continue;
             JButton boton = new JButton(nombre);
 
             boton.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -132,7 +136,8 @@ public class FrmPrincipal extends JFrame {
                     || nombre.equals("Capacitaciones") && pnlCapacitaciones != null
                     || nombre.equals("Usuarios") && usuarios != null
                     || nombre.equals("Reportes") && reportesPanel != null
-                    || nombre.equals("Alertas") && alertas != null;
+                    || nombre.equals("Alertas") && alertas != null
+                    || nombre.equals("Mis capacitaciones") && misCapacitaciones != null;
 
             boton.setEnabled(disponible);
 
@@ -144,6 +149,7 @@ public class FrmPrincipal extends JFrame {
             }
             boton.addActionListener(e -> {
                 if (nombre.equals("Inicio")) pnlInicio.cargarResumen(inicioControlador);
+                if (nombre.equals("Mis capacitaciones")) misCapacitaciones.refrescar();
                 if (nombre.equals("Personal")) pnlPersonal.refrescar();
                 if (nombre.equals("Capacitaciones")) pnlCapacitaciones.refrescar();
                 if (nombre.equals("Usuarios")) usuarios.refrescar();

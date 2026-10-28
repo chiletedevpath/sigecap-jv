@@ -7,6 +7,8 @@ import java.util.List;
 import javax.swing.*;
 import pe.utp.sigecapjv.controlador.*;
 import pe.utp.sigecapjv.dao.Jdbc;
+import pe.utp.sigecapjv.dao.HistorialDAO;
+import pe.utp.sigecapjv.dao.InicioDAO;
 import pe.utp.sigecapjv.modelo.*;
 import pe.utp.sigecapjv.vista.PnlReportes;
 
@@ -156,11 +158,61 @@ public final class PruebaReportesMySql {
             comprobar(tabla.getRowCount() >= 4, "Sin filtros muestra todos los registros");
         });
 
+        verificarVigencias(r, basico, beta, pBeta);
+
         // Al final: cerrada la sesión, el mismo controlador deja de responder.
         comprobar(generar(r, inicio, fin, null, null, null, null).getFilas().size() == 3, "Acceso con sesión autorizada");
         admin.close();
         rechazar(() -> generar(r, inicio, fin, null, null, null, null));
         System.out.println("OK: " + total + " comprobaciones MySQL del módulo Reportes.");
+    }
+
+    private static void verificarVigencias(ReporteControlador control, Curso curso, Trabajador trabajador,
+                                           int participacion) throws Exception {
+        LocalDate hoy = Jdbc.transaccion(c -> {
+            try (var p=c.createStatement(); var r=p.executeQuery("SELECT CURDATE()")) {
+                r.next(); return r.getDate(1).toLocalDate();
+            }
+        });
+        Integer[] dias = {-1, 0, 30, 31, null};
+        String[] estados = {"VENCIDO", "PROXIMO_A_VENCER", "PROXIMO_A_VENCER", "VIGENTE", "NO_APLICA"};
+        for (int i=0; i<dias.length; i++) {
+            LocalDate fecha = dias[i]==null ? null : hoy.plusDays(dias[i]);
+            String esperado = estados[i];
+            Jdbc.transaccion(c -> {
+                Jdbc.actualizar(c, "UPDATE certificado SET fechaVencimiento=? WHERE idParticipacion=?", fecha, participacion);
+                return null;
+            });
+            Reporte reporte = generar(control, null, null, curso, trabajador, null, esperado);
+            comprobar(reporte.getFilas().size()==1 && reporte.getFilas().get(0).vigencia().equals(esperado),
+                    "Reporte y filtro con vencimiento a " + dias[i] + " días");
+            Jdbc.transaccion(c -> {
+                var historial = new HistorialDAO().consultar(c, trabajador.getIdTrabajador());
+                comprobar(historial.stream().anyMatch(f -> f.idParticipacion()==participacion && esperado.equals(f.vigencia())),
+                        "Historial coincide con Reportes: " + esperado);
+                var resumen = new InicioDAO().obtenerResumen(c, trabajador.getIdTrabajador());
+                comprobar(resumen.proximasVencer()==(esperado.equals("PROXIMO_A_VENCER") ? 1 : 0)
+                        && resumen.vencidas()==(esperado.equals("VENCIDO") ? 1 : 0), "Inicio coincide con Reportes: " + esperado);
+                return null;
+            });
+            if (i==2) {
+                Path pdf=Files.createTempFile("sigecap-vigencia", ".pdf");
+                try {
+                    control.exportarPdf(reporte,pdf);
+                    comprobar(new String(Files.readAllBytes(pdf),Charset.forName("windows-1252")).contains("(Próximo a vencer)"),
+                            "PDF conserva el estado próximo a vencer completo");
+                } finally { Files.deleteIfExists(pdf); }
+                SwingUtilities.invokeAndWait(() -> {
+                    PnlReportes panel = new PnlReportes(control);
+                    campo(panel,"vigencia",JComboBox.class).setSelectedItem("PROXIMO_A_VENCER");
+                    boton(panel,"Generar reporte").doClick();
+                    JTable tabla=(JTable)((JScrollPane)encontrarScroll(panel)).getViewport().getView();
+                    comprobar(tabla.getRowCount()>0,"Filtro próximo a vencer disponible en pantalla");
+                    for(int fila=0;fila<tabla.getRowCount();fila++)
+                        comprobar("PROXIMO_A_VENCER".equals(tabla.getValueAt(fila,5)),"Pantalla filtra vigencias próximas");
+                });
+            }
+        }
     }
 
     private static java.awt.Component encontrarScroll(java.awt.Container c) {

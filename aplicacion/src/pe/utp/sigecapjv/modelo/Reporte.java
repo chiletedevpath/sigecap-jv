@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class Reporte {
     public static final String[] ESTADOS = {"PENDIENTE", "COMPLETADA", "CANCELADA"};
-    public static final String[] VIGENCIAS = {"VIGENTE", "VENCIDO", "NO_APLICA", "SIN_CERTIFICADO"};
+    public static final String[] VIGENCIAS = {"VIGENTE", "PROXIMO_A_VENCER", "VENCIDO", "NO_APLICA", "SIN_CERTIFICADO"};
 
     public record Fila(String trabajador, String curso, LocalDate fecha, String estado, String resultado,
                        String vigencia) {
