@@ -67,7 +67,7 @@ public final class PruebaNotificacionesMySql {
             var consulta=new NotificacionesControlador(supervisor);
             comprobar(consulta.obtenerAlertasActualizadas().size()==cantidad,"Supervisor consulta");
             rechazar(() -> consulta.marcarComoLeida(id));
-            rechazar(() -> new NotificacionesControlador(trabajador).obtenerAlertasActualizadas());
+
             // Simula un aviso previo con la misma fecha, en la etapa preventiva.
             Jdbc.transaccion(c -> { Jdbc.actualizar(c,"UPDATE notificacion SET tipo='POR_VENCER',claveEvento=REPLACE(claveEvento,':VENCIDO',':POR_VENCER') WHERE claveEvento LIKE ?","VENCIMIENTO:"+certificados[0]+":%"); return null; });
             ExecutorService pool=Executors.newFixedThreadPool(2);
@@ -85,6 +85,33 @@ public final class PruebaNotificacionesMySql {
                 comprobar(tabla.getRowCount()>0,"Filtro vencido tiene resultados");
                 for(int f=0;f<tabla.getRowCount();f++) comprobar(tabla.getValueAt(f,3).equals("VENCIDO"),"Filtro por tipo");
             });
+            var propias = new NotificacionesControlador(trabajador);
+            int propia = Jdbc.transaccion(c -> Jdbc.insertar(c,
+                    "INSERT INTO notificacion(idTrabajador,tipo,mensaje,estado,claveEvento) VALUES (?, 'POR_VENCER','Aviso propio','PENDIENTE','PRUEBA:PROPIA')",
+                    trabajador.getIdTrabajador()));
+            var antes = consulta.obtenerAlertasActualizadas();
+            int ajena = antes.stream().filter(n -> n.getIdTrabajador()!=trabajador.getIdTrabajador()
+                    && "PENDIENTE".equals(n.getEstado())).findFirst().orElseThrow().getIdNotificacion();
+            var misAlertas = propias.obtenerAlertasActualizadas();
+            comprobar(misAlertas.stream().allMatch(n -> n.getIdTrabajador()==trabajador.getIdTrabajador()), "Solo devuelve alertas propias");
+            comprobar(misAlertas.stream().anyMatch(n -> n.getIdNotificacion()==propia), "Incluye aviso propio");
+            comprobar(consulta.obtenerAlertasActualizadas().size()==antes.size(), "Trabajador no genera avisos");
+            rechazar(() -> propias.marcarComoLeida(ajena));
+            comprobar(consulta.obtenerAlertasActualizadas().stream().anyMatch(n -> n.getIdNotificacion()==ajena && "PENDIENTE".equals(n.getEstado())), "Aviso ajeno permanece pendiente");
+            propias.marcarComoLeida(propia);
+            propias.marcarComoLeida(propia);
+            comprobar(propias.obtenerAlertasActualizadas().stream().anyMatch(n -> n.getIdNotificacion()==propia && "LEIDA".equals(n.getEstado())), "Lectura propia persistente e idempotente");
+            rechazar(() -> propias.marcarComoLeida(Integer.MAX_VALUE));
+            SwingUtilities.invokeAndWait(() -> {
+                PnlAlertas panel=new PnlAlertas(propias); panel.refrescar();
+                JTable tabla=encontrar(panel,JTable.class);
+                comprobar(tabla.getRowCount()==misAlertas.size(), "Pantalla muestra solo alertas propias");
+                for(int f=0;f<tabla.getRowCount();f++) comprobar(tabla.getValueAt(f,1).equals(trabajador.getIdTrabajador()), "Pantalla aislada por trabajador");
+                trabajador.close(); panel.refrescar();
+                comprobar(tabla.getRowCount()==0, "Sesion cerrada limpia alertas visibles");
+            });
+            rechazar(propias::obtenerAlertasActualizadas);
+            rechazar(() -> propias.marcarComoLeida(propia));
             admin.close(); rechazar(control::obtenerAlertasActualizadas);
         }
         System.out.println("OK: "+total+" comprobaciones MySQL y Swing de notificaciones.");

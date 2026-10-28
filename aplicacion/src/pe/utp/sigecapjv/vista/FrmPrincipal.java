@@ -78,7 +78,7 @@ public class FrmPrincipal extends JFrame {
             if (pnlCapacitaciones != null && !sesion.puede("capacitaciones", "gestionar"))
                 soloConsulta(pnlCapacitaciones);
         }
-        PnlAlertas alertas = sesion.puede("capacitaciones", "consultar")
+        PnlAlertas alertas = ("Trabajador".equals(sesion.getRol()) || sesion.puede("capacitaciones", "consultar"))
                 ? new PnlAlertas(new NotificacionesControlador(sesion)) : null;
         if (alertas != null) contenido.add(alertas, "Alertas");
         PnlMisCapacitaciones misCapacitaciones = "Trabajador".equals(sesion.getRol())

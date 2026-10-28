@@ -130,11 +130,11 @@ Las credenciales, los archivos `.env`, las preferencias personales del editor, l
 
 ## Vigencias y notificaciones (HU-009 / HU-010)
 
-Alertas consulta las notificaciones guardadas en MySQL. Administrador y Responsable con permiso de gestión de Capacitaciones generan avisos al pulsar **Consultar**; Supervisor con permiso de consulta solo los lee. El módulo global no se muestra al Trabajador. Se conserva el login, los permisos y la vigilancia de sesión.
+Alertas consulta las notificaciones guardadas en MySQL. Administrador y Responsable con permiso de gestión de Capacitaciones generan avisos al pulsar **Consultar**; Supervisor con permiso de consulta solo los lee. El Trabajador ve **Mis alertas** dentro de Alertas: solo consulta las notificaciones de su cuenta y puede marcarlas como leídas. Su consulta no genera avisos; estos se generan cuando consulta Administrador o Responsable. Se conserva el login, los permisos y la vigilancia de sesión.
 
 - Se avisa desde 30 días antes del vencimiento, incluido el día de vencimiento; el certificado está vencido desde el día siguiente. Los certificados sin vencimiento no generan avisos.
 - La clave incluye certificado, fecha y etapa: consultar varias veces no duplica eventos y el paso a vencido genera su propio aviso. No hay tarea automática en segundo plano.
-- Los filtros Tipo y Estado se aplican a la tabla. **Marcar como leída** requiere gestionar Capacitaciones y conserva ese estado al volver a consultar.
+- Los filtros Tipo y Estado se aplican a la tabla. **Marcar como leída** requiere gestionar Capacitaciones en la consulta global; el trabajador solo puede actualizar sus propias notificaciones. El estado se conserva al volver a consultar.
 - Las tarjetas de ejemplo se sustituyeron por datos reales. Un fallo de MySQL se comunica como error.
 - En volúmenes Docker existentes, un administrador de MySQL debe conceder SELECT, INSERT y UPDATE sobre `sigecap_jv.notificacion` y SELECT sobre `sigecap_jv.vw_control_vigencias` a `sigecap_app`; el script de inicialización los concede en volúmenes nuevos. Conserve sus datos.
 - La configuración compartida de IntelliJ no guarda credenciales: configure las variables de conexión localmente. Toda contraseña previamente publicada debe rotarse; retirarla del archivo no la elimina del historial.

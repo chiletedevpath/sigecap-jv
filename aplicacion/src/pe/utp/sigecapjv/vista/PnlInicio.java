@@ -26,7 +26,7 @@ public class PnlInicio extends JPanel {
 
     private final Perfil perfil;
     private int carga;
-    private final JLabel estado = new JLabel("Pendiente de consultar MySQL");
+    private final JLabel estado = new JLabel();
     private final Map<String, JLabel> indicadoresAdmin = new HashMap<>();
     private final Map<String, DefaultTableModel> tablasAdmin = new HashMap<>();
 
@@ -227,7 +227,7 @@ public class PnlInicio extends JPanel {
         int solicitud=++carga;
         indicadoresAdmin.values().forEach(e->e.setText("…"));
         tablasAdmin.values().forEach(t->t.setRowCount(0));
-        estado.setText("Consultando MySQL…");
+        estado.setText("Cargando resumen…");
         new SwingWorker<InicioControlador.Panel,Void>() {
             @Override protected InicioControlador.Panel doInBackground() { return controlador.obtenerPanel(); }
             @Override protected void done() {
@@ -242,12 +242,12 @@ public class PnlInicio extends JPanel {
                     var hora=java.time.format.DateTimeFormatter.ofPattern("HH:mm");
                     for(var d:panel.programadas()) tablasAdmin.get("Capacitaciones programadas").addRow(new Object[]{d.curso(),d.fecha().format(fecha),d.horaInicio().format(hora)+" - "+d.horaFin().format(hora),d.participantes()});
                     for(var d:panel.vencimientos()) tablasAdmin.get("Próximos vencimientos").addRow(new Object[]{d.trabajador(),d.curso(),d.vencimiento().format(fecha),d.estado()});
-                    estado.setText("Datos de MySQL · Próximos vencimientos: de hoy a 30 días · Tablas: hasta 20 registros" + (perfil==Perfil.TRABAJADOR ? " · Solo sus capacitaciones" : ""));
+                    estado.setText("");
                 } catch(Exception ex) {
                     indicadoresAdmin.values().forEach(e->e.setText("—"));
                     tablasAdmin.values().forEach(t->t.setRowCount(0));
                     Throwable causa=ex.getCause()==null?ex:ex.getCause();
-                    estado.setText(causa instanceof SecurityException ? "Sin acceso al resumen. Revise sus permisos o inicie sesión nuevamente." : "No se pudo consultar MySQL. Vuelva a Inicio para reintentar.");
+                    estado.setText(causa instanceof SecurityException ? "Sin acceso al resumen. Revise sus permisos o inicie sesión nuevamente." : "No se pudo cargar el resumen. Vuelva a Inicio para reintentar.");
                 }
             }
         }.execute();
