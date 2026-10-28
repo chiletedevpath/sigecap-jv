@@ -1,6 +1,5 @@
 package pe.utp.sigecapjv.dao;
 
-import pe.utp.sigecapjv.modelo.Certificado;
 import pe.utp.sigecapjv.modelo.Reporte;
 
 import java.sql.Connection;
@@ -19,12 +18,15 @@ public class ReporteDAO {
         StringBuilder sql = new StringBuilder(
                 "SELECT p.idParticipacion,p.idTrabajador,t.nombres,t.apellidos,cu.nombre AS curso,ca.fecha,"
                         + ESTADO + " AS estado,r.condicion,ce.idCertificado,ce.numero,ce.fechaEmision,"
-                        + "ce.fechaVencimiento FROM participacion p "
+                        + "ce.fechaVencimiento, CASE WHEN ce.idCertificado IS NULL THEN 'SIN_CERTIFICADO' "
+                        + "WHEN v.diasRestantes BETWEEN 0 AND 30 THEN 'PROXIMO_A_VENCER' "
+                        + "ELSE v.estadoActual END AS vigencia FROM participacion p "
                         + "JOIN trabajador t ON t.idTrabajador=p.idTrabajador "
                         + "JOIN capacitacion ca ON ca.idCapacitacion=p.idCapacitacion "
                         + "JOIN curso cu ON cu.idCurso=ca.idCurso "
                         + "LEFT JOIN resultado r ON r.idParticipacion=p.idParticipacion "
-                        + "LEFT JOIN certificado ce ON ce.idParticipacion=p.idParticipacion WHERE 1=1");
+                        + "LEFT JOIN certificado ce ON ce.idParticipacion=p.idParticipacion "
+                        + "LEFT JOIN vw_control_vigencias v ON v.idCertificado=ce.idCertificado WHERE 1=1");
         List<Object> valores = new ArrayList<>();
         if (filtros.getDesde() != null) {
             sql.append(" AND ca.fecha>=?");
@@ -58,11 +60,7 @@ public class ReporteDAO {
     }
 
     private Reporte.Fila mapear(ResultSet r) throws SQLException {
-        // La vigencia usa la misma regla del modelo Certificado.
-        String vigencia = r.getObject("idCertificado") == null ? "SIN_CERTIFICADO" : new Certificado(
-                r.getInt("idCertificado"), r.getInt("idParticipacion"), r.getInt("idTrabajador"),
-                r.getString("numero"), r.getObject("fechaEmision", LocalDate.class),
-                r.getObject("fechaVencimiento", LocalDate.class), null).calcularEstadoVigencia();
+        String vigencia = r.getString("vigencia");
         String resultado = r.getString("condicion");
         return new Reporte.Fila(
                 r.getString("nombres") + " " + r.getString("apellidos"), r.getString("curso"),

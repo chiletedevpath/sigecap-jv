@@ -29,10 +29,10 @@ Los resultados admiten notas opcionales de 0 a 20 y requieren asistencia. La con
 
 **Reportes** muestra el estado consolidado de las capacitaciones guardadas en MySQL. Cada fila corresponde a una participación e indica trabajador, curso, fecha, estado, resultado y vigencia.
 
-- **Filtros:** periodo (Desde y Hasta en formato DD/MM/AAAA, según la fecha de la capacitación; vacío significa sin límite), curso, trabajador, estado (PENDIENTE, COMPLETADA o CANCELADA) y vigencia (VIGENTE, VENCIDO, NO_APLICA o SIN_CERTIFICADO). **Limpiar** restablece los filtros.
+- **Filtros:** periodo (Desde y Hasta en formato DD/MM/AAAA, según la fecha de la capacitación; vacío significa sin límite), curso, trabajador, estado (PENDIENTE, COMPLETADA o CANCELADA) y vigencia (VIGENTE, PROXIMO_A_VENCER, VENCIDO, NO_APLICA o SIN_CERTIFICADO). **Limpiar** restablece los filtros.
 - Si ningún registro cumple los filtros, se muestra "No existen registros para los filtros seleccionados." y la exportación queda deshabilitada.
 - **Exportar PDF** guarda el último reporte generado, con sus filtros, fecha de generación y total de registros. El PDF se escribe sin bibliotecas externas (texto en A4 horizontal).
-- Las participaciones de una capacitación cancelada aparecen como CANCELADA. La vigencia usa la misma regla que Certificados; el estado "próximo a vencer" se agregará con el módulo de vigencias (HU-009).
+- Las participaciones de una capacitación cancelada aparecen como CANCELADA. Reportes, Inicio e Historial usan la fecha de MySQL: de hoy a 30 días es PROXIMO_A_VENCER; después de 30 días, VIGENTE; antes de hoy, VENCIDO. Sin fecha de vencimiento es NO_APLICA y sin certificado, SIN_CERTIFICADO. El PDF muestra «Próximo a vencer».
 - Se exige el permiso de consulta de Capacitaciones, porque todavía no existe un permiso propio de reportes.
 - Estructura: `PnlReportes` → `ReporteControlador` → `ReporteDAO`, que hace una consulta parametrizada de solo lectura. El modelo `Reporte` conserva los filtros y las filas, y `util/ReportePdf` genera el archivo.
 

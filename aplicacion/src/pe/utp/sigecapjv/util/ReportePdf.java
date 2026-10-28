@@ -83,7 +83,7 @@ public final class ReportePdf {
         for (Reporte.Fila f : filas) {
             y -= 14;
             String[] valores = {f.trabajador(), f.curso(), String.valueOf(f.fecha()), f.estado(), f.resultado(),
-                    f.vigencia()};
+                    "PROXIMO_A_VENCER".equals(f.vigencia()) ? "Próximo a vencer" : f.vigencia()};
             for (int i = 0; i < valores.length; i++) texto(s, "F1", 9, X[i], y, recortar(valores[i], CARACTERES[i]));
         }
         texto(s, "F1", 8, 40, 25, "Página " + numero + " de " + total);
