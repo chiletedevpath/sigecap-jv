@@ -1,5 +1,12 @@
 package pe.utp.sigecapjv.vista;
 
+import pe.utp.sigecapjv.controlador.VigenciasControlador;
+import pe.utp.sigecapjv.controlador.NotificacionesControlador;
+import pe.utp.sigecapjv.modelo.Vigencia;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.time.format.DateTimeFormatter;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -7,18 +14,81 @@ import java.awt.*;
 
 public class PnlSeguimiento extends JPanel {
 
-    private static final Color AZUL = new Color(28, 48, 71);
-    private static final Color AZUL_CLARO = new Color(46, 102, 158);
     private static final Color FONDO = new Color(245, 247, 249);
     private static final Color BLANCO = Color.WHITE;
     private static final Color TEXTO = new Color(42, 49, 57);
     private static final Color TEXTO_SUAVE = new Color(104, 116, 130);
     private static final Color BORDE = new Color(224, 229, 234);
 
-    // Diseño conservado para la siguiente etapa; todavía utiliza datos de ejemplo.
-    public PnlSeguimiento() {
+    private final VigenciasControlador controlador;
+    private final String rol;
+    private final PnlAlertas alertas;
+    private final JComboBox<String> estado = new JComboBox<>(new String[]{
+            "Todos", "VIGENTE", "PROXIMO_A_VENCER", "VENCIDO", "NO_APLICA"});
+    private record OpcionCurso(int id, String nombre) {
+        @Override public String toString() { return nombre; }
+    }
+    private final JComboBox<OpcionCurso> curso = new JComboBox<>();
+    private final JLabel mensaje = new JLabel("Pulse Consultar para cargar las vigencias.");
+    private final DefaultTableModel modelo = new DefaultTableModel(
+            new String[]{"Trabajador", "Curso", "Certificado", "Vencimiento", "Días restantes", "Estado"},0) {
+        @Override public boolean isCellEditable(int fila,int columna) { return false; }
+    };
+    private List<Vigencia> filas = List.of();
+    private int consulta;
+
+    public PnlSeguimiento(VigenciasControlador controlador,
+                          NotificacionesControlador notificaciones, String rol) {
+        this.controlador=controlador;
+        this.rol=rol;
+        this.alertas=new PnlAlertas(notificaciones);
         setLayout(new BorderLayout());
         add(crearContenido(), BorderLayout.CENTER);
+        estado.addActionListener(e -> filtrar());
+        curso.addActionListener(e -> filtrar());
+    }
+
+    public void refrescar() {
+        int actual=++consulta;
+        filas=List.of(); modelo.setRowCount(0);
+        mensaje.setText("Cargando vigencias…");
+        new SwingWorker<List<Vigencia>,Void>() {
+            @Override protected List<Vigencia> doInBackground() {
+                return controlador.consultar();
+            }
+            @Override protected void done() {
+                if(actual!=consulta) return;
+                try {
+                    filas=get();
+                    OpcionCurso seleccionado=(OpcionCurso)curso.getSelectedItem();
+                    curso.removeAllItems(); curso.addItem(new OpcionCurso(0,"Todos"));
+                    Set<Integer> ids=new HashSet<>();
+                    for(var fila:filas) if(ids.add(fila.idCurso())) {
+                        var opcion=new OpcionCurso(fila.idCurso(),fila.curso()); curso.addItem(opcion);
+                        if(seleccionado!=null && seleccionado.id()==opcion.id()) curso.setSelectedItem(opcion);
+                    }
+                    filtrar();
+                } catch(java.util.concurrent.ExecutionException | InterruptedException ex) {
+                    if(ex instanceof InterruptedException) Thread.currentThread().interrupt();
+                    filas=List.of(); modelo.setRowCount(0);
+                    curso.removeAllItems();
+                    mensaje.setText("No se pudieron cargar las vigencias. Verifique su sesión y vuelva a consultar.");
+                }
+            }
+        }.execute();
+    }
+
+    private void filtrar() {
+        modelo.setRowCount(0);
+        OpcionCurso elegido=(OpcionCurso)curso.getSelectedItem();
+        for(var fila:filas) {
+            if(estado.getSelectedIndex()>0 && !estado.getSelectedItem().equals(fila.estado())) continue;
+            if(elegido!=null && elegido.id()!=0 && elegido.id()!=fila.idCurso()) continue;
+            modelo.addRow(new Object[]{fila.trabajador(),fila.curso(),fila.certificado(),
+                    fila.vencimiento()==null?"No aplica":fila.vencimiento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    fila.diasRestantes()==null?"No aplica":fila.diasRestantes(),fila.estado()});
+        }
+        mensaje.setText(modelo.getRowCount()==0?"No hay certificados para los filtros seleccionados.":modelo.getRowCount()+" certificado(s).");
     }
 
     private JPanel crearContenido() {
@@ -45,7 +115,7 @@ public class PnlSeguimiento extends JPanel {
         titulos.add(Box.createVerticalStrut(4));
         titulos.add(subtitulo);
 
-        JLabel usuario = new JLabel("Administrador");
+        JLabel usuario = new JLabel(rol);
         usuario.setForeground(TEXTO);
         usuario.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
@@ -56,7 +126,8 @@ public class PnlSeguimiento extends JPanel {
         tabs.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabs.setBackground(BLANCO);
         tabs.addTab("Vigencias", crearVigencias());
-        tabs.addTab("Alertas", crearAlertas());
+        tabs.addTab("Alertas", alertas);
+        tabs.addChangeListener(e -> { if(tabs.getSelectedComponent()==alertas) alertas.refrescar(); });
 
         JPanel centro = new JPanel(new BorderLayout());
         centro.setOpaque(false);
@@ -76,67 +147,18 @@ public class PnlSeguimiento extends JPanel {
         filtros.setOpaque(false);
 
         filtros.add(new JLabel("Estado:"));
-        JComboBox<String> estado = new JComboBox<>(new String[]{
-                "Todos", "Vigente", "Próximo a vencer", "Vencido"
-        });
         estado.setPreferredSize(new Dimension(180, 36));
         filtros.add(estado);
 
         filtros.add(new JLabel("Curso:"));
-        JComboBox<String> curso = new JComboBox<>(new String[]{
-                "Todos", "Formación Básica", "Perfeccionamiento", "Protección Portuaria"
-        });
         curso.setPreferredSize(new Dimension(220, 36));
         filtros.add(curso);
 
-        filtros.add(botonSecundario("Consultar"));
-
-        String[] columnas = {"Trabajador", "Curso", "Vencimiento", "Días restantes", "Estado"};
-        Object[][] datos = {
-                {"Juan Carlos Pérez Soto", "Formación Básica", "12/10/2026", "18", "Próximo a vencer"},
-                {"María Elena Torres Ruiz", "Protección Portuaria", "25/10/2026", "31", "Próximo a vencer"},
-                {"Carlos Alberto Rojas Díaz", "Perfeccionamiento", "05/09/2026", "0", "Vencido"},
-                {"Ana Lucía Vásquez León", "Formación Básica", "18/03/2027", "175", "Vigente"}
-        };
-
+        JButton consultar=botonSecundario("Consultar");
+        consultar.addActionListener(e -> refrescar()); filtros.add(consultar);
         panel.add(filtros, BorderLayout.NORTH);
-        panel.add(scrollTabla(datos, columnas), BorderLayout.CENTER);
-        return panel;
-    }
-
-    private JPanel crearAlertas() {
-        JPanel panel = panelBase();
-
-        JPanel superior = new JPanel(new BorderLayout());
-        superior.setOpaque(false);
-
-        JLabel descripcion = new JLabel("Alertas generadas según las fechas y capacitaciones registradas");
-        descripcion.setForeground(TEXTO_SUAVE);
-        descripcion.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-
-        JComboBox<String> tipo = new JComboBox<>(new String[]{
-                "Todas", "Nueva asignación", "Recordatorio", "Próximo vencimiento"
-        });
-        tipo.setPreferredSize(new Dimension(210, 36));
-
-        JPanel filtro = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        filtro.setOpaque(false);
-        filtro.add(new JLabel("Tipo:"));
-        filtro.add(tipo);
-
-        superior.add(descripcion, BorderLayout.WEST);
-        superior.add(filtro, BorderLayout.EAST);
-
-        String[] columnas = {"Fecha", "Trabajador", "Tipo de alerta", "Capacitación", "Estado"};
-        Object[][] datos = {
-                {"24/09/2026", "Juan Carlos Pérez Soto", "Próximo vencimiento", "Formación Básica", "Generada"},
-                {"23/09/2026", "María Elena Torres Ruiz", "Recordatorio", "Protección Portuaria", "Generada"},
-                {"22/09/2026", "Ana Lucía Vásquez León", "Nueva asignación", "Perfeccionamiento", "Generada"},
-                {"20/09/2026", "Carlos Alberto Rojas Díaz", "Próximo vencimiento", "Perfeccionamiento", "Generada"}
-        };
-
-        panel.add(superior, BorderLayout.NORTH);
-        panel.add(scrollTabla(datos, columnas), BorderLayout.CENTER);
+        panel.add(scrollTabla(), BorderLayout.CENTER);
+        panel.add(mensaje, BorderLayout.SOUTH);
         return panel;
     }
 
@@ -147,14 +169,7 @@ public class PnlSeguimiento extends JPanel {
         return panel;
     }
 
-    private JScrollPane scrollTabla(Object[][] datos, String[] columnas) {
-        DefaultTableModel modelo = new DefaultTableModel(datos, columnas) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
+    private JScrollPane scrollTabla() {
         JTable tabla = new JTable(modelo);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(31);

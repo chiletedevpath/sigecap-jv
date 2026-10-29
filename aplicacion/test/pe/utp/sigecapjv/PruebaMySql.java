@@ -71,6 +71,7 @@ public class PruebaMySql {
                 PruebaReportesMySql.verificar();
                 PruebaNotificacionesMySql.verificar();
                 PruebaHistorialMySql.verificar();
+                PruebaVigenciasMySql.verificar();
                 return;
             }
 

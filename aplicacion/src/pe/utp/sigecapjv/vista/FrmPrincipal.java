@@ -78,6 +78,9 @@ public class FrmPrincipal extends JFrame {
             if (pnlCapacitaciones != null && !sesion.puede("capacitaciones", "gestionar"))
                 soloConsulta(pnlCapacitaciones);
         }
+        PnlSeguimiento vigencias = !"Trabajador".equals(sesion.getRol()) && sesion.puede("capacitaciones", "consultar")
+                ? new PnlSeguimiento(new VigenciasControlador(sesion),new NotificacionesControlador(sesion),sesion.getRol()) : null;
+        if(vigencias!=null) contenido.add(vigencias,"Seguimiento");
         PnlAlertas alertas = ("Trabajador".equals(sesion.getRol()) || sesion.puede("capacitaciones", "consultar"))
                 ? new PnlAlertas(new NotificacionesControlador(sesion)) : null;
         if (alertas != null) contenido.add(alertas, "Alertas");
@@ -103,7 +106,7 @@ public class FrmPrincipal extends JFrame {
         menu.add(Box.createVerticalStrut(30));
         for (String nombre : new String[]{"Inicio", "Personal", "Capacitaciones", "Seguimiento", "Reportes",
                 "Usuarios", "Alertas", "Mis capacitaciones"}) {
-            if (nombre.equals("Seguimiento")) {
+            if (nombre.equals("Seguimiento") && vigencias==null) {
                 continue;
             }
 
@@ -132,6 +135,7 @@ public class FrmPrincipal extends JFrame {
             boton.setFocusPainted(false);
             boton.setBorder(new EmptyBorder(0, 12, 0, 10));
             boolean disponible = nombre.equals("Inicio")
+                    || nombre.equals("Seguimiento") && vigencias!=null
                     || nombre.equals("Personal") && pnlPersonal != null
                     || nombre.equals("Capacitaciones") && pnlCapacitaciones != null
                     || nombre.equals("Usuarios") && usuarios != null
@@ -148,6 +152,7 @@ public class FrmPrincipal extends JFrame {
                                 : "Funcionalidad pendiente de implementación");
             }
             boton.addActionListener(e -> {
+                if (nombre.equals("Seguimiento")) vigencias.refrescar();
                 if (nombre.equals("Inicio")) pnlInicio.cargarResumen(inicioControlador);
                 if (nombre.equals("Mis capacitaciones")) misCapacitaciones.refrescar();
                 if (nombre.equals("Personal")) pnlPersonal.refrescar();
