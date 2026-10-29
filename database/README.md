@@ -6,7 +6,7 @@ La aplicación funcional requiere Java 17 o superior y MySQL 8.4. Los mockups de
 
 `001-esquema.sql` conserva el diseño físico entregado: 12 tablas InnoDB y la vista `vw_control_vigencias`. Ejecútalo una sola vez en una base nueva desde MySQL Workbench. Si ya creaste las tablas, no vuelvas a ejecutarlo: no es una migración incremental ni borra registros existentes.
 
-El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participacion`, `asistencia`, `resultado` y `certificado`. Las demás tablas están preparadas para etapas posteriores. La vista obtiene el estado actual por fecha; las alertas preventivas usan un umbral de 30 días. El estado de vigencia se calcula al consultar las fechas; `estadoVigencia` se guarda como NULL para evitar estados desactualizados.
+El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participacion`, `asistencia`, `resultado` y `certificado`. Usuarios, roles, permisos y notificaciones también están integrados. La vista obtiene el estado actual por fecha; las alertas preventivas usan un umbral de 30 días. El estado de vigencia se calcula al consultar las fechas; `estadoVigencia` se guarda como NULL para evitar estados desactualizados.
 
 ## Conexión local
 
@@ -31,7 +31,7 @@ Para ejecutar desde PowerShell, situado en la raíz del repositorio y con las va
 
 Sustituye ambas rutas por las instaladas en tu equipo. `-JavaHome` es opcional si JAVA_HOME o PATH ya resuelven el JDK. `-ConnectorJar` es opcional si SIGECAP_JDBC_JAR está definida o si el JAR existe en `%USERPROFILE%\.m2\repository\com\mysql\mysql-connector-j\26.7.0\`.
 
-No se cambia silenciosamente a memoria cuando falla MySQL. El error se muestra al usuario; no se muestran credenciales ni consultas SQL. Las operaciones tienen tiempos de espera de conexión y lectura. En esta etapa las consultas Swing son síncronas; una caída de la base puede bloquear brevemente la interfaz hasta el tiempo de espera.
+No se cambia silenciosamente a memoria cuando falla MySQL. El error se muestra al usuario; no se muestran credenciales ni consultas SQL. Las operaciones tienen tiempos de espera de conexión y lectura. Inicio, Historial, Mis capacitaciones y Seguimiento cargan sus consultas en segundo plano. Algunas pantallas todavía consultan de forma síncrona; una caída de la base puede bloquearlas brevemente hasta el tiempo de espera.
 
 ## Pruebas reproducibles
 
