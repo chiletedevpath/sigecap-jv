@@ -42,7 +42,7 @@ public class Participacion {
 
     public void actualizarEstado() {
         Validador.requerido(fechaAsignacion, "Fecha de asignación");
-        // El cumplimiento se incorporará con Asistencia y Resultado.
+        // Esta operación solo cambia la asignación; SeguimientoControlador registra el resultado.
         Validador.estado(estado, "PENDIENTE", "CANCELADA");
     }
 

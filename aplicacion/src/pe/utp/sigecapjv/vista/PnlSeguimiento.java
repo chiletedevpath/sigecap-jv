@@ -108,6 +108,7 @@ public class PnlSeguimiento extends JPanel {
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 26));
 
         JLabel subtitulo = new JLabel("Control de vigencias y alertas de capacitación");
+        subtitulo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
         subtitulo.setForeground(TEXTO_SUAVE);
         subtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
@@ -119,7 +120,7 @@ public class PnlSeguimiento extends JPanel {
         usuario.setForeground(TEXTO);
         usuario.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
-        cabecera.add(titulos, BorderLayout.WEST);
+        cabecera.add(titulos, BorderLayout.CENTER);
         cabecera.add(usuario, BorderLayout.EAST);
 
         JTabbedPane tabs = new JTabbedPane();
@@ -171,6 +172,9 @@ public class PnlSeguimiento extends JPanel {
 
     private JScrollPane scrollTabla() {
         JTable tabla = new JTable(modelo);
+        tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        int[] anchos = {250, 200, 180, 120, 110, 170};
+        for (int i=0; i<anchos.length; i++) tabla.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(31);
         tabla.setForeground(TEXTO);

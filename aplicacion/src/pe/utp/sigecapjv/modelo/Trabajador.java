@@ -22,7 +22,7 @@ public class Trabajador {
         this.estado = estado;
     }
 
-    // Valida el objeto; el controlador administra su registro en memoria.
+    // El modelo valida los datos; el controlador se encarga de guardarlos.
     public void registrar() {
         validar();
     }
@@ -45,7 +45,7 @@ public class Trabajador {
         cargo = cargo.trim();
     }
 
-    // Las firmas del UML se conservan; el historial completo pertenece a otra etapa.
+    // Las consultas con acceso a MySQL se realizan mediante HistorialControlador.
     public void consultarHistorial() {
         throw new UnsupportedOperationException("La consulta del historial todavía no está implementada.");
     }

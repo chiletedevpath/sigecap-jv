@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PersonalControlador {
-    // Mientras no exista persistencia, los registros se mantienen en memoria.
+    // Implementación en memoria usada por las pruebas; la aplicación usa PersonalJdbcControlador.
     private final List<Trabajador> trabajadores = new ArrayList<>();
     private int siguienteId = 1;
 

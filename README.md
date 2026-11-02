@@ -93,9 +93,14 @@ Desde la raíz del repositorio:
 
 # Inicio por perfil con MySQL temporal.
 .\aplicacion\probar-mysql.ps1 -Inicio
+
+# Suite completa y navegación de ventanas por perfil; requiere un escritorio activo.
+.\aplicacion\probar-mysql.ps1 -Ventanas
 ```
 
-La suite MySQL verifica el flujo de capacitación, persistencia entre procesos, usuarios, permisos, sesiones, reportes, historial, alertas y seguimiento. Crea su propio contenedor y lo elimina al terminar; no usa la base real. Las pruebas de Seguimiento comprueban la consulta de los tres perfiles autorizados y el rechazo del trabajador, además de filtros y limpieza de datos al cerrar sesión.
+La suite MySQL verifica el flujo de capacitación, persistencia entre procesos, usuarios, permisos, sesiones, reportes, historial, alertas y seguimiento. Crea su propio contenedor y lo elimina al terminar; no usa la base real. La opción `-Ventanas` abre los módulos con las cuatro cuentas de prueba, verifica el menú y el cierre de sesión, y guarda renders en `aplicacion/out/revision-perfiles/` para revisar el diseño. Esos archivos no se publican en Git.
+
+Las pruebas de Seguimiento comprueban la consulta de los tres perfiles autorizados y el rechazo del trabajador, además de filtros y limpieza de datos al cerrar sesión.
 
 ## Trabajo en equipo
 

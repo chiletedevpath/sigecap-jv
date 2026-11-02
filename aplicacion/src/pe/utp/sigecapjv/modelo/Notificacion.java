@@ -1,8 +1,7 @@
 package pe.utp.sigecapjv.modelo;
 
 /**
- * Clase base creada como parte de la estructura inicial del proyecto SIGECAP J&V.
- * Su implementación se completará progresivamente según los requerimientos del sistema.
+ * Aviso guardado para un trabajador, con su estado de lectura y clave de evento.
  */
 public class Notificacion {
         private int idNotificacion;

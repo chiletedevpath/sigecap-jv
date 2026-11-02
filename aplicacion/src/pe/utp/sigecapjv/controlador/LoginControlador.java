@@ -20,7 +20,7 @@ public class LoginControlador {
     }
 
     /**
-     * El llamador debe borrar su char[] después del uso.
+     * Quien llama a este método debe limpiar el char[] al terminar.
      */
     public SesionUsuario autenticar(String usuario, char[] clave) {
         if (usuario == null || usuario.isBlank() || usuario.strip().length() > 60 || clave == null || clave.length == 0 || clave.length > 128)

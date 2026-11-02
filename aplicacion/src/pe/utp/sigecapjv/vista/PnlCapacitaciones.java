@@ -229,7 +229,7 @@ public class PnlCapacitaciones extends JPanel {
         return panel;
     }
 
-    // Diseños conservados para las próximas etapas, todavía sin lógica de negocio.
+    // Paneles vacíos para las pruebas que no reciben un controlador de seguimiento.
     private JPanel crearAsistencia() {
         JPanel panel = panelBase();
 

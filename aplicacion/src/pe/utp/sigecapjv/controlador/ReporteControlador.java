@@ -15,9 +15,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * HU-JVR-011: consulta de solo lectura sobre los datos registrados por los demás módulos.
- * Todavía no existe un permiso propio de reportes; se exige consultar capacitaciones,
- * que según las reglas de roles también incluye consultar personal.
+ * Consulta y exportación de reportes. Usa el permiso de consulta de Capacitaciones.
  */
 public class ReporteControlador {
     private final SesionUsuario sesion;

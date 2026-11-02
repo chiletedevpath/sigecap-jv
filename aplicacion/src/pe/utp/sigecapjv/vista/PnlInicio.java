@@ -30,7 +30,7 @@ public class PnlInicio extends JPanel {
     private final Map<String, JLabel> indicadoresAdmin = new HashMap<>();
     private final Map<String, DefaultTableModel> tablasAdmin = new HashMap<>();
 
-    // La vista inicia vacía y recibe únicamente resultados del controlador MySQL.
+    // Los indicadores se cargan después de crear la vista.
     public PnlInicio() {
         this(Perfil.ADMINISTRADOR);
     }

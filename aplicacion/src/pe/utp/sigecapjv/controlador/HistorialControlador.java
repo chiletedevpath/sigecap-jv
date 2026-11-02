@@ -11,7 +11,7 @@ public class HistorialControlador {
 
     public HistorialControlador(SesionUsuario sesion) { this.sesion = sesion; }
 
-    // El trabajador no puede enviar un identificador ajeno desde la vista.
+    // El ID se toma de la sesión para impedir consultas de otro trabajador.
     public List<HistorialCapacitacion> consultarMisCapacitaciones() {
         return Jdbc.transaccion(c -> {
             if (sesion == null || !SesionControlador.vigente(c, sesion))
