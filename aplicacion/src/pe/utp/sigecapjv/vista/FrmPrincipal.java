@@ -122,6 +122,7 @@ public class FrmPrincipal extends JFrame {
                 continue;
             }
 
+            if (nombre.equals("Reportes") && reportesPanel == null) continue;
             if (nombre.equals("Alertas") && alertas == null) continue;
             if (nombre.equals("Mis capacitaciones") && misCapacitaciones == null) continue;
             JButton boton = new JButton(nombre);
@@ -240,7 +241,7 @@ public class FrmPrincipal extends JFrame {
                     JOptionPane.showMessageDialog(null, ex.getMessage(), "Acceso", JOptionPane.WARNING_MESSAGE);
                 } catch (IllegalStateException ex) {
                     if (!(ex.getCause() instanceof java.sql.SQLException)) throw ex;
-                    // Registrar códigos de diagnóstico sin publicar SQL ni datos de los registros.
+                    // El diagnóstico incluye solo SQLState y código; no expone datos ni credenciales.
                     java.sql.SQLException sql = (java.sql.SQLException) ex.getCause();
                     System.err.printf("MySQL: SQLState=%s, codigo=%d%n", sql.getSQLState(), sql.getErrorCode());
                     JOptionPane.showMessageDialog(null, ex.getMessage(), "MySQL", JOptionPane.ERROR_MESSAGE);

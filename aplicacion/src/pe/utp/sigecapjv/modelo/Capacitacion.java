@@ -81,7 +81,7 @@ public class Capacitacion {
         modalidad = modalidad.trim();
     }
 
-    // La composición del UML se mantiene: la capacitación contiene sus participaciones.
+    // Cada participación pertenece a esta capacitación.
     void agregarParticipacion(Participacion participacion) {
         exigirProgramada();
         if (participaciones.stream().anyMatch(

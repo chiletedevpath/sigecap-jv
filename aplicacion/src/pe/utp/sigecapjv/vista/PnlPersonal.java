@@ -67,6 +67,7 @@ public class PnlPersonal extends JPanel {
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 26));
 
         JLabel subtitulo = new JLabel("Registro y consulta del personal de Operaciones");
+        subtitulo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
         subtitulo.setForeground(TEXTO_SUAVE);
         subtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
@@ -78,7 +79,7 @@ public class PnlPersonal extends JPanel {
         usuario.setForeground(TEXTO);
         usuario.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
-        cabecera.add(titulos, BorderLayout.WEST);
+        cabecera.add(titulos, BorderLayout.CENTER);
         cabecera.add(usuario, BorderLayout.EAST);
 
         tabs.setFont(new Font("Segoe UI", Font.PLAIN, 13));
