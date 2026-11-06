@@ -6,6 +6,37 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NotificacionDAO {
+    public void avisarAsignacion(Connection c, int participacion) throws SQLException {
+        String sql = """
+                INSERT INTO notificacion (idTrabajador,tipo,mensaje,estado,claveEvento)
+                SELECT p.idTrabajador,'ASIGNACION',CONCAT('Capacitación asignada: ',cu.nombre,' - ',ca.fecha,' ',ca.horaInicio),
+                       'PENDIENTE',CONCAT('ASIGNACION:',p.idParticipacion)
+                FROM participacion p JOIN capacitacion ca USING (idCapacitacion) JOIN curso cu USING (idCurso)
+                WHERE p.idParticipacion=?
+                """;
+        try (PreparedStatement sentencia = c.prepareStatement(sql)) {
+            sentencia.setInt(1, participacion);
+            sentencia.executeUpdate();
+        }
+    }
+
+    public void generarRecordatorios(Connection c, Integer trabajador) throws SQLException {
+        String sql = """
+                INSERT INTO notificacion (idTrabajador,tipo,mensaje,estado,claveEvento)
+                SELECT p.idTrabajador,'RECORDATORIO',CONCAT(cu.nombre,' empieza el ',ca.fecha,' a las ',ca.horaInicio),
+                       'PENDIENTE',CONCAT('RECORDATORIO:',p.idParticipacion,':',ca.fecha,':',ca.horaInicio)
+                FROM participacion p JOIN capacitacion ca USING (idCapacitacion) JOIN curso cu USING (idCurso)
+                WHERE p.estado='PENDIENTE' AND ca.estado='PROGRAMADA'
+                  AND TIMESTAMP(ca.fecha,ca.horaInicio)>=CURRENT_TIMESTAMP
+                  AND ca.fecha<=CURRENT_DATE + INTERVAL 3 DAY
+                """ + (trabajador == null ? "" : " AND p.idTrabajador=?")
+                + " ORDER BY p.idParticipacion ON DUPLICATE KEY UPDATE idNotificacion=notificacion.idNotificacion";
+        try (PreparedStatement sentencia = c.prepareStatement(sql)) {
+            if (trabajador != null) sentencia.setInt(1, trabajador);
+            sentencia.executeUpdate();
+        }
+    }
+
     public void generarAlertasVencimiento(Connection c) throws SQLException {
         // Un evento por certificado, fecha y etapa. La clave única también protege consultas concurrentes.
         String sql = "INSERT INTO notificacion (idTrabajador,tipo,mensaje,estado,claveEvento) "

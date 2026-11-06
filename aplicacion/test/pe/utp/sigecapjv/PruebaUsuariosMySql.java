@@ -93,7 +93,10 @@ public final class PruebaUsuariosMySql {
                         return r.getInt(1);
                     }
                 });
-                gestion.guardar(datos(0,trabajador,idTrabajador,"trabajador_prueba","ACTIVO"),clave);
+                comprobar(gestion.trabajadoresDisponibles(0).stream().anyMatch(t -> t.getIdTrabajador()==idTrabajador));
+                int cuentaTrabajador=gestion.guardar(datos(0,trabajador,idTrabajador,"trabajador_prueba","ACTIVO"),clave);
+                comprobar(gestion.trabajadoresDisponibles(0).stream().noneMatch(t -> t.getIdTrabajador()==idTrabajador));
+                comprobar(gestion.trabajadoresDisponibles(cuentaTrabajador).stream().anyMatch(t -> t.getIdTrabajador()==idTrabajador));
                 try (SesionUsuario trabajadorSesion=login.autenticar("trabajador_prueba",clave)) {
                     comprobar(trabajadorSesion.getIdTrabajador().equals(idTrabajador));
                     comprobar(!trabajadorSesion.puede("personal","consultar") && !trabajadorSesion.puede("usuarios","gestionar"));

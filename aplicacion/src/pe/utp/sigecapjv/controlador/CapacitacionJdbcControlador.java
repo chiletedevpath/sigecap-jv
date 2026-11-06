@@ -12,6 +12,7 @@ import java.util.List;
 public class CapacitacionJdbcControlador extends CapacitacionControlador {
     private final SesionUsuario sesion;
 
+    private final NotificacionDAO avisos = new NotificacionDAO();
     private final CursoDAO cursos = new CursoDAO();
     private final CapacitacionDAO capacitaciones = new CapacitacionDAO();
     private final ParticipacionDAO participaciones = new ParticipacionDAO();
@@ -125,6 +126,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
             Participacion nueva = new Participacion(0, null, null, registrado, actual);
             nueva.asignarTrabajador();
             nueva.setIdParticipacion(participaciones.insertar(c, nueva));
+            avisos.avisarAsignacion(c, nueva.getIdParticipacion());
             return nueva.copia();
         });
     }

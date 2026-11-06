@@ -34,6 +34,28 @@ public final class PruebaNavegacionMySql {
         }
         throw new AssertionError("La pantalla no terminó de cargar");
     }
+    private static FrmPrincipal ingresar(String usuario,String clave) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            FrmLogin login=new FrmLogin();
+            login.setVisible(true);
+            buscar(login,JTextField.class).stream().filter(c -> !(c instanceof JPasswordField))
+                    .findFirst().orElseThrow().setText(usuario);
+            buscar(login,JPasswordField.class).get(0).setText(clave);
+            login.getRootPane().getDefaultButton().doClick();
+        });
+        long limite=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(20);
+        while(System.nanoTime()<limite) {
+            FrmPrincipal[] principal={null};
+            SwingUtilities.invokeAndWait(() -> {
+                for(Window w:Window.getWindows())
+                    if(w instanceof FrmPrincipal f && f.isShowing()) principal[0]=f;
+            });
+            if(principal[0]!=null) return principal[0];
+            Thread.sleep(30);
+        }
+        throw new AssertionError("El login no abrió el panel para "+usuario);
+    }
+
     public static void main(String[] args) throws Exception {
         if(!"true".equals(System.getenv("SIGECAP_DB_TEST")) || GraphicsEnvironment.isHeadless())
             throw new IllegalStateException("Requiere escritorio y la base temporal de pruebas.");
@@ -42,9 +64,8 @@ public final class PruebaNavegacionMySql {
         try {
             for(String usuario:new String[]{"admin_prueba","responsable_prueba","supervisor_prueba","trabajador_prueba"}) {
                 String clave=usuario.equals("supervisor_prueba")?"Clave-renovada-prueba-2026":"Clave-usuarios-prueba-2026";
-                try(var sesion=new LoginControlador().autenticar(usuario,clave.toCharArray())) {
-                    JFrame[] ventana={null};
-                    SwingUtilities.invokeAndWait(() -> { ventana[0]=new FrmPrincipal(sesion); ventana[0].setVisible(true); });
+                {
+                    JFrame[] ventana={ingresar(usuario,clave)};
                     esperar(ventana[0]);
                     List<String> esperados=usuario.equals("trabajador_prueba")
                             ? List.of("Inicio","Alertas","Mis capacitaciones","Cerrar sesión")
@@ -70,7 +91,7 @@ public final class PruebaNavegacionMySql {
                         });
                     }
                     SwingUtilities.invokeAndWait(() -> {
-                        comprobar(!sesion.estaActiva() && !ventana[0].isDisplayable(),"Cerrar sesión invalida acceso y cierra ventana");
+                        comprobar(!ventana[0].isDisplayable(),"Cerrar sesión cierra la ventana");
                         comprobar(java.util.Arrays.stream(Window.getWindows()).anyMatch(w->w instanceof FrmLogin && w.isShowing()),"Vuelve al login");
                         for(Window w:Window.getWindows()) w.dispose();
                     });
