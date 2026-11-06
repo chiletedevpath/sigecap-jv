@@ -116,6 +116,24 @@ public class CapacitacionControlador {
         return nueva.copia();
     }
 
+    public void asignarGrupo(List<Trabajador> grupo, Capacitacion capacitacion) {
+        Validador.requerido(capacitacion, "Capacitación");
+        List<Trabajador> ordenados = ordenarGrupo(grupo);
+        Capacitacion revision = buscarCapacitacion(capacitacion.getIdCapacitacion()).copia();
+        for (Trabajador t : ordenados) {
+            var registrado = personal.trabajadorRegistrado(t.getIdTrabajador());
+            new Participacion(0, null, null, registrado, revision).asignarTrabajador();
+        }
+        for (Trabajador t : ordenados) asignarTrabajador(t, capacitacion);
+    }
+
+    protected static List<Trabajador> ordenarGrupo(List<Trabajador> grupo) {
+        if (grupo == null || grupo.isEmpty()) throw new IllegalArgumentException("Seleccione al menos un trabajador.");
+        for (Trabajador t : grupo) Validador.requerido(t, "Trabajador");
+        // Todas las asignaciones múltiples bloquean los trabajadores en el mismo orden.
+        return grupo.stream().sorted(java.util.Comparator.comparingInt(Trabajador::getIdTrabajador)).toList();
+    }
+
     public List<Curso> listarCursos() {
         return cursos.stream().map(Curso::copia).toList();
     }

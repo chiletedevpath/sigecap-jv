@@ -30,6 +30,7 @@ public class PruebaFlujo {
         return new Capacitacion(0, LocalDate.now().plusDays(2), LocalTime.of(9, 0), LocalTime.of(13, 0), "Presencial", null, curso);
     }
     public static void main(String[] args) throws Exception {
+        PruebaSelectorParticipantes.verificar();
         PruebaAcceso.verificar();
         PruebaPermisosSwing.verificar();
         PruebaAsistencia.verificar();

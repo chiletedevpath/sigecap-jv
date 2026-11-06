@@ -125,18 +125,45 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
 
     @Override
     public Participacion asignarTrabajador(Trabajador trabajador, Capacitacion capacitacion) {
-        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(trabajador, "Trabajador");
         Validador.requerido(capacitacion, "Capacitación");
         return Jdbc.transaccion(c -> {
-            Capacitacion actual = capacitaciones.buscar(c, capacitacion.getIdCapacitacion(), true);
-            Trabajador registrado = new TrabajadorDAO().buscar(c, trabajador.getIdTrabajador(), true);
-            Participacion nueva = new Participacion(0, null, null, registrado, actual);
-            nueva.asignarTrabajador();
-            nueva.setIdParticipacion(participaciones.insertar(c, nueva));
-            avisos.avisarAsignacion(c, nueva.getIdParticipacion());
-            return nueva.copia();
+            Capacitacion actual = bloquearParaAsignar(c, capacitacion);
+            return insertarParticipante(c, actual, trabajador).copia();
         });
+    }
+
+    @Override
+    public void asignarGrupo(List<Trabajador> grupo, Capacitacion capacitacion) {
+        Validador.requerido(capacitacion, "Capacitación");
+        List<Trabajador> ordenados = ordenarGrupo(grupo);
+        Jdbc.transaccion(c -> {
+            Capacitacion actual = bloquearParaAsignar(c, capacitacion);
+            for (Trabajador t : ordenados) insertarParticipante(c, actual, t);
+            return null;
+        });
+    }
+
+    private Capacitacion bloquearParaAsignar(java.sql.Connection c, Capacitacion sesionCurso) throws java.sql.SQLException {
+        AccesoControlador.exigir(c, sesion, "capacitaciones", "gestionar");
+        return capacitaciones.buscar(c, sesionCurso.getIdCapacitacion(), true);
+    }
+
+    private Participacion insertarParticipante(java.sql.Connection c, Capacitacion actual, Trabajador trabajador)
+            throws java.sql.SQLException {
+        Trabajador registrado = new TrabajadorDAO().buscar(c, trabajador.getIdTrabajador(), true);
+        Participacion nueva = new Participacion(0, null, null, registrado, actual);
+        nueva.asignarTrabajador();
+        try {
+            nueva.setIdParticipacion(participaciones.insertar(c, nueva));
+        } catch (java.sql.SQLException ex) {
+            if (ex.getErrorCode() == 1062)
+                throw new IllegalStateException(registrado.getNombres() + " " + registrado.getApellidos()
+                        + " ya figura en la sesión. Revise la lista y vuelva a seleccionar.", ex);
+            throw ex;
+        }
+        avisos.avisarAsignacion(c, nueva.getIdParticipacion());
+        return nueva;
     }
 
     @Override
