@@ -49,8 +49,24 @@ public class PruebaMySql {
         Trabajador segundo = trabajador("70998812");
         personal.registrarTrabajador(primero);
         personal.registrarTrabajador(segundo);
-        gestion.asignarTrabajador(primero, sesion);
-        gestion.asignarTrabajador(segundo, sesion);
+        var grupo = java.util.List.of(segundo, primero);
+        rechazar(() -> gestion.asignarGrupo(java.util.List.of(), sesion));
+        segundo.setEstado("INACTIVO");
+        personal.actualizarTrabajador(segundo);
+        rechazar(() -> gestion.asignarGrupo(grupo, sesion));
+        comprobar(Jdbc.transaccion(c -> new HistorialDAO().consultar(c, primero.getIdTrabajador())).isEmpty(),
+                "Un trabajador inactivo revierte las asignaciones del grupo");
+        comprobar(Jdbc.transaccion(c -> new NotificacionDAO().listarPorTrabajador(c, primero.getIdTrabajador())).isEmpty(),
+                "Un grupo rechazado tampoco deja avisos");
+        segundo.setEstado("ACTIVO");
+        personal.actualizarTrabajador(segundo);
+        gestion.asignarGrupo(grupo, sesion);
+        rechazar(() -> gestion.asignarGrupo(grupo, sesion));
+        for (Trabajador t : grupo) {
+            var individuales = Jdbc.transaccion(c -> new NotificacionDAO().listarPorTrabajador(c, t.getIdTrabajador()));
+            comprobar(individuales.size()==1 && "ASIGNACION".equals(individuales.get(0).getTipo()),
+                    "Un aviso por participante aunque se reintente el grupo");
+        }
         sesion.setFecha(sesion.getFecha().plusDays(5));
         sesion.setModalidad("Virtual");
         gestion.actualizarCapacitacion(sesion);

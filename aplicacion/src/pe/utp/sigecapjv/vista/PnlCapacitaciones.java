@@ -217,7 +217,7 @@ public class PnlCapacitaciones extends JPanel {
         filtros.add(new JLabel("Capacitación:"));
         cap.setPreferredSize(new Dimension(420, 36));
         filtros.add(cap);
-        JButton asignar = botonPrimario("Asignar trabajador");
+        JButton asignar = botonPrimario("Asignar participantes");
         filtros.add(asignar);
         asignar.addActionListener(e -> asignar());
         cap.addActionListener(e -> refrescarParticipantes());
@@ -401,17 +401,31 @@ public class PnlCapacitaciones extends JPanel {
             JOptionPane.showMessageDialog(this, "Primero programe una capacitación.");
             return;
         }
-        Object[] trabajadores = personal.listarTrabajadores().toArray();
-        if (trabajadores.length == 0) {
-            JOptionPane.showMessageDialog(this, "Primero registre un trabajador en Personal.");
+        if (!"PROGRAMADA".equals(seleccionada.getEstado())) {
+            JOptionPane.showMessageDialog(this, "Seleccione una sesión programada.");
             return;
         }
-        Trabajador t = (Trabajador) JOptionPane.showInputDialog(
-                this, "Trabajador", "Asignar trabajador",
-                JOptionPane.PLAIN_MESSAGE, null, trabajadores,
-                trabajadores[0]);
-        if (t != null && ejecutar(() -> controlador.asignarTrabajador(t, seleccionada)))
-            JOptionPane.showMessageDialog(this, "Trabajador asignado correctamente.");
+        try {
+            var inscritos = seleccionada.getParticipaciones().stream()
+                    .map(p -> p.getTrabajador().getIdTrabajador()).collect(java.util.stream.Collectors.toSet());
+            var disponibles = personal.listarTrabajadores().stream()
+                    .filter(t -> "ACTIVO".equals(t.getEstado()) && !inscritos.contains(t.getIdTrabajador())).toList();
+            if (disponibles.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay trabajadores activos disponibles para esta sesión.");
+                return;
+            }
+            SelectorParticipantes selector = new SelectorParticipantes(disponibles);
+            if (JOptionPane.showConfirmDialog(this, selector, "Asignar participantes",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
+            var grupo = selector.seleccionados();
+            if (ejecutar(() -> controlador.asignarGrupo(grupo, seleccionada))) {
+                JOptionPane.showMessageDialog(this, "Participantes asignados: " + grupo.size());
+            } else {
+                refrescar();
+            }
+        } catch (SecurityException | IllegalStateException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Asignar participantes", JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     public void refrescar() {
