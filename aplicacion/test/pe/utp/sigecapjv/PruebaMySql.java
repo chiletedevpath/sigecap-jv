@@ -40,6 +40,38 @@ public class PruebaMySql {
         return false;
     }
 
+    private static void probarCambiosDeSesion(PersonalJdbcControlador personal, CapacitacionJdbcControlador gestion,
+                                              SesionUsuario admin) {
+        Curso curso = gestion.listarCursos().stream().filter(c -> "PRUEBA".equals(c.getCodigo())).findFirst().orElseThrow();
+        Capacitacion sesion = capacitacion(curso);
+        gestion.programarCapacitacion(sesion);
+        Trabajador primero = trabajador("70998811");
+        Trabajador segundo = trabajador("70998812");
+        personal.registrarTrabajador(primero);
+        personal.registrarTrabajador(segundo);
+        gestion.asignarTrabajador(primero, sesion);
+        gestion.asignarTrabajador(segundo, sesion);
+        sesion.setFecha(sesion.getFecha().plusDays(5));
+        sesion.setModalidad("Virtual");
+        gestion.actualizarCapacitacion(sesion);
+        gestion.actualizarCapacitacion(sesion);
+        gestion.cancelarCapacitacion(sesion.getIdCapacitacion());
+        rechazar(() -> gestion.cancelarCapacitacion(sesion.getIdCapacitacion()));
+        var avisos = new NotificacionesControlador(admin).obtenerAlertasActualizadas();
+        for (Trabajador persona : java.util.List.of(primero, segundo)) {
+            var propios = avisos.stream().filter(n -> n.getIdTrabajador()==persona.getIdTrabajador()).toList();
+            for (String tipo : java.util.List.of("REPROGRAMACION", "CANCELACION")) {
+                var cambios = propios.stream().filter(n -> tipo.equals(n.getTipo())).toList();
+                comprobar(cambios.size()==1 && cambios.get(0).getMensaje().contains(sesion.getFecha().toString())
+                        && cambios.get(0).getMensaje().contains("Virtual"), "Aviso único con la programación vigente");
+            }
+            var fila = Jdbc.transaccion(c -> new HistorialDAO().consultar(c, persona.getIdTrabajador())).get(0);
+            comprobar(fila.fecha().equals(sesion.getFecha()) && fila.horaInicio().equals(sesion.getHoraInicio())
+                    && fila.horaFin().equals(sesion.getHoraFin()) && fila.modalidad().equals("Virtual")
+                    && fila.estado().equals("CANCELADA"), "El historial refleja los cambios y la cancelación");
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         if (!"true".equals(System.getenv("SIGECAP_DB_TEST"))) {
             throw new IllegalStateException("Solo ejecutar en una base aislada con SIGECAP_DB_TEST=true.");
@@ -72,6 +104,7 @@ public class PruebaMySql {
                 PruebaNotificacionesMySql.verificar();
                 PruebaHistorialMySql.verificar();
                 PruebaVigenciasMySql.verificar();
+                probarCambiosDeSesion(personal, gestion, admin);
                 return;
             }
 
