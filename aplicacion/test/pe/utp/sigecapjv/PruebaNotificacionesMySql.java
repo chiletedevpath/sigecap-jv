@@ -95,17 +95,32 @@ public final class PruebaNotificacionesMySql {
             var misAlertas = propias.obtenerAlertasActualizadas();
             comprobar(misAlertas.stream().allMatch(n -> n.getIdTrabajador()==trabajador.getIdTrabajador()), "Solo devuelve alertas propias");
             comprobar(misAlertas.stream().anyMatch(n -> n.getIdNotificacion()==propia), "Incluye aviso propio");
-            comprobar(consulta.obtenerAlertasActualizadas().size()==antes.size(), "Trabajador no genera avisos");
+            comprobar(consulta.obtenerAlertasActualizadas().size()==antes.size(), "Consultar avisos anteriores conserva el total");
             rechazar(() -> propias.marcarComoLeida(ajena));
             comprobar(consulta.obtenerAlertasActualizadas().stream().anyMatch(n -> n.getIdNotificacion()==ajena && "PENDIENTE".equals(n.getEstado())), "Aviso ajeno permanece pendiente");
             propias.marcarComoLeida(propia);
             propias.marcarComoLeida(propia);
             comprobar(propias.obtenerAlertasActualizadas().stream().anyMatch(n -> n.getIdNotificacion()==propia && "LEIDA".equals(n.getEstado())), "Lectura propia persistente e idempotente");
             rechazar(() -> propias.marcarComoLeida(Integer.MAX_VALUE));
+            int[] sesiones = Jdbc.transaccion(c -> {
+                int curso = Jdbc.insertar(c,"INSERT INTO curso(codigo,nombre,tipo) VALUES ('REC','Curso recordatorio','Interno')");
+                int[] ids = new int[2];
+                for (int i=0; i<ids.length; i++) {
+                    int cap = Jdbc.insertar(c,"INSERT INTO capacitacion(idCurso,fecha,horaInicio,horaFin,modalidad) VALUES (?,CURDATE()+INTERVAL ? DAY,'08:00','09:00','Presencial')",curso,3+i);
+                    ids[i] = Jdbc.insertar(c,"INSERT INTO participacion(idTrabajador,idCapacitacion,fechaAsignacion) VALUES (?,?,CURDATE())",trabajador.getIdTrabajador(),cap);
+                }
+                return ids;
+            });
+            var recordatorios = propias.obtenerAlertasActualizadas();
+            var aviso = recordatorios.stream().filter(n -> n.getClaveEvento().startsWith("RECORDATORIO:"+sesiones[0]+":")).findFirst().orElseThrow();
+            comprobar(recordatorios.stream().noneMatch(n -> n.getClaveEvento().startsWith("RECORDATORIO:"+sesiones[1]+":")), "Fuera del plazo de tres días");
+            propias.marcarComoLeida(aviso.getIdNotificacion());
+            var repetida = propias.obtenerAlertasActualizadas();
+            comprobar(repetida.size()==recordatorios.size() && repetida.stream().anyMatch(n -> n.getIdNotificacion()==aviso.getIdNotificacion() && "LEIDA".equals(n.getEstado())), "Reconsultar conserva el recordatorio leído");
             SwingUtilities.invokeAndWait(() -> {
                 PnlAlertas panel=new PnlAlertas(propias); panel.refrescar();
                 JTable tabla=encontrar(panel,JTable.class);
-                comprobar(tabla.getRowCount()==misAlertas.size(), "Pantalla muestra solo alertas propias");
+                comprobar(tabla.getRowCount()==repetida.size(), "Pantalla muestra solo alertas propias");
                 for(int f=0;f<tabla.getRowCount();f++) comprobar(tabla.getValueAt(f,1).equals(trabajador.getIdTrabajador()), "Pantalla aislada por trabajador");
                 trabajador.close(); panel.refrescar();
                 comprobar(tabla.getRowCount()==0, "Sesion cerrada limpia alertas visibles");

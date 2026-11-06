@@ -116,6 +116,14 @@ public class PruebaMySql {
             t.setEstado("ACTIVO"); personal.actualizarTrabajador(t);
             Participacion p = gestion.asignarTrabajador(t, cap);
             comprobar(p.getIdParticipacion() > 0 && "PENDIENTE".equals(p.getEstado()), "Asignación persistida");
+            try (Connection lectura = ConexionBD.obtenerConexion();
+                 var aviso = lectura.prepareStatement("SELECT idTrabajador,tipo FROM notificacion WHERE claveEvento=?")) {
+                aviso.setString(1, "ASIGNACION:" + p.getIdParticipacion());
+                try (ResultSet filas = aviso.executeQuery()) {
+                    comprobar(filas.next() && filas.getInt(1)==t.getIdTrabajador()
+                            && "ASIGNACION".equals(filas.getString(2)) && !filas.next(), "Aviso de asignación persistido para el trabajador");
+                }
+            }
             // La extracción a DAO debe conservar el bloqueo de ambas entidades.
             try (Connection lectura = ConexionBD.obtenerConexion(); Connection cambio = ConexionBD.obtenerConexion()) {
                 lectura.setAutoCommit(false);

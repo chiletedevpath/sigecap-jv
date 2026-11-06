@@ -14,7 +14,7 @@ La aplicación ya trabaja con datos de MySQL. El flujo disponible es registrar u
 | Inicio | Consultar tarjetas y tablas con datos reales según el perfil. |
 | Mis capacitaciones | Consultar el historial del trabajador que inició sesión, con filtros por estado. |
 | Seguimiento | Consultar certificados, vencimientos y días restantes; filtrar por curso y vigencia. |
-| Alertas | Consultar avisos de vencimiento y marcarlos como leídos según el acceso del usuario. |
+| Alertas | Consultar asignaciones, recordatorios y avisos de vencimiento y marcarlos como leídos según el acceso del usuario. |
 | Reportes | Filtrar el consolidado de capacitaciones y exportarlo a PDF. |
 
 Se ingresa con **nombre de usuario y contraseña**. El correo es un dato de contacto. La opción **Crear primer administrador** aparece únicamente cuando la base no tiene usuarios. Si ya existe una cuenta, no hay que crearla nuevamente.
@@ -27,13 +27,26 @@ Las vigencias de Inicio, Historial, Seguimiento y Reportes usan la fecha de MySQ
 
 Administrador y Responsable generan avisos al consultar Alertas con permiso de gestión. Supervisor solo consulta. El trabajador puede leer y marcar únicamente sus propios avisos. Volver a consultar no duplica el mismo evento. La pestaña Alertas de Seguimiento utiliza este mismo módulo.
 
+## Recorrido para la presentación
+
+1. Ingresa como Administrador. En Personal registra al trabajador y en Usuarios crea su cuenta con el rol Trabajador. El selector muestra los trabajadores disponibles para vincular.
+2. Ingresa como Responsable de capacitaciones. Programa una sesión para mañana y asigna al trabajador.
+3. Ingresa con la cuenta del trabajador. Abre Mis capacitaciones y Alertas, comprueba el curso y marca el aviso como leído. Cierra sesión y vuelve a ingresar para verificar que la lectura quedó guardada.
+4. Ingresa como Supervisor y consulta la programación. Con los permisos iniciales de este perfil puedes revisar los datos y reportes.
+
 ## Qué falta
 
-- Completar la revisión visual y la aceptación del flujo completo con los cuatro perfiles en el equipo de presentación. Las pruebas automatizadas no sustituyen esa revisión.
-- Revisar con el equipo y contrastar con el informe los criterios de entrega de las historias de usuario antes de dar el proyecto por terminado.
-- Preparar la base definitiva para la presentación, con respaldo previo y creación del administrador. Todavía no se han eliminado los datos actuales.
+El cierre del proyecto también debe cubrir pruebas, despliegue y operación. Tomamos el sílabo como guía de trabajo; los criterios de evaluación específicos deben confirmarse con el docente.
 
-Las alertas se generan al consultar: no existe un proceso automático en segundo plano ni envío por correo o WhatsApp. Las evidencias de certificados son archivos locales y los PDF se guardan en el equipo desde el que se ejecuta la aplicación.
+1. **Empaquetado con Maven.** Configurar compilación Java 17, dependencias, ejecución de pruebas y distribución de la aplicación. Actualmente compilamos con PowerShell y `javac`; Docker tampoco usa Maven. Mantendremos la ejecución local mientras validamos el nuevo empaquetado.
+2. **Evidencia de pruebas y seguridad.** Relacionar las historias de usuario con los casos y resultados de prueba. Ya comprobamos permisos, sesiones, aislamiento y validaciones; falta consolidar la revisión de seguridad y sus observaciones. Tener pruebas no demuestra por sí solo que se haya aplicado TDD.
+3. **Monitoreo.** Registrar errores de forma consistente sin exponer contraseñas ni datos personales, y definir qué revisar cuando falle la aplicación o MySQL. Evaluaremos una biblioteca de logs para una necesidad concreta.
+4. **Mantenimiento.** Preparar y probar respaldo y restauración en una base aislada, y definir el procedimiento de actualización. No basta con generar un respaldo: debemos comprobar que se puede recuperar.
+5. **Aceptación y entrega.** Revisar el flujo completo con los cuatro perfiles en el equipo de presentación, contrastar las historias con el informe y completar las instrucciones de usuario. La revisión del grupo sigue pendiente aunque las pruebas automatizadas pasen.
+
+También debemos contrastar el informe con los entregables de planificación y diseño del curso: Lean Canvas, Project Charter, Gantt, WBS, requerimientos, BPM y diseños de base de datos. Su revisión documental no está cerrada. La base definitiva de presentación se preparará con respaldo previo; todavía no se han eliminado los datos actuales.
+
+Asignar un trabajador genera un aviso al guardar. Al abrir Alertas se generan recordatorios de las sesiones pendientes que empiezan entre hoy y los próximos tres días. El trabajador recibe únicamente los suyos. Los avisos se consultan dentro de SIGECAP: no existe un proceso automático en segundo plano ni envío por correo o WhatsApp. Las evidencias de certificados son archivos locales y los PDF se guardan en el equipo desde el que se ejecuta la aplicación.
 
 ## Cómo ejecutarlo
 

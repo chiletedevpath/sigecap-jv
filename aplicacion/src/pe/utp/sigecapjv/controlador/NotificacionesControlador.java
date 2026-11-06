@@ -24,9 +24,16 @@ public class NotificacionesControlador {
         if (sesion == null) throw new SecurityException("Debe iniciar sesión.");
         return Jdbc.transaccion(c -> {
             c.setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_COMMITTED);
-            if (esTrabajador()) return dao.listarPorTrabajador(c, trabajadorVigente(c));
+            if (esTrabajador()) {
+                int trabajador = trabajadorVigente(c);
+                dao.generarRecordatorios(c, trabajador);
+                return dao.listarPorTrabajador(c, trabajador);
+            }
             AccesoControlador.exigir(c, sesion, "capacitaciones", "consultar");
-            if (puedeGestionar()) dao.generarAlertasVencimiento(c);
+            if (puedeGestionar()) {
+                dao.generarRecordatorios(c, null);
+                dao.generarAlertasVencimiento(c);
+            }
             return dao.listarNotificaciones(c);
         });
     }
