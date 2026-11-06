@@ -48,7 +48,7 @@ public class NotificacionDAO {
                 FROM participacion p JOIN capacitacion ca USING (idCapacitacion) JOIN curso cu USING (idCurso)
                 WHERE p.estado='PENDIENTE' AND ca.estado='PROGRAMADA'
                   AND TIMESTAMP(ca.fecha,ca.horaInicio)>=CURRENT_TIMESTAMP
-                  AND ca.fecha<=CURRENT_DATE + INTERVAL 3 DAY
+                  AND ca.fecha<=ADDDATE(CURRENT_DATE,(SELECT diasRecordatorio FROM configuracion_alertas WHERE id=1))
                 """ + (trabajador == null ? "" : " AND p.idTrabajador=?")
                 + " ORDER BY p.idParticipacion ON DUPLICATE KEY UPDATE idNotificacion=notificacion.idNotificacion";
         try (PreparedStatement sentencia = c.prepareStatement(sql)) {
@@ -64,7 +64,7 @@ public class NotificacionDAO {
                 + "CONCAT(nombreCurso, ' - certificado ', numeroCertificado, ' - vence el ', fechaVencimiento), "
                 + "'PENDIENTE', CONCAT('VENCIMIENTO:',idCertificado,':',fechaVencimiento,':',"
                 + "CASE WHEN diasRestantes<0 THEN 'VENCIDO' ELSE 'POR_VENCER' END) "
-                + "FROM vw_control_vigencias WHERE fechaVencimiento IS NOT NULL AND diasRestantes<=30 "
+                + "FROM vw_control_vigencias WHERE fechaVencimiento IS NOT NULL AND diasRestantes<=(SELECT diasVencimiento FROM configuracion_alertas WHERE id=1) "
                 + "ORDER BY idCertificado ON DUPLICATE KEY UPDATE idNotificacion=notificacion.idNotificacion";
         try (PreparedStatement p = c.prepareStatement(sql)) { p.executeUpdate(); }
     }

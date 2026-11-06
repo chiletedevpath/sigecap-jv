@@ -4,9 +4,19 @@ La aplicación funcional requiere Java 17 o superior y MySQL 8.4. Los mockups de
 
 ## Esquema
 
-`001-esquema.sql` conserva el diseño físico entregado: 12 tablas InnoDB y la vista `vw_control_vigencias`. Ejecútalo una sola vez en una base nueva desde MySQL Workbench. Si ya creaste las tablas, no vuelvas a ejecutarlo: no es una migración incremental ni borra registros existentes.
+`001-esquema.sql` conserva el diseño físico entregado: 12 tablas del diseño original, una tabla de configuración y la vista `vw_control_vigencias`. Ejecútalo una sola vez en una base nueva desde MySQL Workbench. Si ya creaste las tablas, no vuelvas a ejecutarlo: no es una migración incremental ni borra registros existentes.
 
-El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participacion`, `asistencia`, `resultado` y `certificado`. Usuarios, roles, permisos y notificaciones también están integrados. La vista obtiene el estado actual por fecha; las alertas preventivas usan un umbral de 30 días. El estado de vigencia se calcula al consultar las fechas; `estadoVigencia` se guarda como NULL para evitar estados desactualizados.
+### Actualizar los plazos en una instalación existente
+
+Desde Workbench, con una cuenta administrativa y conectado a la misma instancia que usa Java, ejecuta `003-plazos-alertas.sql`. Puedes repetirlo: conserva los plazos que haya guardado el administrador. Después otorga estos permisos a la cuenta de conexión de la aplicación. Ajusta el usuario y el host si tu instalación usa otra cuenta.
+
+```sql
+GRANT SELECT, UPDATE ON sigecap_jv.configuracion_alertas TO 'sigecap_app'@'%';
+```
+
+En un volumen Docker existente aplica los mismos pasos al MySQL del puerto publicado. En volúmenes nuevos Compose ya crea la tabla y concede los permisos.
+
+El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participacion`, `asistencia`, `resultado` y `certificado`. Usuarios, roles, permisos y notificaciones también están integrados. La vista obtiene el estado actual por fecha; las alertas preventivas usan el plazo guardado en configuracion_alertas (inicialmente 30 días). El estado de vigencia se calcula al consultar las fechas; `estadoVigencia` se guarda como NULL para evitar estados desactualizados.
 
 ## Conexión local
 

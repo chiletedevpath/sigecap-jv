@@ -19,7 +19,7 @@ public class ReporteDAO {
                 "SELECT p.idParticipacion,p.idTrabajador,t.nombres,t.apellidos,cu.nombre AS curso,ca.fecha,"
                         + ESTADO + " AS estado,r.condicion,ce.idCertificado,ce.numero,ce.fechaEmision,"
                         + "ce.fechaVencimiento, CASE WHEN ce.idCertificado IS NULL THEN 'SIN_CERTIFICADO' "
-                        + "WHEN v.diasRestantes BETWEEN 0 AND 30 THEN 'PROXIMO_A_VENCER' "
+                        + "WHEN v.diasRestantes BETWEEN 0 AND (SELECT diasVencimiento FROM configuracion_alertas WHERE id=1) THEN 'PROXIMO_A_VENCER' "
                         + "ELSE v.estadoActual END AS vigencia FROM participacion p "
                         + "JOIN trabajador t ON t.idTrabajador=p.idTrabajador "
                         + "JOIN capacitacion ca ON ca.idCapacitacion=p.idCapacitacion "

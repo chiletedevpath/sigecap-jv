@@ -127,6 +127,35 @@ public final class PruebaNotificacionesMySql {
             });
             rechazar(propias::obtenerAlertasActualizadas);
             rechazar(() -> propias.marcarComoLeida(propia));
+            var inicial = control.consultarPlazos();
+            comprobar(inicial.equals(new NotificacionesControlador.Plazos(30, 3)), "Plazos iniciales");
+            var ampliado = new NotificacionesControlador.Plazos(31, 4);
+            rechazar(() -> consulta.guardarPlazos(inicial, ampliado));
+            rechazar(() -> new NotificacionesControlador.Plazos(366, 2));
+            control.guardarPlazos(inicial, ampliado);
+            try {
+                comprobar(new NotificacionesControlador(admin).consultarPlazos().equals(ampliado), "Preferencias persistidas");
+                rechazar(() -> control.guardarPlazos(inicial, new NotificacionesControlador.Plazos(0, 0)));
+                var ampliadas = control.obtenerAlertasActualizadas();
+                comprobar(ampliadas.stream().anyMatch(n -> n.getClaveEvento().startsWith("VENCIMIENTO:"+certificados[3]+":")), "Aviso al ampliar a 31 días");
+                int titular = ampliadas.stream().filter(n -> n.getClaveEvento().startsWith("VENCIMIENTO:"+certificados[3]+":"))
+                        .findFirst().orElseThrow().getIdTrabajador();
+                Jdbc.transaccion(c -> {
+                    String proximo = "PROXIMO_A_VENCER";
+                    comprobar(new InicioDAO().obtenerResumen(c, titular).proximasVencer()==3, "Inicio aplica el plazo configurado");
+                    comprobar(new VigenciaDAO().consultar(c).stream().anyMatch(f -> "ALERTA-3".equals(f.certificado())
+                            && proximo.equals(f.estado())), "Seguimiento incluye el certificado a 31 días");
+                    comprobar(new HistorialDAO().consultar(c, titular).stream().anyMatch(f -> "ALERTA-3".equals(f.certificado())
+                            && proximo.equals(f.vigencia())), "Historial usa el plazo del administrador");
+                    var filtro = new pe.utp.sigecapjv.modelo.Reporte(null,null,null,null,null,proximo);
+                    comprobar(new ReporteDAO().consultar(c, filtro).stream().filter(f -> f.curso().equals("Curso alertas")
+                            && proximo.equals(f.vigencia())).count()==3, "Reportes clasifica con el mismo plazo");
+                    return null;
+                });
+                comprobar(ampliadas.stream().anyMatch(n -> n.getClaveEvento().startsWith("RECORDATORIO:"+sesiones[1]+":")), "Recordatorio al ampliar a cuatro días");
+            } finally {
+                control.guardarPlazos(ampliado, inicial);
+            }
             admin.close(); rechazar(control::obtenerAlertasActualizadas);
         }
         System.out.println("OK: "+total+" comprobaciones MySQL y Swing de notificaciones.");

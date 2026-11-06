@@ -23,9 +23,11 @@ El administrador gestiona usuarios y permisos. Por defecto, el responsable de ca
 
 Los resultados admiten una nota opcional de 0 a 20 y requieren asistencia registrada. El certificado requiere un resultado favorable. Su evidencia se guarda como una ruta a un archivo local: el sistema no copia ni publica ese archivo.
 
-Las vigencias de Inicio, Historial, Seguimiento y Reportes usan la fecha de MySQL. Un certificado es próximo a vencer desde hoy hasta 30 días inclusive; está vencido después de su fecha de vencimiento. Sin fecha de vencimiento figura NO_APLICA; una participación sin certificado figura SIN_CERTIFICADO en Historial y Reportes. Seguimiento muestra únicamente certificados existentes.
+Las vigencias de Inicio, Historial, Seguimiento y Reportes usan la fecha de MySQL. Un certificado es próximo a vencer desde hoy hasta el plazo configurado inclusive (30 días inicialmente); está vencido después de su fecha de vencimiento. Sin fecha de vencimiento figura NO_APLICA; una participación sin certificado figura SIN_CERTIFICADO en Historial y Reportes. Seguimiento muestra únicamente certificados existentes.
 
 Administrador y Responsable generan avisos al consultar Alertas con permiso de gestión. Supervisor solo consulta. El trabajador puede leer y marcar únicamente sus propios avisos. Volver a consultar no duplica el mismo evento. La pestaña Alertas de Seguimiento utiliza este mismo módulo.
+
+Desde **Alertas → Configurar plazos**, el administrador puede definir entre 0 y 365 días para vencimientos y recordatorios por separado. Cero incluye solo hoy para el aviso anticipado. Los cambios se aplican en la siguiente consulta y los avisos ya emitidos conservan su estado de lectura. Para actualizar una instalación existente, aplica primero la migración de plazos indicada en la guía de base de datos.
 
 ## Recorrido para la presentación
 
@@ -46,7 +48,7 @@ El cierre del proyecto también debe cubrir pruebas, despliegue y operación. To
 
 También debemos contrastar el informe con los entregables de planificación y diseño del curso: Lean Canvas, Project Charter, Gantt, WBS, requerimientos, BPM y diseños de base de datos. Su revisión documental no está cerrada. La base definitiva de presentación se preparará con respaldo previo; todavía no se han eliminado los datos actuales.
 
-Asignar un trabajador genera un aviso al guardar. Si el responsable cambia el curso, fecha, horario o modalidad, cada participante pendiente recibe la nueva programación. Cancelar la sesión también genera un aviso. El trabajador consulta el horario y la modalidad en Mis capacitaciones. Al abrir Alertas se generan recordatorios de las sesiones pendientes que empiezan entre hoy y los próximos tres días. El trabajador recibe únicamente los suyos. Los avisos se consultan dentro de SIGECAP: no existe un proceso automático en segundo plano ni envío por correo o WhatsApp. Las evidencias de certificados son archivos locales y los PDF se guardan en el equipo desde el que se ejecuta la aplicación.
+Asignar un trabajador genera un aviso al guardar. Si el responsable cambia el curso, fecha, horario o modalidad, cada participante pendiente recibe la nueva programación. Cancelar la sesión también genera un aviso. El trabajador consulta el horario y la modalidad en Mis capacitaciones. Al abrir Alertas se generan recordatorios de las sesiones pendientes que empiezan dentro del plazo configurado (tres días inicialmente). El trabajador recibe únicamente los suyos. Los avisos se consultan dentro de SIGECAP: no existe un proceso automático en segundo plano ni envío por correo o WhatsApp. Las evidencias de certificados son archivos locales y los PDF se guardan en el equipo desde el que se ejecuta la aplicación.
 
 ## Cómo ejecutarlo
 

@@ -37,7 +37,7 @@ public class InicioDAO {
                        AND c.estado <> 'CANCELADA' AND (? IS NULL OR p.idTrabajador=?)) AS pendientes,
                     (SELECT COUNT(*)
                      FROM vw_control_vigencias
-                     WHERE diasRestantes BETWEEN 0 AND 30 AND (? IS NULL OR idTrabajador=?)) AS proximas,
+                     WHERE diasRestantes BETWEEN 0 AND (SELECT diasVencimiento FROM configuracion_alertas WHERE id=1) AND (? IS NULL OR idTrabajador=?)) AS proximas,
                     (SELECT COUNT(*)
                      FROM vw_control_vigencias
                      WHERE estadoActual = 'VENCIDO' AND (? IS NULL OR idTrabajador=?)) AS vencidas
@@ -109,7 +109,7 @@ public class InicioDAO {
                     nombreCurso AS curso,
                     fechaVencimiento
                 FROM vw_control_vigencias
-                WHERE diasRestantes BETWEEN 0 AND 30 AND (? IS NULL OR idTrabajador=?)
+                WHERE diasRestantes BETWEEN 0 AND (SELECT diasVencimiento FROM configuracion_alertas WHERE id=1) AND (? IS NULL OR idTrabajador=?)
                 ORDER BY fechaVencimiento, idCertificado
                 LIMIT 20
                 """;
