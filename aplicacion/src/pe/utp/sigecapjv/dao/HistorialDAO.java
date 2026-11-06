@@ -10,7 +10,7 @@ import java.util.List;
 public class HistorialDAO {
     public List<HistorialCapacitacion> consultar(Connection c, int trabajador) throws SQLException {
         String sql = """
-                SELECT p.idParticipacion, cu.nombre, ca.fecha,
+                SELECT p.idParticipacion, cu.nombre, ca.fecha, ca.horaInicio, ca.horaFin, ca.modalidad,
                        CASE WHEN ca.estado='CANCELADA' THEN 'CANCELADA' ELSE p.estado END AS estado,
                        a.condicion AS asistencia, r.condicion AS resultado, r.calificacion,
                        ce.numero, ce.fechaVencimiento,
@@ -36,7 +36,8 @@ public class HistorialDAO {
                         r.getInt("idParticipacion"), r.getString("nombre"), r.getObject("fecha", LocalDate.class),
                         r.getString("estado"), r.getString("asistencia"), r.getString("resultado"),
                         r.getBigDecimal("calificacion"), r.getString("numero"),
-                        r.getObject("fechaVencimiento", LocalDate.class), r.getString("vigencia")));
+                        r.getObject("fechaVencimiento", LocalDate.class), r.getString("vigencia"),
+                        r.getTime("horaInicio").toLocalTime(), r.getTime("horaFin").toLocalTime(), r.getString("modalidad")));
             }
         }
         return List.copyOf(filas);

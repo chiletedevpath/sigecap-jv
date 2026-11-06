@@ -20,6 +20,26 @@ public class NotificacionDAO {
         }
     }
 
+    public void avisarCambioSesion(Connection c, int capacitacion, boolean cancelada) throws SQLException {
+        String tipo = cancelada ? "CANCELACION" : "REPROGRAMACION";
+        String detalle = cancelada ? "Sesión cancelada: " : "Programación actualizada: ";
+        String sql = """
+                INSERT INTO notificacion (idTrabajador,tipo,mensaje,estado,claveEvento)
+                SELECT p.idTrabajador,?,CONCAT(?,cu.nombre,' - ',ca.fecha,' de ',ca.horaInicio,
+                       ' a ',ca.horaFin,' (',ca.modalidad,')'),'PENDIENTE',CONCAT(?,':',p.idParticipacion)
+                FROM participacion p JOIN capacitacion ca USING (idCapacitacion) JOIN curso cu USING (idCurso)
+                WHERE p.idCapacitacion=? AND p.estado='PENDIENTE'
+                ORDER BY p.idParticipacion
+                """;
+        try (PreparedStatement aviso = c.prepareStatement(sql)) {
+            aviso.setString(1, tipo);
+            aviso.setString(2, detalle);
+            aviso.setString(3, tipo + ":" + java.util.UUID.randomUUID());
+            aviso.setInt(4, capacitacion);
+            aviso.executeUpdate();
+        }
+    }
+
     public void generarRecordatorios(Connection c, Integer trabajador) throws SQLException {
         String sql = """
                 INSERT INTO notificacion (idTrabajador,tipo,mensaje,estado,claveEvento)

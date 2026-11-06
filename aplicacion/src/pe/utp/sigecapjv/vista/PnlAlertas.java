@@ -15,7 +15,7 @@ public class PnlAlertas extends JPanel {
         @Override public boolean isCellEditable(int fila, int columna) { return false; }
     };
     private final JTable tabla = new JTable(modelo);
-    private final JComboBox<String> tipo = new JComboBox<>(new String[]{"Todos", "ASIGNACION", "RECORDATORIO", "POR_VENCER", "VENCIDO"});
+    private final JComboBox<String> tipo = new JComboBox<>(new String[]{"Todos", "ASIGNACION", "REPROGRAMACION", "CANCELACION", "RECORDATORIO", "POR_VENCER", "VENCIDO"});
     private final JComboBox<String> estado = new JComboBox<>(new String[]{"Todos", "PENDIENTE", "LEIDA"});
     private final JLabel mensaje = new JLabel("Pulse Consultar para cargar las alertas.");
 

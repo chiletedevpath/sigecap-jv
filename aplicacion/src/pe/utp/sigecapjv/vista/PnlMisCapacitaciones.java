@@ -197,7 +197,7 @@ public class PnlMisCapacitaciones extends JPanel {
                 "Estado",
                 "Resultado",
                 "Certificación",
-                "Vigencia"
+                "Vigencia", "Horario", "Modalidad"
         };
 
         modelo = new DefaultTableModel(columnas, 0) {
@@ -206,7 +206,7 @@ public class PnlMisCapacitaciones extends JPanel {
 
         JTable tabla = new JTable(modelo);
         tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        int[] anchos = {210, 105, 125, 125, 160, 270};
+        int[] anchos = {210, 105, 125, 125, 160, 270, 125, 100};
         for (int i=0;i<anchos.length;i++) tabla.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(31);
@@ -264,7 +264,8 @@ public class PnlMisCapacitaciones extends JPanel {
                     for (var f : filas) if (filtro == null || filtro.equals(f.estado())) modelo.addRow(new Object[]{
                             f.curso(), f.fecha().format(formato), f.estado(), f.resultado() == null ? "Pendiente" : f.resultado(),
                             f.certificado() == null ? "Pendiente" : f.certificado(),
-                            f.vencimiento() == null ? f.vigencia() : f.vencimiento().format(formato) + " · " + f.vigencia()});
+                            f.vencimiento() == null ? f.vigencia() : f.vencimiento().format(formato) + " · " + f.vigencia(),
+                            f.horaInicio() + " – " + f.horaFin(), f.modalidad()});
                     mensaje.setText(modelo.getRowCount() == 0 ? "No hay capacitaciones para esta consulta." : "Consulta actualizada. Las tarjetas resumen todo su historial.");
                 } catch (Exception ex) {
                     modelo.setRowCount(0);

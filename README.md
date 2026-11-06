@@ -46,7 +46,7 @@ El cierre del proyecto también debe cubrir pruebas, despliegue y operación. To
 
 También debemos contrastar el informe con los entregables de planificación y diseño del curso: Lean Canvas, Project Charter, Gantt, WBS, requerimientos, BPM y diseños de base de datos. Su revisión documental no está cerrada. La base definitiva de presentación se preparará con respaldo previo; todavía no se han eliminado los datos actuales.
 
-Asignar un trabajador genera un aviso al guardar. Al abrir Alertas se generan recordatorios de las sesiones pendientes que empiezan entre hoy y los próximos tres días. El trabajador recibe únicamente los suyos. Los avisos se consultan dentro de SIGECAP: no existe un proceso automático en segundo plano ni envío por correo o WhatsApp. Las evidencias de certificados son archivos locales y los PDF se guardan en el equipo desde el que se ejecuta la aplicación.
+Asignar un trabajador genera un aviso al guardar. Si el responsable cambia el curso, fecha, horario o modalidad, cada participante pendiente recibe la nueva programación. Cancelar la sesión también genera un aviso. El trabajador consulta el horario y la modalidad en Mis capacitaciones. Al abrir Alertas se generan recordatorios de las sesiones pendientes que empiezan entre hoy y los próximos tres días. El trabajador recibe únicamente los suyos. Los avisos se consultan dentro de SIGECAP: no existe un proceso automático en segundo plano ni envío por correo o WhatsApp. Las evidencias de certificados son archivos locales y los PDF se guardan en el equipo desde el que se ejecuta la aplicación.
 
 ## Cómo ejecutarlo
 

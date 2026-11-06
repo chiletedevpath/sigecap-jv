@@ -80,6 +80,13 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
                                                   datos.getHoraFin(), datos.getModalidad(), actual.getEstado(), curso);
             nueva.actualizar();
             capacitaciones.actualizar(c, nueva);
+            if (actual.getCurso().getIdCurso() != nueva.getCurso().getIdCurso()
+                    || !actual.getFecha().equals(nueva.getFecha())
+                    || !actual.getHoraInicio().equals(nueva.getHoraInicio())
+                    || !actual.getHoraFin().equals(nueva.getHoraFin())
+                    || !actual.getModalidad().equals(nueva.getModalidad())) {
+                avisos.avisarCambioSesion(c, nueva.getIdCapacitacion(), false);
+            }
             return null;
         });
     }
@@ -103,6 +110,7 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
             if (cerrar) actual.cerrar();
             else actual.cancelar();
             capacitaciones.actualizar(c, actual);
+            if (!cerrar) avisos.avisarCambioSesion(c, id, true);
             return null;
         });
     }
