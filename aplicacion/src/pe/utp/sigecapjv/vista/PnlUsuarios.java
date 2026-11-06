@@ -501,13 +501,20 @@ public class PnlUsuarios extends JPanel {
         tabla.setFont(
                 new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(31);
+        tabla.setForeground(TEXTO);
+        tabla.setGridColor(new Color(232, 235, 239));
+        tabla.setSelectionBackground(new Color(224, 235, 246));
+        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        tabla.getTableHeader().setBackground(new Color(239, 243, 247));
+        tabla.getTableHeader().setForeground(TEXTO);
         tabla.setFillsViewportHeight(true);
         tabla.setSelectionMode(
                 ListSelectionModel.SINGLE_SELECTION);
 
         panel.add(superior, BorderLayout.NORTH);
-        panel.add(
-                new JScrollPane(tabla), BorderLayout.CENTER);
+        JScrollPane scroll = new JScrollPane(tabla);
+        scroll.setBorder(BorderFactory.createLineBorder(BORDE));
+        panel.add(scroll, BorderLayout.CENTER);
 
         JPanel acciones =
                 new JPanel(new FlowLayout(FlowLayout.RIGHT));
