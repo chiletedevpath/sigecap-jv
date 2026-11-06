@@ -9,6 +9,7 @@ clave_sql=${SIGECAP_DB_PASSWORD//\'/\'\'}
     for tabla in trabajador curso capacitacion participacion asistencia resultado certificado notificacion usuario rol permiso rol_permiso; do
         printf "GRANT SELECT, INSERT, UPDATE ON sigecap_jv.%s TO 'sigecap_app'@'%%';\n" "$tabla"
     done
+    printf "GRANT SELECT, UPDATE ON sigecap_jv.configuracion_alertas TO 'sigecap_app'@'%%';\n"
     printf "GRANT SELECT ON sigecap_jv.vw_control_vigencias TO 'sigecap_app'@'%%';\n"
     printf "GRANT DELETE ON sigecap_jv.rol_permiso TO 'sigecap_app'@'%%';\n"
 } | MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql --protocol=socket -uroot

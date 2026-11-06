@@ -12,7 +12,7 @@ public class VigenciaDAO {
         String sql = """
                 SELECT idCurso, CONCAT(nombres,' ',apellidos) AS trabajador, nombreCurso,
                        numeroCertificado, fechaVencimiento, diasRestantes,
-                       CASE WHEN diasRestantes BETWEEN 0 AND 30 THEN 'PROXIMO_A_VENCER'
+                       CASE WHEN diasRestantes BETWEEN 0 AND (SELECT diasVencimiento FROM configuracion_alertas WHERE id=1) THEN 'PROXIMO_A_VENCER'
                             ELSE estadoActual END AS vigencia
                 FROM vw_control_vigencias
                 ORDER BY fechaVencimiento IS NULL, fechaVencimiento, apellidos, nombres, idCertificado

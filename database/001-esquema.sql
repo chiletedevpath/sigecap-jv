@@ -242,6 +242,15 @@ CREATE TABLE notificacion (
     INDEX ix_notificacion_fecha (fechaGeneracion)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS configuracion_alertas (
+    id TINYINT PRIMARY KEY CHECK (id = 1),
+    diasVencimiento SMALLINT NOT NULL CHECK (diasVencimiento BETWEEN 0 AND 365),
+    diasRecordatorio SMALLINT NOT NULL CHECK (diasRecordatorio BETWEEN 0 AND 365)
+) ENGINE=InnoDB;
+
+INSERT INTO configuracion_alertas (id,diasVencimiento,diasRecordatorio)
+VALUES (1,30,3) ON DUPLICATE KEY UPDATE id=1;
+
 -- VISTA DE CONSULTA (NO ES UNA TABLA): CONTROL ACTUAL DE VIGENCIAS
 -- El estado se calcula en tiempo de consulta; no depende de un job diario.
 -- El periodo para identificar 'proximos a vencer' debe configurarse en la
@@ -278,7 +287,7 @@ INNER JOIN curso AS cu ON cu.idCurso = ca.idCurso;
 
 -- ============================================================================
 -- VERIFICACIONES (solo lectura)
--- Deben aparecer 12 tablas y 1 vista.
+-- Deben aparecer 13 tablas y 1 vista.
 -- ============================================================================
 SELECT COUNT(*) AS totalTablas
 FROM information_schema.TABLES

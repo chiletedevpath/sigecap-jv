@@ -111,7 +111,7 @@ public class PruebaMySql {
             try (Connection c = ConexionBD.obtenerConexion();
                  Statement s = c.createStatement()) {
                 try (ResultSet r = s.executeQuery("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_type='BASE TABLE'")) {
-                    r.next(); comprobar(r.getInt(1) == 12, "Doce tablas");
+                    r.next(); comprobar(r.getInt(1) == 13, "Trece tablas");
                 }
                 try (ResultSet r = s.executeQuery("SELECT COUNT(*) FROM information_schema.views WHERE table_schema=DATABASE()")) {
                     r.next(); comprobar(r.getInt(1) == 1, "Una vista");

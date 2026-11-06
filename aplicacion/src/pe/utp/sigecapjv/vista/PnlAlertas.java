@@ -46,12 +46,38 @@ public class PnlAlertas extends JPanel {
             } catch (SecurityException | IllegalArgumentException | IllegalStateException ex) { modelo.setRowCount(0); mensaje.setText(ex.getMessage()); }
         });
         filtros.add(leida);
+        if (controlador.puedeConfigurar()) {
+            JButton configurar = new JButton("Configurar plazos");
+            configurar.addActionListener(e -> configurarPlazos());
+            cabecera.add(configurar, BorderLayout.EAST);
+        }
         cabecera.add(filtros,BorderLayout.CENTER);
         add(cabecera,BorderLayout.NORTH);
         tabla.setRowHeight(30); tabla.setFillsViewportHeight(true);
         tabla.getColumnModel().getColumn(4).setPreferredWidth(440);
         add(new JScrollPane(tabla),BorderLayout.CENTER);
         add(mensaje,BorderLayout.SOUTH);
+    }
+
+    private void configurarPlazos() {
+        try {
+            var anterior = controlador.consultarPlazos();
+            JSpinner vencimiento = new JSpinner(new SpinnerNumberModel(anterior.vencimiento(), 0, 365, 1));
+            JSpinner recordatorio = new JSpinner(new SpinnerNumberModel(anterior.recordatorio(), 0, 365, 1));
+            Object[] campos = {"Días antes del vencimiento del certificado", vencimiento,
+                    "Días antes de la capacitación", recordatorio};
+            if (JOptionPane.showConfirmDialog(this, campos, "Anticipación de alertas",
+                    JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+            vencimiento.commitEdit();
+            recordatorio.commitEdit();
+            var nuevo = new NotificacionesControlador.Plazos((int) vencimiento.getValue(), (int) recordatorio.getValue());
+            if (!nuevo.equals(anterior)) controlador.guardarPlazos(anterior, nuevo);
+            refrescar();
+        } catch (java.text.ParseException ex) {
+            mensaje.setText("Ingrese días enteros entre 0 y 365.");
+        } catch (IllegalStateException | SecurityException | IllegalArgumentException ex) {
+            mensaje.setText(ex.getMessage());
+        }
     }
 
     public void refrescar() {

@@ -17,7 +17,7 @@ public class HistorialDAO {
                        CASE WHEN ce.idCertificado IS NULL THEN 'SIN_CERTIFICADO'
                             WHEN ce.fechaVencimiento IS NULL THEN 'NO_APLICA'
                             WHEN ce.fechaVencimiento < CURDATE() THEN 'VENCIDO'
-                            WHEN DATEDIFF(ce.fechaVencimiento,CURDATE()) <= 30 THEN 'PROXIMO_A_VENCER'
+                            WHEN DATEDIFF(ce.fechaVencimiento,CURDATE()) <= (SELECT diasVencimiento FROM configuracion_alertas WHERE id=1) THEN 'PROXIMO_A_VENCER'
                             ELSE 'VIGENTE' END AS vigencia
                 FROM participacion p
                 JOIN capacitacion ca ON ca.idCapacitacion=p.idCapacitacion
