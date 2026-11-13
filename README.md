@@ -1,79 +1,94 @@
 # SIGECAP J&V
 
-SIGECAP es un sistema de gestión de cursos de capacitación para el área de Operaciones de J&V Resguardo. Lo desarrollamos como proyecto académico con Java 17, Swing y MySQL. Permite registrar trabajadores, organizar capacitaciones y consultar sus resultados, certificados y vencimientos.
+SIGECAP es el sistema de gestión de cursos de capacitación que desarrollamos para el área de Operaciones de J&V Resguardo como proyecto del Curso Integrador I. Está hecho con Java 17, Swing y MySQL.
+
+El sistema permite registrar trabajadores, programar cursos, asignar participantes y llevar el control de asistencia, resultados, certificados y vencimientos. Cada usuario ingresa con su cuenta y accede a los módulos que corresponden a su perfil.
 
 ## Qué hemos avanzado
 
-La aplicación ya trabaja con datos de MySQL. El flujo disponible es registrar un trabajador y un curso, programar la capacitación, asignar participantes y registrar asistencia, resultado y certificado.
+Los módulos trabajan con datos guardados en MySQL.
 
-| Módulo | Qué permite hacer |
+| Módulo | Funciones disponibles |
 | --- | --- |
-| Acceso y usuarios | Iniciar sesión, crear usuarios, asignar roles, editar permisos y activar o desactivar cuentas. |
-| Personal | Registrar y actualizar trabajadores; consultar su historial de capacitación. |
-| Capacitaciones | Administrar cursos, programar sesiones, asignar participantes y registrar asistencia, resultados y certificados. |
-| Inicio | Consultar tarjetas y tablas con datos reales según el perfil. |
-| Mis capacitaciones | Consultar el historial del trabajador que inició sesión, con filtros por estado. |
-| Seguimiento | Consultar certificados, vencimientos y días restantes; filtrar por curso y vigencia. |
-| Alertas | Consultar asignaciones, recordatorios y avisos de vencimiento y marcarlos como leídos según el acceso del usuario. |
-| Reportes | Filtrar el consolidado de capacitaciones y exportarlo a PDF. |
+| Acceso y usuarios | Inicio de sesión, creación y edición de cuentas, asignación de roles, permisos y activación o desactivación de usuarios. |
+| Personal | Registro y actualización de trabajadores, con consulta de su historial de capacitación. |
+| Capacitaciones | Registro de cursos, programación y modificación de sesiones, asignación individual o grupal, asistencia, resultados y certificados. |
+| Inicio | Resumen de capacitaciones y vencimientos según el perfil. |
+| Mis capacitaciones | Historial propio del trabajador, con fecha, horario, modalidad, resultado, certificado y vigencia. |
+| Seguimiento | Consulta de certificados y días restantes, con filtros por curso y estado de vigencia. |
+| Alertas | Avisos de asignación, reprogramación, cancelación, recordatorios y vencimientos. |
+| Reportes | Consulta del consolidado con filtros y exportación a PDF. |
 
-Se ingresa con **nombre de usuario y contraseña**. El correo es un dato de contacto. La opción **Crear primer administrador** aparece únicamente cuando la base no tiene usuarios. Si ya existe una cuenta, no hay que crearla nuevamente.
+### Usuarios y acceso
 
-Cada perfil puede usar Cambiar contraseña desde el menú, indicando su contraseña actual y confirmando la nueva. Al guardar debe iniciar sesión nuevamente. Las otras sesiones abiertas con la contraseña anterior pierden acceso al validar su sesión o realizar una operación protegida. El administrador gestiona usuarios y permisos. Por defecto, el responsable de capacitaciones puede gestionar Personal y Capacitaciones; el supervisor consulta la información; el trabajador ve sus propios datos. Seguimiento requiere consultar Capacitaciones y no está disponible para el trabajador. El historial de Personal requiere consultar Personal y Capacitaciones. Los cambios de rol, permisos, contraseña o estado invalidan las sesiones anteriores.
+Se ingresa con el **nombre de usuario y la contraseña**. El correo se registra como dato de contacto. La opción **Crear primer administrador** aparece cuando la base todavía carece de cuentas.
 
-Los resultados admiten una nota opcional de 0 a 20 y requieren asistencia registrada. El certificado requiere un resultado favorable. Su evidencia se guarda como una ruta a un archivo local: el sistema no copia ni publica ese archivo.
+El administrador gestiona usuarios, roles y permisos. Con los permisos iniciales, el responsable gestiona Personal y Capacitaciones, el supervisor consulta la información y el trabajador accede a sus propios datos.
 
-Las vigencias de Inicio, Historial, Seguimiento y Reportes usan la fecha de MySQL. Un certificado es próximo a vencer desde hoy hasta el plazo configurado inclusive (30 días inicialmente); está vencido después de su fecha de vencimiento. Sin fecha de vencimiento figura NO_APLICA; una participación sin certificado figura SIN_CERTIFICADO en Historial y Reportes. Seguimiento muestra únicamente certificados existentes.
+Todos los perfiles pueden cambiar su contraseña desde el menú. Deben ingresar la actual y confirmar la nueva, de entre 12 y 128 caracteres. Después vuelven al login. Los formularios incluyen un botón de ojo para mostrar u ocultar cada contraseña.
 
-Administrador y Responsable generan avisos al consultar Alertas con permiso de gestión. Supervisor solo consulta. El trabajador puede leer y marcar únicamente sus propios avisos. Volver a consultar no duplica el mismo evento. La pestaña Alertas de Seguimiento utiliza este mismo módulo.
+Los cambios de rol, permisos, contraseña o estado invalidan las sesiones anteriores cuando se comprueba su vigencia o se intenta realizar una operación protegida. El sistema exige conservar al menos un administrador activo.
 
-Desde **Alertas → Configurar plazos**, el administrador puede definir entre 0 y 365 días para vencimientos y recordatorios por separado. Cero incluye solo hoy para el aviso anticipado. Los cambios se aplican en la siguiente consulta y los avisos ya emitidos conservan su estado de lectura. Para actualizar una instalación existente, aplica primero la migración de plazos indicada en la guía de base de datos.
+### Capacitaciones y seguimiento
 
-## Recorrido para la presentación
+En **Capacitaciones → Participantes** se puede buscar por DNI o nombre y seleccionar varios trabajadores activos. La selección se conserva al cambiar la búsqueda. Las inscripciones y sus avisos se guardan juntos. Si una inscripción falla, se revierte el grupo completo.
 
-1. Ingresa como Administrador. En Personal registra al trabajador y en Usuarios crea su cuenta con el rol Trabajador. El selector muestra los trabajadores disponibles para vincular.
-2. Ingresa como Responsable de capacitaciones. Programa una sesión para mañana y asigna al trabajador.
-3. Ingresa con la cuenta del trabajador. Abre Mis capacitaciones y Alertas, comprueba el curso y marca el aviso como leído. Cierra sesión y vuelve a ingresar para verificar que la lectura quedó guardada.
-4. Ingresa como Supervisor y consulta la programación. Con los permisos iniciales de este perfil puedes revisar los datos y reportes.
+Cuando cambia el curso, la fecha, el horario o la modalidad de una sesión, sus participantes pendientes reciben un aviso con la programación actualizada. La cancelación también genera un aviso.
+
+El registro de resultados requiere asistencia. La nota es opcional y admite valores de 0 a 20. Para registrar un certificado debe existir un resultado favorable. La evidencia del certificado se conserva como una ruta a un archivo local.
+
+### Vigencias y alertas
+
+Inicio, Historial, Seguimiento y Reportes calculan la vigencia con la fecha de MySQL y el plazo configurado. Un certificado pasa a vencido después de su fecha de vencimiento. Los certificados sin fecha de vencimiento figuran como NO_APLICA.
+
+Desde **Alertas → Configurar plazos**, el administrador puede definir por separado la anticipación de vencimientos y recordatorios, entre 0 y 365 días. Los valores iniciales son 30 días para certificados y 3 para capacitaciones. Cero considera el día actual para la anticipación. Los cambios se aplican en la siguiente consulta.
+
+Los avisos de asignación y cambios de programación se guardan al realizar la operación. Los recordatorios y avisos de vencimiento se generan al consultar Alertas. El trabajador consulta y marca sus propios avisos como leídos. Consultar nuevamente conserva la lectura y evita repetir el mismo evento.
+
+Los avisos se muestran dentro de SIGECAP. Las evidencias y los PDF exportados se gestionan como archivos locales.
 
 ## Qué falta
 
-El cierre del proyecto también debe cubrir pruebas, despliegue y operación. Tomamos el sílabo como guía de trabajo; los criterios de evaluación específicos deben confirmarse con el docente.
+- Completar Seguimiento con filtros por trabajador y rango de fechas de vencimiento. El criterio de entidad requiere precisar su significado y su relación con el modelo de datos antes de implementarlo.
+- Revisar con el grupo un caso completo en el equipo de presentación, desde la asignación hasta el certificado y el reporte, usando los cuatro perfiles.
+- Mejorar los mensajes cuando falte una actualización de la base o falle la conexión.
+- Comprobar un respaldo y su restauración en una base separada.
+- Contrastar las historias y limitaciones del informe con las funciones terminadas y registrar los resultados de aceptación.
 
-1. **Empaquetado con Maven.** Configurar compilación Java 17, dependencias, ejecución de pruebas y distribución de la aplicación. Actualmente compilamos con PowerShell y `javac`; Docker tampoco usa Maven. Mantendremos la ejecución local mientras validamos el nuevo empaquetado.
-2. **Evidencia de pruebas y seguridad.** Relacionar las historias de usuario con los casos y resultados de prueba. Ya comprobamos permisos, sesiones, aislamiento y validaciones; falta consolidar la revisión de seguridad y sus observaciones. Tener pruebas no demuestra por sí solo que se haya aplicado TDD.
-3. **Monitoreo.** Registrar errores de forma consistente sin exponer contraseñas ni datos personales, y definir qué revisar cuando falle la aplicación o MySQL. Evaluaremos una biblioteca de logs para una necesidad concreta.
-4. **Mantenimiento.** Preparar y probar respaldo y restauración en una base aislada, y definir el procedimiento de actualización. No basta con generar un respaldo: debemos comprobar que se puede recuperar.
-5. **Aceptación y entrega.** Revisar el flujo completo con los cuatro perfiles en el equipo de presentación, contrastar las historias con el informe y completar las instrucciones de usuario. La revisión del grupo sigue pendiente aunque las pruebas automatizadas pasen.
-
-También debemos contrastar el informe con los entregables de planificación y diseño del curso: Lean Canvas, Project Charter, Gantt, WBS, requerimientos, BPM y diseños de base de datos. Su revisión documental no está cerrada. La base definitiva de presentación se preparará con respaldo previo; todavía no se han eliminado los datos actuales.
-
-Desde Capacitaciones → Participantes puedes buscar por DNI o nombre y marcar varios trabajadores activos para una sesión. La selección se conserva al cambiar la búsqueda. Al confirmar, MySQL guarda el grupo y un aviso individual por trabajador en una sola transacción. Si alguien ya fue asignado o dejó de estar activo, se revierte el grupo. Si el responsable cambia el curso, fecha, horario o modalidad, cada participante pendiente recibe la nueva programación. Cancelar la sesión también genera un aviso. El trabajador consulta el horario y la modalidad en Mis capacitaciones. Al abrir Alertas se generan recordatorios de las sesiones pendientes que empiezan dentro del plazo configurado (tres días inicialmente). El trabajador recibe únicamente los suyos. Los avisos se consultan dentro de SIGECAP: no existe un proceso automático en segundo plano ni envío por correo o WhatsApp. Las evidencias de certificados son archivos locales y los PDF se guardan en el equipo desde el que se ejecuta la aplicación.
+El empaquetado con Maven quedó aplazado. La ejecución disponible utiliza IntelliJ, los scripts PowerShell o Docker. La prioridad actual es cerrar las funciones y su validación con el grupo.
 
 ## Cómo ejecutarlo
 
+Ejecuta los comandos desde la raíz del repositorio.
+
+### Preparar MySQL
+
+Necesitas JDK 17 o superior, MySQL y MySQL Connector/J. Las pruebas de integración usan MySQL 8.4.
+
+Para una base nueva, ejecuta el esquema y prepara la cuenta de conexión siguiendo la guía. Si ya tenías la base antes de incorporar los plazos configurables, aplica la migración de plazos y concede los permisos indicados antes de iniciar la versión actual. [Guía de base de datos](database/README.md)
+
 ### Desde IntelliJ o PowerShell
 
-Necesitas JDK 17 o superior, MySQL 8.4 y MySQL Connector/J. La [guía de base de datos](database/README.md) explica cómo crear el esquema y configurar la cuenta de conexión. El esquema se ejecuta una sola vez en una base nueva; no lo vuelvas a ejecutar sobre una instalación existente.
+Configura estas variables en el proceso que inicia Java.
 
-Configura estas variables en el proceso que inicia la aplicación:
-
-| Variable | Valor |
+| Variable | Contenido |
 | --- | --- |
-| `SIGECAP_DB_URL` | URL de tu base, por ejemplo `jdbc:mysql://localhost:3306/sigecap_jv`. |
-| `SIGECAP_DB_USER` | Cuenta de MySQL para la aplicación. |
-| `SIGECAP_DB_PASSWORD` | Contraseña de esa cuenta. |
-| `SIGECAP_JDBC_JAR` | Ruta al JAR de Connector/J, si el lanzador no lo encuentra en la caché Maven. |
+| SIGECAP_DB_URL | URL JDBC de tu instalación, por ejemplo jdbc:mysql://localhost:3306/sigecap_jv. |
+| SIGECAP_DB_USER | Cuenta de MySQL con permisos para la aplicación. |
+| SIGECAP_DB_PASSWORD | Contraseña de esa cuenta MySQL. |
+| SIGECAP_JDBC_JAR | Ruta a Connector/J, si el lanzador necesita una ubicación distinta de la caché Maven. |
 
-En IntelliJ abre la raíz del repositorio, selecciona el JDK y ejecuta **SIGECAP MySQL**. La clase principal es `pe.utp.sigecapjv.vista.FrmPrincipal`. Guarda las credenciales en la configuración local, no en los archivos compartidos.
+Las credenciales de conexión se guardan en la configuración local del equipo.
 
-Desde PowerShell, situado en la raíz del repositorio y con las variables configuradas:
+En IntelliJ abre la raíz del repositorio, selecciona el JDK y ejecuta **SIGECAP MySQL**. La clase de entrada es `pe.utp.sigecapjv.vista.FrmPrincipal`, que abre el login.
+
+Desde PowerShell, con las variables configuradas, ejecuta lo siguiente.
 
 ```powershell
 .\aplicacion\ejecutar.ps1
 ```
 
-Si el JDK o Connector/J no se detectan, indica sus rutas reales:
+Si necesitas indicar la ubicación del JDK o del conector, sustituye las rutas de ejemplo por las de tu equipo.
 
 ```powershell
 .\aplicacion\ejecutar.ps1 -JavaHome 'C:\ruta\al\jdk' -ConnectorJar 'C:\ruta\mysql-connector-j-26.7.0.jar'
@@ -81,51 +96,49 @@ Si el JDK o Connector/J no se detectan, indica sus rutas reales:
 
 ### Con Docker
 
-En Windows 11, Docker Desktop con WSL 2 y WSLg permite ejecutar MySQL y la ventana Swing. Desde la raíz del repositorio, copia `.env.example` como `.env` y define `SIGECAP_MYSQL_ROOT_PASSWORD` y `SIGECAP_DB_PASSWORD`. Después ejecuta:
+En Windows 11, la ventana Swing utiliza Docker Desktop con WSL 2 y WSLg. Copia `.env.example` como `.env` y define `SIGECAP_MYSQL_ROOT_PASSWORD` y `SIGECAP_DB_PASSWORD`.
 
 ```powershell
 docker compose up -d --build
 ```
 
-Para volver a abrir la aplicación después de cerrarla, usa `docker compose up -d app`. Para detener los servicios, usa `docker compose down`; los datos permanecen en el volumen. **No añadas `-v` si quieres conservarlos.**
+Para volver a abrir la aplicación después de cerrarla, ejecuta `docker compose up -d app`. Para detener los servicios conservando el volumen de datos, usa `docker compose down`.
 
-Si Docker no dispone del socket WSLg, levanta solo la base con `docker compose up -d db` y ejecuta Java desde IntelliJ o PowerShell. En ese caso la URL es `jdbc:mysql://localhost:3307/sigecap_jv` y el usuario es `sigecap_app`, con la contraseña definida en `.env`. El lanzador PowerShell no carga `.env` automáticamente.
+También puedes levantar la base con `docker compose up -d db` y ejecutar Java en IntelliJ o PowerShell. Con la configuración predeterminada, usa `jdbc:mysql://localhost:3307/sigecap_jv`, la cuenta `sigecap_app` y la contraseña definida en `.env`. Configura esas variables también en el proceso de Java.
 
-La base de Docker en el puerto 3307 es independiente de un MySQL local en el 3306. Sus cuentas y datos no se copian entre ambas. Los scripts de inicialización solo se ejecutan al crear el volumen: cambiar `.env` no cambia las contraseñas de una base existente. Consulta la guía de base de datos para actualizar permisos sin borrar registros.
-
-Los PDF exportados desde Docker quedan en `reportes/`.
+La instalación Docker usa su propio volumen y sus propias cuentas. Los scripts de inicialización se ejecutan al crear ese volumen. En una base existente, las migraciones y los cambios de contraseña se aplican sobre esa instalación. Los PDF exportados desde Docker quedan en `reportes/`.
 
 ## Pruebas
 
-Desde la raíz del repositorio:
+Para comprobar modelos, controladores y eventos Swing, ejecuta lo siguiente.
 
 ```powershell
-# Modelo, controladores y eventos Swing, sin base de datos.
 .\aplicacion\ejecutar.ps1 -Probar
+```
 
-# Regresión con MySQL temporal. Requiere Docker y Connector/J.
+La regresión con MySQL requiere Docker y Connector/J. Crea una base temporal con cuentas de prueba y elimina su contenedor al finalizar.
+
+```powershell
 .\aplicacion\probar-mysql.ps1
+```
 
-# Inicio por perfil con MySQL temporal.
-.\aplicacion\probar-mysql.ps1 -Inicio
+Para comprobar también el ingreso y la navegación de los cuatro perfiles, utiliza un escritorio activo.
 
-# Suite completa y navegación de ventanas por perfil; requiere un escritorio activo.
+```powershell
 .\aplicacion\probar-mysql.ps1 -Ventanas
 ```
 
-La suite MySQL verifica el flujo de capacitación, persistencia entre procesos, usuarios, permisos, sesiones, reportes, historial, alertas y seguimiento. Crea su propio contenedor y lo elimina al terminar; no usa la base real. La opción `-Ventanas` abre los módulos con las cuatro cuentas de prueba, verifica el menú y el cierre de sesión, y guarda renders en `aplicacion/out/revision-perfiles/` para revisar el diseño. Esos archivos no se publican en Git.
-
-Las pruebas de Seguimiento comprueban la consulta de los tres perfiles autorizados y el rechazo del trabajador, además de filtros y limpieza de datos al cerrar sesión.
+Las pruebas cubren persistencia, asignación grupal, asistencia, resultados, certificados, usuarios, permisos, cambio de contraseña, sesiones, historial, alertas, vigencias y reportes. Las capturas de revisión quedan en `aplicacion/out/revision-perfiles/`, una carpeta de salida excluida de Git.
 
 ## Trabajo en equipo
 
 | Integrante | Responsabilidad | Rama |
 | --- | --- | --- |
-| Adrian Pisco | Seguridad y control de acceso | `feature/seguridad-acceso` |
-| Anthony Sacha | Historial y consulta del trabajador | `feature/historial-trabajador` |
-| Cristofher Chirihuana | Vigencias y notificaciones | `feature/vigencias-notificaciones` |
-| Lijhoan Machaca | Reportes e integración | `feature/reportes-integracion` |
+| Adrian Pisco | Seguridad y control de acceso | feature/seguridad-acceso |
+| Anthony Sacha | Historial y consulta del trabajador | feature/historial-trabajador |
+| Cristofher Chirihuana | Vigencias y notificaciones | feature/vigencias-notificaciones |
+| Lijhoan Machaca | Reportes e integración | feature/reportes-integracion |
 
 Cada integrante trabaja en su rama y abre un pull request hacia `main`. Adrian revisa los cambios antes de integrarlos. Las modificaciones de clases compartidas y base de datos se coordinan con el equipo.
 
-El código está en `aplicacion/src/`, las pruebas en `aplicacion/test/` y el esquema en `database/`. Las credenciales, `.env`, preferencias personales, PDF generados y `privado/` quedan fuera de Git. El contenido de `privado/` no tiene respaldo en este repositorio.
+El código está en `aplicacion/src/`, las pruebas en `aplicacion/test/` y el esquema y las migraciones en `database/`. Las credenciales, la configuración personal, los archivos generados y el contenido de `privado/` se mantienen fuera del repositorio.
