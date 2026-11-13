@@ -556,7 +556,7 @@ public class PnlUsuarios extends JPanel {
 
         agregarCampo(
                 formulario, g, 1, 1,
-                "Contraseña (obligatoria al crear)", clave);
+                "Contraseña (obligatoria al crear)", CampoContrasena.conVisibilidad(clave));
 
         clave.setToolTipText(
                 "Al editar, deje el campo vacío para conservar la contraseña.");

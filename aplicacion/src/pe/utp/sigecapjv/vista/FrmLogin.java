@@ -100,7 +100,7 @@ public class FrmLogin extends JFrame {
         JTextField nombre = new JTextField(), usuario = new JTextField(), correo = new JTextField();
         JPasswordField clave = new JPasswordField(), confirmar = new JPasswordField();
         Object[] campos = {"Solo para una base sin usuarios.","Nombre completo",nombre,"Usuario",usuario,
-                "Correo de contacto (no se usa para ingresar)",correo,"Contraseña (12 a 128 caracteres)",clave,"Confirmar contraseña",confirmar};
+                "Correo de contacto (no se usa para ingresar)",correo,"Contraseña (12 a 128 caracteres)",CampoContrasena.conVisibilidad(clave),"Confirmar contraseña",CampoContrasena.conVisibilidad(confirmar)};
         if (JOptionPane.showConfirmDialog(this,campos,"Primer administrador",JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
         char[] valor = clave.getPassword(), repetida = confirmar.getPassword();
         boolean iguales = java.util.Arrays.equals(valor,repetida);
@@ -234,7 +234,7 @@ public class FrmLogin extends JFrame {
         formulario.add(Box.createVerticalStrut(20));
         formulario.add(lblContrasena);
         formulario.add(Box.createVerticalStrut(8));
-        formulario.add(txtContrasena);
+        formulario.add(CampoContrasena.conVisibilidad(txtContrasena));
         formulario.add(Box.createVerticalStrut(28));
         formulario.add(btnIngresar);
         formulario.add(Box.createVerticalStrut(12));

@@ -22,11 +22,11 @@ final class PnlCuenta extends JPanel {
         JButton guardar = new JButton("Guardar contraseña");
         formulario.add(titulo);
         formulario.add(new JLabel("Contraseña actual"));
-        formulario.add(actual);
+        formulario.add(CampoContrasena.conVisibilidad(actual));
         formulario.add(new JLabel("Nueva contraseña (12 a 128 caracteres)"));
-        formulario.add(nueva);
+        formulario.add(CampoContrasena.conVisibilidad(nueva));
         formulario.add(new JLabel("Confirmar nueva contraseña"));
-        formulario.add(confirmar);
+        formulario.add(CampoContrasena.conVisibilidad(confirmar));
         formulario.add(guardar);
         formulario.add(mensaje);
         JPanel alineacion = new JPanel(new FlowLayout(FlowLayout.LEFT));
