@@ -168,6 +168,27 @@ public class FrmPrincipal extends JFrame {
             menu.add(boton);
             menu.add(Box.createVerticalStrut(6));
         }
+        if (sesion != null) {
+            contenido.add(new PnlCuenta(new pe.utp.sigecapjv.controlador.CuentaControlador(sesion), () -> {
+                if (!isDisplayable()) return;
+                dispose();
+                new FrmLogin().setVisible(true);
+            }), "Cambiar contraseña");
+            JButton cuenta = new JButton("Cambiar contraseña");
+            cuenta.setForeground(Color.WHITE);
+            cuenta.setBackground(azul);
+            cuenta.setFocusPainted(false);
+            cuenta.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            cuenta.setBorder(new EmptyBorder(10, 12, 10, 12));
+            cuenta.setAlignmentX(Component.LEFT_ALIGNMENT);
+            cuenta.addActionListener(e -> {
+                tarjetas.show(contenido, "Cambiar contraseña");
+                for (Component componente : menu.getComponents())
+                    if (componente instanceof JButton boton)
+                        boton.setBackground(boton == cuenta ? seleccionado : azul);
+            });
+            menu.add(cuenta);
+        }
         menu.add(Box.createVerticalGlue());
         JButton salir = new JButton("Cerrar sesión");
         salir.setForeground(Color.WHITE);

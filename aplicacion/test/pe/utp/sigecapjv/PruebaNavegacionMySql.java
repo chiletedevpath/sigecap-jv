@@ -68,10 +68,10 @@ public final class PruebaNavegacionMySql {
                     JFrame[] ventana={ingresar(usuario,clave)};
                     esperar(ventana[0]);
                     List<String> esperados=usuario.equals("trabajador_prueba")
-                            ? List.of("Inicio","Alertas","Mis capacitaciones","Cerrar sesión")
+                            ? List.of("Inicio","Alertas","Mis capacitaciones","Cambiar contraseña","Cerrar sesión")
                             : usuario.equals("admin_prueba")
-                            ? List.of("Inicio","Personal","Capacitaciones","Seguimiento","Reportes","Usuarios","Alertas","Cerrar sesión")
-                            : List.of("Inicio","Personal","Capacitaciones","Seguimiento","Reportes","Alertas","Cerrar sesión");
+                            ? List.of("Inicio","Personal","Capacitaciones","Seguimiento","Reportes","Usuarios","Alertas","Cambiar contraseña","Cerrar sesión")
+                            : List.of("Inicio","Personal","Capacitaciones","Seguimiento","Reportes","Alertas","Cambiar contraseña","Cerrar sesión");
                     JPanel menu=(JPanel)((BorderLayout)ventana[0].getContentPane().getLayout()).getLayoutComponent(BorderLayout.WEST);
                     SwingUtilities.invokeAndWait(() -> {
                         comprobar(buscar(menu,JButton.class).stream().map(JButton::getText).toList().equals(esperados),"Menú exacto de "+usuario);
