@@ -56,6 +56,11 @@ public class UsuarioDAO {
         // MySQL libera el bloqueo al cerrar la conexión, después del commit de Jdbc.
     }
 
+    public void cambiarClave(Connection c, int id, String anterior, String nuevo) throws SQLException {
+        Jdbc.actualizar(c, "UPDATE usuario SET contrasenaHash=? WHERE idUsuario=? AND contrasenaHash=?",
+                nuevo, id, anterior);
+    }
+
     public boolean hayUsuarios(Connection c) throws SQLException {
         try (var p = c.prepareStatement("SELECT 1 FROM usuario LIMIT 1"); var r = p.executeQuery()) {
             return r.next();

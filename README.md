@@ -19,7 +19,7 @@ La aplicación ya trabaja con datos de MySQL. El flujo disponible es registrar u
 
 Se ingresa con **nombre de usuario y contraseña**. El correo es un dato de contacto. La opción **Crear primer administrador** aparece únicamente cuando la base no tiene usuarios. Si ya existe una cuenta, no hay que crearla nuevamente.
 
-El administrador gestiona usuarios y permisos. Por defecto, el responsable de capacitaciones puede gestionar Personal y Capacitaciones; el supervisor consulta la información; el trabajador ve sus propios datos. Seguimiento requiere consultar Capacitaciones y no está disponible para el trabajador. El historial de Personal requiere consultar Personal y Capacitaciones. Los cambios de rol, permisos, contraseña o estado invalidan las sesiones anteriores.
+Cada perfil puede usar Cambiar contraseña desde el menú, indicando su contraseña actual y confirmando la nueva. Al guardar debe iniciar sesión nuevamente. Las otras sesiones abiertas con la contraseña anterior pierden acceso al validar su sesión o realizar una operación protegida. El administrador gestiona usuarios y permisos. Por defecto, el responsable de capacitaciones puede gestionar Personal y Capacitaciones; el supervisor consulta la información; el trabajador ve sus propios datos. Seguimiento requiere consultar Capacitaciones y no está disponible para el trabajador. El historial de Personal requiere consultar Personal y Capacitaciones. Los cambios de rol, permisos, contraseña o estado invalidan las sesiones anteriores.
 
 Los resultados admiten una nota opcional de 0 a 20 y requieren asistencia registrada. El certificado requiere un resultado favorable. Su evidencia se guarda como una ruta a un archivo local: el sistema no copia ni publica ese archivo.
 

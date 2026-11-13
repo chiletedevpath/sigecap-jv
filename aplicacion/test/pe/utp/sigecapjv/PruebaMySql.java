@@ -121,6 +121,7 @@ public class PruebaMySql {
                 PruebaHistorialMySql.verificar();
                 PruebaVigenciasMySql.verificar();
                 probarCambiosDeSesion(personal, gestion, admin);
+                PruebaCuentaMySql.verificar();
                 return;
             }
 
