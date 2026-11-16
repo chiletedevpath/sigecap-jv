@@ -3,6 +3,7 @@ package pe.utp.sigecapjv;
 import java.sql.*;
 import java.time.*;
 import java.util.concurrent.*;
+import java.math.BigDecimal;
 import javax.swing.*;
 import java.awt.*;
 import pe.utp.sigecapjv.conexion.ConexionBD;
@@ -40,6 +41,30 @@ public class PruebaMySql {
         return false;
     }
 
+    private static <T extends Component> T encontrar(Component componente, Class<T> tipo) {
+        if (tipo.isInstance(componente)) return tipo.cast(componente);
+        if (!(componente instanceof Container contenedor)) return null;
+        for (Component hijo : contenedor.getComponents()) {
+            if (tipo.isInstance(hijo)) return tipo.cast(hijo);
+            if (hijo instanceof Container) {
+                T encontrado = encontrar(hijo, tipo);
+                if (encontrado != null) return encontrado;
+            }
+        }
+        return null;
+    }
+
+    private static JButton encontrarBoton(Container contenedor, String texto) {
+        for (Component componente : contenedor.getComponents()) {
+            if (componente instanceof JButton boton && texto.equals(boton.getText())) return boton;
+            if (componente instanceof Container hijo && !(componente instanceof JComboBox<?>)) {
+                JButton encontrado = encontrarBoton(hijo, texto);
+                if (encontrado != null) return encontrado;
+            }
+        }
+        return null;
+    }
+
     public static void main(String[] args) throws Exception {
         if (!"true".equals(System.getenv("SIGECAP_DB_TEST"))) {
             throw new IllegalStateException("Solo ejecutar en una base aislada con SIGECAP_DB_TEST=true.");
@@ -53,9 +78,14 @@ public class PruebaMySql {
         }
         // Una segunda JVM debe recuperar lo registrado por la primera.
         if (!personal.listarTrabajadores().isEmpty()) {
-            comprobar(personal.listarTrabajadores().stream().anyMatch(t -> "87654321".equals(t.getDni())), "Persistencia del trabajador entre procesos");
+            Trabajador persistido = personal.listarTrabajadores().stream()
+                    .filter(t -> "87654321".equals(t.getDni())).findFirst().orElseThrow();
+            comprobar(persistido.getIdTrabajador() > 0, "Persistencia del trabajador entre procesos");
             comprobar(gestion.listarParticipaciones().size() == 2, "Persistencia de asignaciones entre procesos");
             comprobar(gestion.listarCapacitaciones().stream().anyMatch(c -> "CERRADA".equals(c.getEstado())), "Persistencia del cierre");
+            comprobar(personal.consultarHistorial(persistido.getIdTrabajador()).stream()
+                    .anyMatch(h -> "CERT-PRUEBA".equals(h.certificado())),
+                    "Persistencia del historial y certificado entre procesos");
             System.out.println("OK: " + comprobaciones + " comprobaciones entre procesos.");
             return;
         }
@@ -101,6 +131,36 @@ public class PruebaMySql {
         t.setEstado("ACTIVO"); personal.actualizarTrabajador(t);
         Participacion p = gestion.asignarTrabajador(t, cap);
         comprobar(p.getIdParticipacion() > 0 && "PENDIENTE".equals(p.getEstado()), "Asignación persistida");
+        var historialInicial = personal.consultarHistorial(t.getIdTrabajador());
+        comprobar(historialInicial.size() == 1, "Historial incluye capacitaciones sin asistencia registrada");
+        comprobar(historialInicial.get(0).asistencia() == null && historialInicial.get(0).resultado() == null
+                        && historialInicial.get(0).certificado() == null,
+                "Historial conserva datos opcionales ausentes");
+        Jdbc.transaccion(c -> {
+            Jdbc.insertar(c, "INSERT INTO asistencia (idParticipacion,condicion) VALUES (?,?)",
+                    p.getIdParticipacion(), "ASISTIÓ");
+            Jdbc.insertar(c, "INSERT INTO resultado (idParticipacion,condicion,calificacion) VALUES (?,?,?)",
+                    p.getIdParticipacion(), "APROBADO", new BigDecimal("18.50"));
+            Jdbc.insertar(c, "INSERT INTO certificado "
+                            + "(idParticipacion,idTrabajador,numero,fechaEmision,fechaVencimiento) VALUES (?,?,?,?,?)",
+                    p.getIdParticipacion(), t.getIdTrabajador(), "CERT-PRUEBA", LocalDate.now(),
+                    LocalDate.now().plusDays(365));
+            return null;
+        });
+        var historial = personal.consultarHistorial(t.getIdTrabajador());
+        comprobar(historial.size() == 1, "Historial filtrado por trabajador");
+        HistorialCapacitacion registro = historial.get(0);
+        comprobar("Curso de prueba".equals(registro.curso()) && cap.getFecha().equals(registro.fecha()),
+                "Curso y fecha del historial");
+        comprobar("PROGRAMADA".equals(registro.estadoCapacitacion())
+                        && "PENDIENTE".equals(registro.estadoParticipacion()),
+                "Estados del historial");
+        comprobar("ASISTIÓ".equals(registro.asistencia()) && "APROBADO".equals(registro.resultado())
+                        && new BigDecimal("18.50").compareTo(registro.calificacion()) == 0,
+                "Asistencia y resultado del historial");
+        comprobar("CERT-PRUEBA".equals(registro.certificado()) && "VIGENTE".equals(registro.vigencia()),
+                "Certificado y vigencia del historial");
+        rechazar(() -> personal.consultarHistorial(999999));
         rechazar(() -> gestion.asignarTrabajador(t, cap));
         comprobar(gestion.listarCapacitaciones().get(0).getParticipaciones().size() == 1, "Composición reconstruida");
         gestion.cerrarCapacitacion(cap.getIdCapacitacion());
@@ -147,11 +207,22 @@ public class PruebaMySql {
             comprobar(exitos == 1, "Solo una asignación concurrente");
         } finally { pool.shutdownNow(); }
         comprobar(gestion.listarParticipaciones().size() == 2, "Sin duplicados concurrentes");
+        comprobar(personal.consultarHistorial(t.getIdTrabajador()).size() == 2,
+                "Consulta JDBC recupera el historial completo del trabajador");
         comprobar(personal.listarTrabajadores().size() == 1, "Programar y asignar no vuelven a registrar personal");
         comprobar(gestion.listarCursos().size() == 2, "Programar no vuelve a registrar curso");
         SwingUtilities.invokeAndWait(() -> {
             comprobar(contieneFilas(new pe.utp.sigecapjv.vista.PnlPersonal(personal), 1), "Personal muestra datos JDBC");
             comprobar(contieneFilas(new pe.utp.sigecapjv.vista.PnlCapacitaciones(gestion, personal), 3), "Programaciones muestran datos JDBC");
+            pe.utp.sigecapjv.vista.PnlPersonal panel = new pe.utp.sigecapjv.vista.PnlPersonal(personal);
+            JTabbedPane pestañas = encontrar(panel, JTabbedPane.class);
+            pestañas.setSelectedIndex(2);
+            JButton consultar = encontrarBoton((Container) pestañas.getComponentAt(2), "Consultar");
+            comprobar(consultar != null, "Botón de consulta del historial disponible");
+            consultar.doClick();
+            int filasHistorial = encontrar(pestañas.getComponentAt(2), JTable.class).getRowCount();
+            comprobar(filasHistorial == 2,
+                    "Consulta visual del historial desde la pestaña; filas encontradas: " + filasHistorial);
         });
         System.out.println("OK: " + comprobaciones + " comprobaciones MySQL.");
     }

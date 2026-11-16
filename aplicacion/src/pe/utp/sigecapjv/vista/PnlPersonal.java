@@ -1,7 +1,8 @@
 package pe.utp.sigecapjv.vista;
 
-import pe.utp.sigecapjv.modelo.*;
-import pe.utp.sigecapjv.controlador.*;
+import pe.utp.sigecapjv.controlador.PersonalControlador;
+import pe.utp.sigecapjv.modelo.HistorialCapacitacion;
+import pe.utp.sigecapjv.modelo.Trabajador;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -20,15 +21,19 @@ public class PnlPersonal extends JPanel {
 
     private final PersonalControlador controlador;
     private final JTabbedPane tabs = new JTabbedPane();
-    private final JTextField dni = new JTextField(18), nombres = new JTextField(18),
-            apellidos = new JTextField(18), cargo = new JTextField(18), buscar = new JTextField();
+    private final JTextField dni = new JTextField(18), nombres = new JTextField(18), apellidos = new JTextField(
+            18), cargo = new JTextField(18), buscar = new JTextField();
     private final JComboBox<String> estado = new JComboBox<>(new String[]{"ACTIVO", "INACTIVO"});
+    private final JComboBox<Trabajador> trabajadorHistorial = new JComboBox<>();
     private JTable listado;
+    private JTable tablaHistorial;
     private int idEdicion;
 
     public PnlPersonal(PersonalControlador controlador) {
         this.controlador = controlador;
-        setLayout(new BorderLayout()); add(crearContenido(), BorderLayout.CENTER); refrescar();
+        setLayout(new BorderLayout());
+        add(crearContenido(), BorderLayout.CENTER);
+        refrescar();
     }
 
     private JPanel crearContenido() {
@@ -67,8 +72,6 @@ public class PnlPersonal extends JPanel {
         tabs.addTab("Listado", crearListado());
         tabs.addTab("Registrar trabajador", crearRegistro());
         tabs.addTab("Historial", crearHistorial());
-        tabs.setEnabledAt(2, false);
-        tabs.setToolTipTextAt(2, "Pendiente: asistencia, resultados y certificados");
 
         JPanel centro = new JPanel(new BorderLayout());
         centro.setOpaque(false);
@@ -168,7 +171,6 @@ public class PnlPersonal extends JPanel {
         return panel;
     }
 
-    // Diseño pendiente de conectar al historial real.
     private JPanel crearHistorial() {
         JPanel panel = new JPanel(new BorderLayout(0, 16));
         panel.setBackground(BLANCO);
@@ -181,18 +183,19 @@ public class PnlPersonal extends JPanel {
         lblTrabajador.setForeground(TEXTO);
         lblTrabajador.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        JComboBox<String> trabajador = new JComboBox<>();
-        trabajador.setPreferredSize(new Dimension(280, 36));
+        trabajadorHistorial.setPreferredSize(new Dimension(280, 36));
+        trabajadorHistorial.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
         superior.add(lblTrabajador);
-        superior.add(trabajador);
-        superior.add(crearBotonSecundario("Consultar"));
+        superior.add(trabajadorHistorial);
+        JButton consultar = crearBotonSecundario("Consultar");
+        consultar.addActionListener(e -> consultarHistorial());
+        superior.add(consultar);
 
-        String[] columnas = {"Curso", "Fecha", "Resultado", "Vigencia"};
-        Object[][] datos = new Object[0][columnas.length];
-
-        JTable tabla = crearTabla(datos, columnas);
-        JScrollPane scroll = new JScrollPane(tabla);
+        String[] columnas = {"Curso", "Fecha", "Capacitación", "Participación", "Asistencia",
+                "Resultado", "Nota", "Certificado", "Vigencia"};
+        tablaHistorial = crearTabla(new Object[0][columnas.length], columnas);
+        JScrollPane scroll = new JScrollPane(tablaHistorial);
         scroll.setBorder(BorderFactory.createLineBorder(BORDE));
 
         panel.add(superior, BorderLayout.NORTH);
@@ -200,39 +203,117 @@ public class PnlPersonal extends JPanel {
         return panel;
     }
 
+    private void consultarHistorial() {
+        Trabajador trabajador = (Trabajador) trabajadorHistorial.getSelectedItem();
+        if (trabajador == null) {
+            JOptionPane.showMessageDialog(this, "Seleccione un trabajador.", "Historial",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            var historial = controlador.consultarHistorial(trabajador.getIdTrabajador());
+            DefaultTableModel modelo = (DefaultTableModel) tablaHistorial.getModel();
+            modelo.setRowCount(0);
+            for (HistorialCapacitacion registro : historial) {
+                modelo.addRow(new Object[]{
+                        registro.curso(),
+                        registro.fecha(),
+                        registro.estadoCapacitacion(),
+                        registro.estadoParticipacion(),
+                        mostrar(registro.asistencia()),
+                        mostrar(registro.resultado()),
+                        registro.calificacion() == null ? "-" : registro.calificacion().toPlainString(),
+                        mostrar(registro.certificado()),
+                        mostrar(registro.vigencia())
+                });
+            }
+            if (modelo.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "El trabajador no tiene capacitaciones registradas.",
+                        "Historial", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (IllegalArgumentException | IllegalStateException | UnsupportedOperationException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "No se pudo consultar el historial",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String mostrar(String valor) {
+        return valor == null || valor.isBlank() ? "-" : valor;
+    }
+
     private void guardar() {
         try {
-            Trabajador trabajador = new Trabajador(idEdicion, dni.getText(), nombres.getText(), apellidos.getText(),
-                    cargo.getText(), (String) estado.getSelectedItem());
+            Trabajador trabajador = new Trabajador(
+                    idEdicion, dni.getText(), nombres.getText(), apellidos.getText(),
+                                                   cargo.getText(), (String) estado.getSelectedItem());
             if (idEdicion == 0) controlador.registrarTrabajador(trabajador);
             else controlador.actualizarTrabajador(trabajador);
-            limpiar(); refrescar(); tabs.setSelectedIndex(0);
+            limpiar();
+            refrescar();
+            tabs.setSelectedIndex(0);
             JOptionPane.showMessageDialog(this, "Trabajador guardado correctamente.");
         } catch (IllegalArgumentException | IllegalStateException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Revisar datos", JOptionPane.WARNING_MESSAGE);
         }
     }
+
     private void editarSeleccionado() {
         int fila = listado.getSelectedRow();
-        if (fila < 0) { JOptionPane.showMessageDialog(this, "Seleccione un trabajador."); return; }
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Seleccione un trabajador.");
+            return;
+        }
         String seleccionado = (String) listado.getValueAt(fila, 0);
-        Trabajador t = controlador.listarTrabajadores().stream().filter(x -> x.getDni().equals(seleccionado)).findFirst().orElseThrow();
-        idEdicion = t.getIdTrabajador(); tabs.setTitleAt(1, "Editar trabajador"); dni.setText(t.getDni()); nombres.setText(t.getNombres());
-        apellidos.setText(t.getApellidos()); cargo.setText(t.getCargo()); estado.setSelectedItem(t.getEstado()); tabs.setSelectedIndex(1);
+        Trabajador t = controlador.listarTrabajadores().stream().filter(
+                x -> x.getDni().equals(seleccionado)).findFirst().orElseThrow();
+        idEdicion = t.getIdTrabajador();
+        tabs.setTitleAt(1, "Editar trabajador");
+        dni.setText(t.getDni());
+        nombres.setText(t.getNombres());
+        apellidos.setText(t.getApellidos());
+        cargo.setText(t.getCargo());
+        estado.setSelectedItem(t.getEstado());
+        tabs.setSelectedIndex(1);
     }
+
     private void limpiar() {
-        idEdicion = 0; tabs.setTitleAt(1, "Registrar trabajador"); dni.setText(""); nombres.setText(""); apellidos.setText(""); cargo.setText(""); estado.setSelectedIndex(0);
+        idEdicion = 0;
+        tabs.setTitleAt(1, "Registrar trabajador");
+        dni.setText("");
+        nombres.setText("");
+        apellidos.setText("");
+        cargo.setText("");
+        estado.setSelectedIndex(0);
     }
+
     public void refrescar() {
-        DefaultTableModel modelo = (DefaultTableModel) listado.getModel(); modelo.setRowCount(0);
+        DefaultTableModel modelo = (DefaultTableModel) listado.getModel();
+        modelo.setRowCount(0);
         String filtro = buscar.getText().trim().toLowerCase(java.util.Locale.ROOT);
-        for (Trabajador t : controlador.listarTrabajadores()) {
-            if ((t.getDni() + " " + t.getApellidos() + " " + t.getNombres() + " " + t.getCargo()).toLowerCase(java.util.Locale.ROOT).contains(filtro))
-                modelo.addRow(new Object[]{t.getDni(), t.getApellidos() + ", " + t.getNombres(), t.getCargo(), t.getEstado()});
+        var trabajadores = controlador.listarTrabajadores();
+        for (Trabajador t : trabajadores) {
+            if ((t.getDni() + " " + t.getApellidos() + " " + t.getNombres() + " " + t.getCargo()).toLowerCase(
+                    java.util.Locale.ROOT).contains(filtro)) modelo.addRow(
+                    new Object[]{t.getDni(), t.getApellidos() + ", " + t.getNombres(), t.getCargo(), t.getEstado()});
+        }
+        actualizarTrabajadoresHistorial(trabajadores);
+    }
+
+    private void actualizarTrabajadoresHistorial(java.util.List<Trabajador> trabajadores) {
+        Trabajador seleccionado = (Trabajador) trabajadorHistorial.getSelectedItem();
+        int idSeleccionado = seleccionado == null ? 0 : seleccionado.getIdTrabajador();
+        trabajadorHistorial.removeAllItems();
+        for (Trabajador trabajador : trabajadores) {
+            trabajadorHistorial.addItem(trabajador);
+            if (trabajador.getIdTrabajador() == idSeleccionado) {
+                trabajadorHistorial.setSelectedItem(trabajador);
+            }
         }
     }
 
-    private void agregarCampo(JPanel panel, GridBagConstraints gbc, int col, int fila, String etiqueta, JComponent campo) {
+    private void agregarCampo(JPanel panel, GridBagConstraints gbc, int col, int fila, String etiqueta,
+                              JComponent campo) {
         JPanel bloque = new JPanel();
         bloque.setOpaque(false);
         bloque.setLayout(new BoxLayout(bloque, BoxLayout.Y_AXIS));

@@ -19,6 +19,7 @@ Los atributos, tipos y métodos principales conservan el diseño del diagrama de
 
 - **Modelo:** valida los datos y aplica las reglas de negocio.
 - **Controladores:** `PersonalJdbcControlador` y `CapacitacionJdbcControlador` coordinan las operaciones persistentes con sus DAO, conservando las validaciones del modelo. Las variantes originales se utilizan en las pruebas en memoria.
+- **Historial:** `PersonalJdbcControlador` consulta los registros asociados al trabajador mediante `TrabajadorDAO`.
 - **Vistas:** `FrmPrincipal`, `PnlPersonal` y `PnlCapacitaciones` capturan datos y llaman a los controladores. Permiten registrar, editar, buscar, programar y asignar participantes.
 - **Utilidades:** `Validador` concentra validaciones reutilizables.
 
@@ -26,9 +27,9 @@ Los atributos, tipos y métodos principales conservan el diseño del diagrama de
 
 `Capacitacion` valida el curso activo y la programación sin volver a registrar el curso. `Participacion` valida las relaciones, estados y duplicidad sin volver a registrar al trabajador. La existencia de ambos registros se comprueba desde los controladores.
 
-Las secciones Historial, Asistencia, Resultados y Certificados permanecen vacías y deshabilitadas, con indicación de funcionalidad pendiente. No contienen registros simulados. Las clases del modelo y los controladores presentan las instrucciones por separado para facilitar su lectura y sustentación.
+La pestaña Historial permite seleccionar un trabajador y consultar sus capacitaciones, fechas, estados, asistencia, resultados, calificaciones y certificados con su vigencia actual. La consulta se realiza desde el controlador persistente y no modifica el esquema de MySQL. Asistencia, Resultados y Certificados todavía no cuentan con pantallas para registrar o actualizar esos datos.
 
-Las pruebas incluyen DNI y curso duplicados, curso y trabajador inactivos, programación inválida y asignación duplicada. También comprueban que programar o asignar no invoque nuevamente el registro de sus entidades y que las secciones pendientes no muestren datos ficticios.
+Las pruebas incluyen DNI y curso duplicados, curso y trabajador inactivos, programación inválida y asignación duplicada. También comprueban que programar o asignar no invoque nuevamente el registro de sus entidades, que la pestaña Historial utilice trabajadores registrados y que las secciones pendientes no muestren datos ficticios.
 
 El primer avance queda preparado como evidencia para documentar el apartado **3.5. Funcionalidades del código fuente**, conservando el UML y la arquitectura MVC + DAO del apartado 3.4.
 
@@ -50,9 +51,9 @@ La integración JDBC se validó en MySQL 8.4 aislado con **32 comprobaciones** d
 
 - Persistencia de los módulos posteriores al flujo inicial.
 - Desarrollo funcional de `Asistencia`, `Resultado`, `Certificado`, `Usuario`, `Rol`, `Permiso`, `Notificacion` y `Reporte`.
-- Autenticación, historial del trabajador, asistencia, resultados, certificados, notificaciones y reportes.
+- Registro y actualización de asistencia, resultados y certificados; autenticación, notificaciones y reportes.
 - Consolidación de resultados al cerrar una capacitación. Actualmente el cierre bloquea edición y nuevas asignaciones.
 
-`Trabajador.consultarHistorial()` y `consultarCapacitaciones()` conservan las firmas del UML y señalan que están pendientes mediante `UnsupportedOperationException`. `Participacion.actualizarEstado()` admite `PENDIENTE` y `CANCELADA`; el cumplimiento dependerá de asistencia y resultados.
+La consulta persistente del historial se ofrece desde `PersonalJdbcControlador`; las firmas sin parámetros `Trabajador.consultarHistorial()` y `consultarCapacitaciones()` se conservan por el UML, pero no se utilizan para acceder a la base de datos. `Participacion.actualizarEstado()` admite `PENDIENTE` y `CANCELADA`; el cumplimiento dependerá de asistencia y resultados.
 
 Este avance no modifica el informe ni incorpora todavía las capturas de código del apartado 3.5.

@@ -12,8 +12,15 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo iniciar MySQL de prueba.' }
     $listo = $false
     for ($intento=0; $intento -lt 45; $intento++) {
-        & docker exec $nombre sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u sigecap_test -D sigecap_jv -Nse "SELECT COUNT(*) FROM vw_control_vigencias"' 2>$null | Out-Null
-        if ($LASTEXITCODE -eq 0) { $listo = $true; break }
+        $preferenciaError = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            & docker exec --env "MYSQL_PWD=$env:MYSQL_PASSWORD" $nombre mysql -h 127.0.0.1 -u sigecap_test -D sigecap_jv -Nse 'SELECT COUNT(*) FROM vw_control_vigencias' 2>$null | Out-Null
+            $codigoSalida = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $preferenciaError
+        }
+        if ($codigoSalida -eq 0) { $listo = $true; break }
         Start-Sleep -Seconds 2
     }
     if (-not $listo) { throw 'MySQL no terminó de inicializar el esquema.' }

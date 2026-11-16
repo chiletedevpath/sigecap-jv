@@ -2,6 +2,7 @@ package pe.utp.sigecapjv.controlador;
 
 import java.util.List;
 import pe.utp.sigecapjv.dao.*;
+import pe.utp.sigecapjv.modelo.HistorialCapacitacion;
 import pe.utp.sigecapjv.modelo.Trabajador;
 import pe.utp.sigecapjv.util.Validador;
 
@@ -40,4 +41,13 @@ public class PersonalJdbcControlador extends PersonalControlador {
 
     @Override
     public List<Trabajador> listarTrabajadores() { return Jdbc.transaccion(dao::listar); }
+
+    @Override
+    public List<HistorialCapacitacion> consultarHistorial(int idTrabajador) {
+        if (idTrabajador <= 0) throw new IllegalArgumentException("Seleccione un trabajador válido.");
+        return Jdbc.transaccion(c -> {
+            dao.buscar(c, idTrabajador, false);
+            return dao.listarHistorial(c, idTrabajador);
+        });
+    }
 }
