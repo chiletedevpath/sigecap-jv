@@ -10,7 +10,8 @@ public class Curso {
     private Integer vigenciaMeses;
     private String estado;
 
-    public Curso() {}
+    public Curso() {
+    }
 
     public Curso(int idCurso, String codigo, String nombre, String tipo, Integer vigenciaMeses, String estado) {
         this.idCurso = idCurso;

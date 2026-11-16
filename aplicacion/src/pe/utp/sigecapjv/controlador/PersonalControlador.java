@@ -37,7 +37,8 @@ public class PersonalControlador {
     }
 
     private void validarDniUnico(Trabajador trabajador, int exceptuarId) {
-        if (trabajadores.stream().anyMatch(t -> t.getIdTrabajador() != exceptuarId && t.getDni().equals(trabajador.getDni()))) {
+        if (trabajadores.stream().anyMatch(
+                t -> t.getIdTrabajador() != exceptuarId && t.getDni().equals(trabajador.getDni()))) {
             throw new IllegalArgumentException("Ya existe un trabajador con ese DNI.");
         }
     }

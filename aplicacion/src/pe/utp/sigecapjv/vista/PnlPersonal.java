@@ -96,8 +96,7 @@ public class PnlPersonal extends JPanel {
         buscar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         buscar.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDE),
-                new EmptyBorder(0, 10, 0, 10)
-        ));
+                new EmptyBorder(0, 10, 0, 10)));
 
         JButton btnBuscar = crearBotonSecundario("Buscar");
         JButton btnNuevo = crearBotonPrimario("Nuevo trabajador");
@@ -106,9 +105,14 @@ public class PnlPersonal extends JPanel {
         acciones.setOpaque(false);
         acciones.add(btnBuscar);
         acciones.add(btnNuevo);
-        JButton editar = crearBotonSecundario("Editar trabajador"); acciones.add(editar);
-        btnBuscar.addActionListener(e -> refrescar()); buscar.addActionListener(e -> refrescar());
-        btnNuevo.addActionListener(e -> { limpiar(); tabs.setSelectedIndex(1); });
+        JButton editar = crearBotonSecundario("Editar trabajador");
+        acciones.add(editar);
+        btnBuscar.addActionListener(e -> refrescar());
+        buscar.addActionListener(e -> refrescar());
+        btnNuevo.addActionListener(e -> {
+            limpiar();
+            tabs.setSelectedIndex(1);
+        });
         editar.addActionListener(e -> editarSeleccionado());
 
         JPanel buscador = new JPanel(new BorderLayout(8, 0));
@@ -156,8 +160,12 @@ public class PnlPersonal extends JPanel {
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         botones.setOpaque(false);
         JButton cancelar = crearBotonSecundario("Cancelar"), guardar = crearBotonPrimario("Guardar");
-        botones.add(cancelar); botones.add(guardar);
-        cancelar.addActionListener(e -> { limpiar(); tabs.setSelectedIndex(0); });
+        botones.add(cancelar);
+        botones.add(guardar);
+        cancelar.addActionListener(e -> {
+            limpiar();
+            tabs.setSelectedIndex(0);
+        });
         guardar.addActionListener(e -> guardar());
 
         gbc.gridx = 0;
@@ -330,8 +338,7 @@ public class PnlPersonal extends JPanel {
         if (campo instanceof JTextField textField) {
             textField.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(BORDE),
-                    new EmptyBorder(0, 9, 0, 9)
-            ));
+                    new EmptyBorder(0, 9, 0, 9)));
         }
 
         campo.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -388,8 +395,7 @@ public class PnlPersonal extends JPanel {
         boton.setFocusPainted(false);
         boton.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDE),
-                new EmptyBorder(9, 14, 9, 14)
-        ));
+                new EmptyBorder(9, 14, 9, 14)));
         boton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return boton;
     }

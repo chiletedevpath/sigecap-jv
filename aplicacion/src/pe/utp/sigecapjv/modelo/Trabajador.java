@@ -10,7 +10,8 @@ public class Trabajador {
     private String cargo;
     private String estado;
 
-    public Trabajador() {}
+    public Trabajador() {
+    }
 
     public Trabajador(int idTrabajador, String dni, String nombres, String apellidos, String cargo, String estado) {
         this.idTrabajador = idTrabajador;
@@ -50,7 +51,8 @@ public class Trabajador {
     }
 
     public void consultarCapacitaciones() {
-        throw new UnsupportedOperationException("La consulta de capacitaciones del trabajador todavía no está implementada.");
+        throw new UnsupportedOperationException(
+                "La consulta de capacitaciones del trabajador todavía no está implementada.");
     }
 
     public Trabajador copia() {
