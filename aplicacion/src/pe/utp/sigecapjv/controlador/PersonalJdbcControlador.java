@@ -1,17 +1,31 @@
 package pe.utp.sigecapjv.controlador;
 
-import java.util.List;
-import pe.utp.sigecapjv.dao.*;
-import pe.utp.sigecapjv.modelo.HistorialCapacitacion;
+import pe.utp.sigecapjv.dao.Jdbc;
+import pe.utp.sigecapjv.dao.TrabajadorDAO;
 import pe.utp.sigecapjv.modelo.Trabajador;
 import pe.utp.sigecapjv.util.Validador;
 
-/** Variante persistente; la variante en memoria se conserva para pruebas unitarias. */
+import java.util.List;
+
+/**
+ * Variante persistente; la variante en memoria se conserva para pruebas unitarias.
+ */
 public class PersonalJdbcControlador extends PersonalControlador {
+    private final SesionUsuario sesion;
+
+    public PersonalJdbcControlador() {
+        this(null);
+    }
+
+    public PersonalJdbcControlador(SesionUsuario sesion) {
+        this.sesion = sesion;
+    }
+
     private final TrabajadorDAO dao = new TrabajadorDAO();
 
     @Override
     public void registrarTrabajador(Trabajador trabajador) {
+        AccesoControlador.exigir(sesion, "personal", "gestionar");
         Validador.requerido(trabajador, "Trabajador");
         Trabajador nuevo = trabajador.copia();
         nuevo.registrar();
@@ -21,6 +35,7 @@ public class PersonalJdbcControlador extends PersonalControlador {
 
     @Override
     public void actualizarTrabajador(Trabajador trabajador) {
+        AccesoControlador.exigir(sesion, "personal", "gestionar");
         Validador.requerido(trabajador, "Trabajador");
         Trabajador nuevo = trabajador.copia();
         nuevo.actualizar();
@@ -33,21 +48,18 @@ public class PersonalJdbcControlador extends PersonalControlador {
 
     @Override
     public Trabajador buscarTrabajador(int id) {
+        AccesoControlador.exigir(sesion, "personal", "consultar");
         return Jdbc.transaccion(c -> dao.buscar(c, id, false));
     }
 
     @Override
-    Trabajador trabajadorRegistrado(int id) { return buscarTrabajador(id); }
+    Trabajador trabajadorRegistrado(int id) {
+        return buscarTrabajador(id);
+    }
 
     @Override
-    public List<Trabajador> listarTrabajadores() { return Jdbc.transaccion(dao::listar); }
-
-    @Override
-    public List<HistorialCapacitacion> consultarHistorial(int idTrabajador) {
-        if (idTrabajador <= 0) throw new IllegalArgumentException("Seleccione un trabajador válido.");
-        return Jdbc.transaccion(c -> {
-            dao.buscar(c, idTrabajador, false);
-            return dao.listarHistorial(c, idTrabajador);
-        });
+    public List<Trabajador> listarTrabajadores() {
+        AccesoControlador.exigir(sesion, "personal", "consultar");
+        return Jdbc.transaccion(dao::listar);
     }
 }

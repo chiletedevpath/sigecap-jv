@@ -1,8 +1,5 @@
 package pe.utp.sigecapjv.modelo;
 
-/**
- * Clase base creada como parte de la estructura inicial del proyecto SIGECAP J&V.
- * Su implementación se completará progresivamente según los requerimientos del sistema.
- */
-public class Rol {
+public record Rol(int idRol, String nombre) {
+    @Override public String toString() { return nombre; }
 }

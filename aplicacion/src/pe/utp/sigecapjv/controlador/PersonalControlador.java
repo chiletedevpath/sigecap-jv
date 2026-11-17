@@ -1,14 +1,13 @@
 package pe.utp.sigecapjv.controlador;
 
 import pe.utp.sigecapjv.modelo.Trabajador;
-import pe.utp.sigecapjv.modelo.HistorialCapacitacion;
 import pe.utp.sigecapjv.util.Validador;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PersonalControlador {
-    // Mientras no exista persistencia, los registros se mantienen en memoria.
+    // Implementación en memoria usada por las pruebas; la aplicación usa PersonalJdbcControlador.
     private final List<Trabajador> trabajadores = new ArrayList<>();
     private int siguienteId = 1;
 
@@ -62,9 +61,5 @@ public class PersonalControlador {
 
     public List<Trabajador> listarTrabajadores() {
         return trabajadores.stream().map(Trabajador::copia).toList();
-    }
-
-    public List<HistorialCapacitacion> consultarHistorial(int idTrabajador) {
-        throw new UnsupportedOperationException("La consulta del historial requiere persistencia MySQL.");
     }
 }

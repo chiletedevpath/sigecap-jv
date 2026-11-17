@@ -2,6 +2,9 @@ param(
     [string]$JavaHome = $env:JAVA_HOME,
     [switch]$Probar,
     [switch]$ProbarMySql,
+    [switch]$Ventanas,
+    [ValidateSet("pe.utp.sigecapjv.PruebaMySql", "pe.utp.sigecapjv.PruebaInicioMySql", "pe.utp.sigecapjv.PruebaNavegacionMySql")]
+    [string]$ClasePrueba = "pe.utp.sigecapjv.PruebaMySql",
     [string]$ConnectorJar = $env:SIGECAP_JDBC_JAR
 )
 $ErrorActionPreference = 'Stop'
@@ -33,9 +36,10 @@ if ($Probar -or $ProbarMySql) {
     & $compilador --release 17 -encoding UTF-8 -cp $salida -d $salida @pruebas
     if ($LASTEXITCODE -ne 0) { throw 'Falló la compilación de pruebas.' }
     if ($ProbarMySql) {
-        & $java '-Djava.awt.headless=true' -cp $classpath pe.utp.sigecapjv.PruebaMySql
+        $sinPantalla = if ($Ventanas) { 'false' } else { 'true' }
+        & $java '-Dsigecap.pruebas=true' "-Djava.awt.headless=$sinPantalla" "-Dsigecap.renders=$salida/revision-perfiles" -cp $classpath $ClasePrueba
     } else {
-        & $java '-Djava.awt.headless=true' -cp $classpath pe.utp.sigecapjv.PruebaFlujo
+        & $java '-Dsigecap.pruebas=true' '-Djava.awt.headless=true' -cp $classpath pe.utp.sigecapjv.PruebaFlujo
     }
 } else {
     & $java -cp $classpath pe.utp.sigecapjv.vista.FrmPrincipal

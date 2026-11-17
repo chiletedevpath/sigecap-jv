@@ -30,6 +30,13 @@ public class PruebaFlujo {
         return new Capacitacion(0, LocalDate.now().plusDays(2), LocalTime.of(9, 0), LocalTime.of(13, 0), "Presencial", null, curso);
     }
     public static void main(String[] args) throws Exception {
+        PruebaSelectorParticipantes.verificar();
+        PruebaAcceso.verificar();
+        PruebaPermisosSwing.verificar();
+        PruebaAsistencia.verificar();
+        PruebaResultados.verificar();
+        PruebaPantallaAsistencia.verificar();
+        PruebaReportes.verificar();
         if (args.length > 0 && args[0].equals("--ventana")) {
             SwingUtilities.invokeAndWait(() -> verificarVentana());
             System.out.println("OK: ventana principal creada y navegación Personal/Capacitaciones verificada.");
@@ -145,10 +152,9 @@ public class PruebaFlujo {
     private static void verificarVistas(PersonalControlador personal, CapacitacionControlador gestion) {
         PnlPersonal p = new PnlPersonal(personal); PnlCapacitaciones c = new PnlCapacitaciones(gestion, personal);
         JTabbedPane tp = encontrar(p, JTabbedPane.class), tc = encontrar(c, JTabbedPane.class);
-        comprobar(tp.isEnabledAt(2) && !tc.isEnabledAt(3), "Historial disponible y funciones futuras deshabilitadas");
-        comprobar(encontrar(tp.getComponentAt(2), JTable.class).getRowCount() == 0, "Historial inicia sin datos simulados");
-        comprobar(encontrar(tp.getComponentAt(2), JComboBox.class).getItemCount() == 2,
-                "Historial muestra los trabajadores registrados");
+        comprobar(!tp.isEnabledAt(2) && !tc.isEnabledAt(3), "Funciones futuras deshabilitadas");
+        comprobar(encontrar(tp.getComponentAt(2), JTable.class).getRowCount() == 0, "Historial pendiente sin datos simulados");
+        comprobar(encontrar(tp.getComponentAt(2), JComboBox.class).getItemCount() == 0, "Historial sin trabajadores simulados");
         for (int i = 3; i < 6; i++) {
             comprobar(!tc.isEnabledAt(i), "Pestaña futura deshabilitada");
             comprobar(encontrar(tc.getComponentAt(i), JTable.class).getRowCount() == 0, "Pestaña futura sin datos simulados");

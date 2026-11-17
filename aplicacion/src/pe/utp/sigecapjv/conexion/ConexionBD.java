@@ -5,7 +5,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public final class ConexionBD {
-    private ConexionBD() {}
+    private ConexionBD() {
+    }
 
     public static Connection obtenerConexion() throws SQLException {
         String usuario = System.getenv("SIGECAP_DB_USER");

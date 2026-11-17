@@ -1,7 +1,8 @@
 package pe.utp.sigecapjv.util;
 
 public final class Validador {
-    private Validador() {}
+    private Validador() {
+    }
 
     public static String texto(String valor, String campo) {
         if (valor == null || valor.isBlank()) throw new IllegalArgumentException(campo + " es obligatorio.");

@@ -1,13 +1,20 @@
 package pe.utp.sigecapjv.dao;
 
-import java.sql.*;
 import pe.utp.sigecapjv.conexion.ConexionBD;
 
-/** Cada operación utiliza su propia conexión y confirma todos sus cambios juntos. */
+import java.sql.*;
+
+/**
+ * Cada operación utiliza su propia conexión y confirma todos sus cambios juntos.
+ */
 public final class Jdbc {
-    private Jdbc() {}
+    private Jdbc() {
+    }
+
     @FunctionalInterface
-    public interface Operacion<T> { T ejecutar(Connection conexion) throws SQLException; }
+    public interface Operacion<T> {
+        T ejecutar(Connection conexion) throws SQLException;
+    }
 
     public static <T> T transaccion(Operacion<T> operacion) {
         try (Connection conexion = ConexionBD.obtenerConexion()) {
@@ -17,16 +24,19 @@ public final class Jdbc {
                 conexion.commit();
                 return resultado;
             } catch (SQLException | RuntimeException ex) {
-                try { conexion.rollback(); } catch (SQLException rollback) { ex.addSuppressed(rollback); }
+                try {
+                    conexion.rollback();
+                } catch (SQLException rollback) {
+                    ex.addSuppressed(rollback);
+                }
                 throw ex;
             }
         } catch (SQLException ex) {
             // No mostrar SQL, credenciales ni detalles internos en los diálogos.
-            String mensaje = ex.getErrorCode() == 1062
-                    ? "Ya existe un registro con esos datos únicos (DNI, código o asignación)."
-                    : ex.getSQLState() != null && ex.getSQLState().startsWith("23")
-                    ? "La operación incumple una relación o restricción de la base de datos."
-                    : "No se pudo completar la operación en MySQL. Revise conexión, configuración y datos.";
+            String mensaje = ex.getErrorCode() == 1062 ? "Ya existe un registro con esos datos únicos (DNI, código, " +
+                    "asignación, usuario o correo)." : ex.getSQLState() != null && ex.getSQLState().startsWith(
+                    "23") ? "La operación incumple una relación o restricción de la base de datos." : "No se pudo " +
+                    "completar la operación en MySQL. Revise conexión, configuración y datos.";
             throw new IllegalStateException(mensaje, ex);
         }
     }

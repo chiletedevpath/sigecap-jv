@@ -1,9 +1,13 @@
 package pe.utp.sigecapjv.controlador;
 
+import pe.utp.sigecapjv.modelo.Capacitacion;
+import pe.utp.sigecapjv.modelo.Curso;
+import pe.utp.sigecapjv.modelo.Participacion;
+import pe.utp.sigecapjv.modelo.Trabajador;
+import pe.utp.sigecapjv.util.Validador;
+
 import java.util.ArrayList;
 import java.util.List;
-import pe.utp.sigecapjv.modelo.*;
-import pe.utp.sigecapjv.util.Validador;
 
 public class CapacitacionControlador {
     private final PersonalControlador personal;
@@ -45,26 +49,28 @@ public class CapacitacionControlador {
     }
 
     private void validarCodigo(Curso curso) {
-        if (cursos.stream().anyMatch(c -> c.getIdCurso() != curso.getIdCurso() && c.getCodigo().equalsIgnoreCase(curso.getCodigo()))) {
+        if (cursos.stream().anyMatch(
+                c -> c.getIdCurso() != curso.getIdCurso() && c.getCodigo().equalsIgnoreCase(curso.getCodigo()))) {
             throw new IllegalArgumentException("Ya existe un curso con ese código.");
         }
     }
 
     private Curso buscarCurso(int id) {
-        return cursos.stream().filter(c -> c.getIdCurso() == id).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("El curso no está registrado."));
+        return cursos.stream().filter(c -> c.getIdCurso() == id).findFirst().orElseThrow(
+                () -> new IllegalArgumentException("El curso no está registrado."));
     }
 
     private Capacitacion buscarCapacitacion(int id) {
-        return capacitaciones.stream().filter(c -> c.getIdCapacitacion() == id).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("La capacitación no está registrada."));
+        return capacitaciones.stream().filter(c -> c.getIdCapacitacion() == id).findFirst().orElseThrow(
+                () -> new IllegalArgumentException("La capacitación no está registrada."));
     }
 
     public void programarCapacitacion(Capacitacion capacitacion) {
         Validador.requerido(capacitacion, "Capacitación");
         Validador.requerido(capacitacion.getCurso(), "Curso");
-        Capacitacion nueva = new Capacitacion(0, capacitacion.getFecha(), capacitacion.getHoraInicio(),
-                capacitacion.getHoraFin(), capacitacion.getModalidad(), null, buscarCurso(capacitacion.getCurso().getIdCurso()));
+        Capacitacion nueva = new Capacitacion(
+                0, capacitacion.getFecha(), capacitacion.getHoraInicio(), capacitacion.getHoraFin(),
+                capacitacion.getModalidad(), null, buscarCurso(capacitacion.getCurso().getIdCurso()));
         if (capacitacion.getEstado() != null && !capacitacion.getEstado().isBlank()) {
             throw new IllegalArgumentException("Para programar, use una capacitación nueva sin estado.");
         }
@@ -79,8 +85,9 @@ public class CapacitacionControlador {
         Validador.requerido(datos, "Capacitación");
         Validador.requerido(datos.getCurso(), "Curso");
         Capacitacion actual = buscarCapacitacion(datos.getIdCapacitacion());
-        Capacitacion candidata = new Capacitacion(actual.getIdCapacitacion(), datos.getFecha(), datos.getHoraInicio(),
-                datos.getHoraFin(), datos.getModalidad(), actual.getEstado(), buscarCurso(datos.getCurso().getIdCurso()));
+        Capacitacion candidata = new Capacitacion(
+                actual.getIdCapacitacion(), datos.getFecha(), datos.getHoraInicio(), datos.getHoraFin(),
+                datos.getModalidad(), actual.getEstado(), buscarCurso(datos.getCurso().getIdCurso()));
         candidata.actualizar();
         actual.setCurso(candidata.getCurso());
         actual.setFecha(candidata.getFecha());
@@ -107,6 +114,24 @@ public class CapacitacionControlador {
         nueva.setIdParticipacion(siguienteParticipacion++);
         participaciones.add(nueva);
         return nueva.copia();
+    }
+
+    public void asignarGrupo(List<Trabajador> grupo, Capacitacion capacitacion) {
+        Validador.requerido(capacitacion, "Capacitación");
+        List<Trabajador> ordenados = ordenarGrupo(grupo);
+        Capacitacion revision = buscarCapacitacion(capacitacion.getIdCapacitacion()).copia();
+        for (Trabajador t : ordenados) {
+            var registrado = personal.trabajadorRegistrado(t.getIdTrabajador());
+            new Participacion(0, null, null, registrado, revision).asignarTrabajador();
+        }
+        for (Trabajador t : ordenados) asignarTrabajador(t, capacitacion);
+    }
+
+    protected static List<Trabajador> ordenarGrupo(List<Trabajador> grupo) {
+        if (grupo == null || grupo.isEmpty()) throw new IllegalArgumentException("Seleccione al menos un trabajador.");
+        for (Trabajador t : grupo) Validador.requerido(t, "Trabajador");
+        // Todas las asignaciones múltiples bloquean los trabajadores en el mismo orden.
+        return grupo.stream().sorted(java.util.Comparator.comparingInt(Trabajador::getIdTrabajador)).toList();
     }
 
     public List<Curso> listarCursos() {

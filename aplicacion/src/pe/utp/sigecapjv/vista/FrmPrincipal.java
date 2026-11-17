@@ -1,9 +1,6 @@
 package pe.utp.sigecapjv.vista;
 
-import pe.utp.sigecapjv.controlador.CapacitacionControlador;
-import pe.utp.sigecapjv.controlador.PersonalControlador;
-import pe.utp.sigecapjv.controlador.PersonalJdbcControlador;
-import pe.utp.sigecapjv.controlador.CapacitacionJdbcControlador;
+import pe.utp.sigecapjv.controlador.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -11,21 +8,85 @@ import java.awt.*;
 
 public class FrmPrincipal extends JFrame {
     public FrmPrincipal() {
-        this(new PersonalJdbcControlador());
+        this((SesionUsuario) null);
     }
 
-    private FrmPrincipal(PersonalJdbcControlador personal) {
-        this(personal, new CapacitacionJdbcControlador(personal));
+    public FrmPrincipal(SesionUsuario sesion) {
+        this(new PersonalJdbcControlador(java.util.Objects.requireNonNull(sesion, "Debe iniciar sesión.")), sesion);
+    }
+
+    private FrmPrincipal(PersonalJdbcControlador personal, SesionUsuario sesion) {
+        this(personal, new CapacitacionJdbcControlador(personal, sesion), new SeguimientoControlador(sesion),
+                new ReporteControlador(sesion), sesion);
     }
 
     public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones) {
+        this(personal, capacitaciones, null);
+    }
+
+    public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
+                        pe.utp.sigecapjv.controlador.SeguimientoControlador seguimiento) {
+        this(personal, capacitaciones, seguimiento, (ReporteControlador) null);
+    }
+
+    // Reportes consulta MySQL directamente; sin controlador el módulo queda deshabilitado.
+    public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
+                        SeguimientoControlador seguimiento, ReporteControlador reportes) {
+        this(personal, capacitaciones, seguimiento, reportes, null);
+    }
+
+    private FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
+                         SeguimientoControlador seguimiento, ReporteControlador reportes, SesionUsuario sesion) {
         super("SIGECAP J&V");
-        PnlPersonal pnlPersonal = new PnlPersonal(personal);
-        PnlCapacitaciones pnlCapacitaciones = new PnlCapacitaciones(capacitaciones, personal);
+        if (sesion == null) {
+            throw new SecurityException("Debe iniciar sesión.");
+        }
+        PnlPersonal pnlPersonal = sesion.puede("personal", "consultar") ? new PnlPersonal(
+                personal, sesion.getRol(), sesion.puede("capacitaciones", "consultar") ? new HistorialControlador(sesion) : null) : null;
+        PnlCapacitaciones pnlCapacitaciones = sesion.puede("capacitaciones", "consultar") ? new PnlCapacitaciones(
+                capacitaciones, personal, seguimiento, sesion.getRol()) : null;
         CardLayout tarjetas = new CardLayout();
         JPanel contenido = new JPanel(tarjetas);
-        contenido.add(pnlPersonal, "Personal");
-        contenido.add(pnlCapacitaciones, "Capacitaciones");
+        PnlInicio.Perfil perfilInicio = PnlInicio.Perfil.ADMINISTRADOR;
+
+        if (sesion != null) {
+            perfilInicio = switch (sesion.getRol()) {
+                case "Administrador" -> PnlInicio.Perfil.ADMINISTRADOR;
+                case "Responsable de capacitaciones" -> PnlInicio.Perfil.RESPONSABLE_CAPACITACIONES;
+                case "Supervisor de Operaciones" -> PnlInicio.Perfil.SUPERVISOR_OPERACIONES;
+                case "Trabajador" -> PnlInicio.Perfil.TRABAJADOR;
+                default -> throw new IllegalStateException("Rol no reconocido: " + sesion.getRol());
+            };
+        }
+
+        PnlInicio pnlInicio = new PnlInicio(perfilInicio);
+        contenido.add(pnlInicio, "Inicio");
+
+        InicioControlador inicioControlador = new InicioControlador(sesion);
+        pnlInicio.cargarResumen(inicioControlador);
+        if (pnlPersonal != null) contenido.add(pnlPersonal, "Personal");
+        if (pnlCapacitaciones != null) contenido.add(pnlCapacitaciones, "Capacitaciones");
+        PnlUsuarios usuarios = "Administrador".equals(sesion.getRol()) && sesion.puede(
+                "usuarios", "consultar") ? new PnlUsuarios(new UsuarioControlador(sesion)) : null;
+        if (usuarios != null) contenido.add(usuarios, "Usuarios");
+
+        PnlReportes reportesPanel = reportes != null && sesion.puede(
+                "capacitaciones", "consultar") ? new PnlReportes(reportes) : null;
+        if (reportesPanel != null) contenido.add(reportesPanel, "Reportes");
+        if (sesion != null) {
+            if (pnlPersonal != null && !sesion.puede("personal", "gestionar")) soloConsulta(pnlPersonal);
+            if (pnlCapacitaciones != null && !sesion.puede("capacitaciones", "gestionar"))
+                soloConsulta(pnlCapacitaciones);
+        }
+        PnlSeguimiento vigencias = !"Trabajador".equals(sesion.getRol()) && sesion.puede("capacitaciones", "consultar")
+                ? new PnlSeguimiento(new VigenciasControlador(sesion),new NotificacionesControlador(sesion),sesion.getRol()) : null;
+        if(vigencias!=null) contenido.add(vigencias,"Seguimiento");
+        PnlAlertas alertas = ("Trabajador".equals(sesion.getRol()) || sesion.puede("capacitaciones", "consultar"))
+                ? new PnlAlertas(new NotificacionesControlador(sesion)) : null;
+        if (alertas != null) contenido.add(alertas, "Alertas");
+        PnlMisCapacitaciones misCapacitaciones = "Trabajador".equals(sesion.getRol())
+                ? new PnlMisCapacitaciones(new HistorialControlador(sesion)) : null;
+        if (misCapacitaciones != null) contenido.add(misCapacitaciones, "Mis capacitaciones");
         JPanel menu = new JPanel();
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
         Color azul = new Color(28, 48, 71), seleccionado = new Color(46, 102, 158);
@@ -44,49 +105,150 @@ public class FrmPrincipal extends JFrame {
         menu.add(area);
         menu.add(Box.createVerticalStrut(30));
         for (String nombre : new String[]{"Inicio", "Personal", "Capacitaciones", "Seguimiento", "Reportes",
-                "Usuarios"}) {
+                "Usuarios", "Alertas", "Mis capacitaciones"}) {
+            if (nombre.equals("Seguimiento") && vigencias==null) {
+                continue;
+            }
+
+            if (nombre.equals("Personal") && pnlPersonal == null) {
+                continue;
+            }
+
+            if (nombre.equals("Capacitaciones") && pnlCapacitaciones == null) {
+                continue;
+            }
+
+            if (nombre.equals("Usuarios") && usuarios == null) {
+                continue;
+            }
+
+            if (nombre.equals("Reportes") && reportesPanel == null) continue;
+            if (nombre.equals("Alertas") && alertas == null) continue;
+            if (nombre.equals("Mis capacitaciones") && misCapacitaciones == null) continue;
             JButton boton = new JButton(nombre);
+
             boton.setAlignmentX(Component.LEFT_ALIGNMENT);
             boton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
             boton.setHorizontalAlignment(SwingConstants.LEFT);
-            boton.setBackground(nombre.equals("Personal") ? seleccionado : azul);
+            boton.setBackground(nombre.equals("Inicio") ? seleccionado : azul);
             boton.setForeground(Color.WHITE);
             boton.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             boton.setFocusPainted(false);
             boton.setBorder(new EmptyBorder(0, 12, 0, 10));
-            boolean disponible = nombre.equals("Personal") || nombre.equals("Capacitaciones");
+            boolean disponible = nombre.equals("Inicio")
+                    || nombre.equals("Seguimiento") && vigencias!=null
+                    || nombre.equals("Personal") && pnlPersonal != null
+                    || nombre.equals("Capacitaciones") && pnlCapacitaciones != null
+                    || nombre.equals("Usuarios") && usuarios != null
+                    || nombre.equals("Reportes") && reportesPanel != null
+                    || nombre.equals("Alertas") && alertas != null
+                    || nombre.equals("Mis capacitaciones") && misCapacitaciones != null;
+
             boton.setEnabled(disponible);
-            if (!disponible) boton.setToolTipText("Funcionalidad pendiente de implementación");
+
+            if (!disponible) {
+                boton.setToolTipText(
+                        java.util.Set.of("Personal", "Capacitaciones", "Usuarios", "Reportes").contains(nombre)
+                                ? "Sin acceso para su rol"
+                                : "Funcionalidad pendiente de implementación");
+            }
             boton.addActionListener(e -> {
-                pnlPersonal.refrescar();
-                pnlCapacitaciones.refrescar();
+                if (nombre.equals("Seguimiento")) vigencias.refrescar();
+                if (nombre.equals("Inicio")) pnlInicio.cargarResumen(inicioControlador);
+                if (nombre.equals("Mis capacitaciones")) misCapacitaciones.refrescar();
+                if (nombre.equals("Personal")) pnlPersonal.refrescar();
+                if (nombre.equals("Capacitaciones")) pnlCapacitaciones.refrescar();
+                if (nombre.equals("Usuarios")) usuarios.refrescar();
+                if (nombre.equals("Reportes")) reportesPanel.refrescar();
+                if (nombre.equals("Alertas")) alertas.refrescar();
                 tarjetas.show(contenido, nombre);
                 for (Component c : menu.getComponents())
-                    if (c instanceof JButton b)
-                        b.setBackground(b == boton ? seleccionado : azul);
+                    if (c instanceof JButton b) b.setBackground(b == boton ? seleccionado : azul);
             });
             menu.add(boton);
             menu.add(Box.createVerticalStrut(6));
         }
+        if (sesion != null) {
+            contenido.add(new PnlCuenta(new pe.utp.sigecapjv.controlador.CuentaControlador(sesion), () -> {
+                if (!isDisplayable()) return;
+                dispose();
+                new FrmLogin().setVisible(true);
+            }), "Cambiar contraseña");
+            JButton cuenta = new JButton("Cambiar contraseña");
+            cuenta.setForeground(Color.WHITE);
+            cuenta.setBackground(azul);
+            cuenta.setFocusPainted(false);
+            cuenta.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            cuenta.setBorder(new EmptyBorder(10, 12, 10, 12));
+            cuenta.setAlignmentX(Component.LEFT_ALIGNMENT);
+            cuenta.addActionListener(e -> {
+                tarjetas.show(contenido, "Cambiar contraseña");
+                for (Component componente : menu.getComponents())
+                    if (componente instanceof JButton boton)
+                        boton.setBackground(boton == cuenta ? seleccionado : azul);
+            });
+            menu.add(cuenta);
+        }
         menu.add(Box.createVerticalGlue());
-        JButton salir = new JButton("Salir");
+        JButton salir = new JButton("Cerrar sesión");
         salir.setForeground(Color.WHITE);
         salir.setBackground(azul);
         salir.setFocusPainted(false);
         salir.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         salir.setBorder(new EmptyBorder(10, 12, 10, 12));
-        salir.addActionListener(e -> dispose());
+        salir.addActionListener(e -> {
+            if (sesion != null) sesion.close();
+            dispose();
+            if (sesion != null) new FrmLogin().setVisible(true);
+        });
         salir.setAlignmentX(Component.LEFT_ALIGNMENT);
         menu.add(salir);
         JPanel principal = new JPanel(new BorderLayout());
         principal.add(menu, BorderLayout.WEST);
         principal.add(contenido, BorderLayout.CENTER);
 
+        if (sesion != null) {
+            VigilanciaSesion vigilancia = new VigilanciaSesion(
+                    sesion, new SesionControlador(), mensaje -> {
+                if (!isDisplayable()) return;
+                dispose();
+                FrmLogin acceso = new FrmLogin();
+                acceso.setVisible(true);
+                JOptionPane.showMessageDialog(acceso, mensaje, "Sesión finalizada", JOptionPane.INFORMATION_MESSAGE);
+            });
+            addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowOpened(java.awt.event.WindowEvent e) {
+                    vigilancia.iniciar();
+                }
+
+                @Override
+                public void windowClosed(java.awt.event.WindowEvent e) {
+                    vigilancia.close();
+                    sesion.close();
+                }
+            });
+            addWindowFocusListener(new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowGainedFocus(java.awt.event.WindowEvent e) {
+                    vigilancia.revisar();
+                }
+            });
+        }
         setContentPane(principal);
         setSize(1220, 750);
         setMinimumSize(new Dimension(1100, 680));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
+    }
+
+    private static void soloConsulta(Container contenedor) {
+        for (Component componente : contenedor.getComponents()) {
+            if (componente instanceof JButton boton && !java.util.Set.of(
+                    "Buscar", "Actualizar listado", "Limpiar", "Consultar").contains(boton.getText()))
+                boton.setEnabled(false);
+            if (componente instanceof Container hijo) soloConsulta(hijo);
+        }
     }
 
     public static void main(String[] args) {
@@ -96,12 +258,17 @@ public class FrmPrincipal extends JFrame {
             protected void dispatchEvent(AWTEvent evento) {
                 try {
                     super.dispatchEvent(evento);
+                } catch (SecurityException ex) {
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Acceso", JOptionPane.WARNING_MESSAGE);
                 } catch (IllegalStateException ex) {
                     if (!(ex.getCause() instanceof java.sql.SQLException)) throw ex;
+                    // El diagnóstico incluye solo SQLState y código; no expone datos ni credenciales.
+                    java.sql.SQLException sql = (java.sql.SQLException) ex.getCause();
+                    System.err.printf("MySQL: SQLState=%s, codigo=%d%n", sql.getSQLState(), sql.getErrorCode());
                     JOptionPane.showMessageDialog(null, ex.getMessage(), "MySQL", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
-        SwingUtilities.invokeLater(() -> new FrmPrincipal().setVisible(true));
+        SwingUtilities.invokeLater(() -> new FrmLogin().setVisible(true));
     }
 }
