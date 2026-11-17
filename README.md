@@ -11,7 +11,7 @@ Los módulos trabajan con datos guardados en MySQL.
 | Módulo | Funciones disponibles |
 | --- | --- |
 | Acceso y usuarios | Inicio de sesión, creación y edición de cuentas, asignación de roles, permisos y activación o desactivación de usuarios. |
-| Personal | Registro y actualización de trabajadores, con consulta de su historial de capacitación. |
+| Personal | Registro y actualización de trabajadores, con consulta de su historial y los estados de sesión y participación por separado. |
 | Capacitaciones | Registro de cursos, programación y modificación de sesiones, asignación individual o grupal, asistencia, resultados y certificados. |
 | Inicio | Resumen de capacitaciones y vencimientos según el perfil. |
 | Mis capacitaciones | Historial propio del trabajador, con fecha, horario, modalidad, resultado, certificado y vigencia. |

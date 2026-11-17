@@ -228,7 +228,7 @@ public class PnlPersonal extends JPanel {
         consultar.addActionListener(e -> consultarHistorial());
         superior.add(consultar);
 
-        String[] columnas = {"Curso", "Fecha", "Estado", "Asistencia", "Resultado", "Nota", "Certificado", "Vencimiento", "Vigencia"};
+        String[] columnas = {"Curso", "Fecha", "Estado", "Asistencia", "Resultado", "Nota", "Certificado", "Vencimiento", "Vigencia", "Sesión", "Participación"};
         Object[][] datos = new Object[0][columnas.length];
 
         tablaHistorial = crearTabla(datos, columnas);
@@ -260,7 +260,7 @@ public class PnlPersonal extends JPanel {
                     for (var f : get()) modelo.addRow(new Object[]{f.curso(),f.fecha().format(fecha),f.estado(),
                             f.asistencia()==null?"Pendiente":f.asistencia(),f.resultado()==null?"Pendiente":f.resultado(),
                             f.calificacion(),f.certificado()==null?"Pendiente":f.certificado(),
-                            f.vencimiento()==null?"—":f.vencimiento().format(fecha),f.vigencia()});
+                            f.vencimiento()==null?"—":f.vencimiento().format(fecha),f.vigencia(),f.estadoCapacitacion(),f.estadoParticipacion()});
                     mensajeHistorial.setText(modelo.getRowCount()==0?"El trabajador no tiene capacitaciones registradas.":"Historial actualizado.");
                 } catch (Exception ex) {
                     modelo.setRowCount(0);

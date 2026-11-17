@@ -72,6 +72,9 @@ public final class PruebaHistorialMySql {
             var nuevas = filas.stream().filter(f->f.curso().equals("Curso historial")).toList();
             comprobar(nuevas.size()==3,"Se mezcló el historial de otro trabajador.");
             comprobar(nuevas.stream().anyMatch(f->f.estado().equals("CANCELADA")),"Cancelación de capacitación no reflejada.");
+            comprobar(nuevas.stream().anyMatch(f -> "CANCELADA".equals(f.estadoCapacitacion())
+                    && "PENDIENTE".equals(f.estadoParticipacion()) && "CANCELADA".equals(f.estado())),
+                    "La cancelación conserva el estado original de la participación.");
             var completa = nuevas.stream().filter(f->f.estado().equals("COMPLETADA")).findFirst().orElseThrow();
             comprobar(completa.calificacion().toPlainString().equals("18.50") && completa.asistencia().equals("ASISTIO"),"Seguimiento incompleto.");
             comprobar(completa.certificado().equals("CERT-HISTORIAL") && completa.vigencia().equals("PROXIMO_A_VENCER"),"Certificado/vigencia incorrectos.");
@@ -100,7 +103,7 @@ public final class PruebaHistorialMySql {
             esperar(historial[0],"Historial actualizado.");
             SwingUtilities.invokeAndWait(()-> {
                 JTable tabla = encontrar(historial[0],JTable.class);
-                comprobar(tabla.getRowCount()==filas.size() && tabla.getColumnCount()==9,"Historial Swing incompleto.");
+                comprobar(tabla.getRowCount()==filas.size() && tabla.getColumnCount()==11,"Historial Swing incompleto.");
             });
 
             PnlMisCapacitaciones[] panel = new PnlMisCapacitaciones[1];

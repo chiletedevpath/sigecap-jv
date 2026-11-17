@@ -8,4 +8,4 @@ import java.time.LocalTime;
 public record HistorialCapacitacion(int idParticipacion, String curso, LocalDate fecha,
                                     String estado, String asistencia, String resultado,
                                     BigDecimal calificacion, String certificado,
-                                    LocalDate vencimiento, String vigencia, LocalTime horaInicio, LocalTime horaFin, String modalidad) { }
+                                    LocalDate vencimiento, String vigencia, LocalTime horaInicio, LocalTime horaFin, String modalidad, String estadoCapacitacion, String estadoParticipacion) { }
