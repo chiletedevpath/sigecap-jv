@@ -31,6 +31,7 @@ public class PruebaFlujo {
     }
     public static void main(String[] args) throws Exception {
         PruebaErroresMySql.verificar();
+        PruebaEliminarCursos.verificar();
         PruebaSelectorParticipantes.verificar();
         PruebaAcceso.verificar();
         PruebaPermisosSwing.verificar();

@@ -123,6 +123,7 @@ public class PruebaMySql {
                 PruebaVigenciasMySql.verificar();
                 probarCambiosDeSesion(personal, gestion, admin);
                 PruebaCuentaMySql.verificar();
+                PruebaEliminarCursosMySql.verificar();
                 return;
             }
 

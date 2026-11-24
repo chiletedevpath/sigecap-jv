@@ -31,6 +31,8 @@ Los cambios de rol, permisos, contraseña o estado invalidan las sesiones anteri
 
 ### Capacitaciones y seguimiento
 
+En **Capacitaciones → Cursos**, los usuarios con permiso de gestión pueden eliminar un curso que no tenga capacitaciones asociadas. La confirmación muestra su código y nombre. Si tiene capacitaciones, incluso canceladas o cerradas, se conserva y puede desactivarse desde **Editar curso**. La eliminación no modifica el historial.
+
 En **Capacitaciones → Participantes** se puede buscar por DNI o nombre y seleccionar varios trabajadores activos. La selección se conserva al cambiar la búsqueda. Las inscripciones y sus avisos se guardan juntos. Si una inscripción falla, se revierte el grupo completo.
 
 Cuando cambia el curso, la fecha, el horario o la modalidad de una sesión, sus participantes pendientes reciben un aviso con la programación actualizada. La cancelación también genera un aviso.
@@ -65,7 +67,7 @@ Ejecuta los comandos desde la raíz del repositorio.
 
 Necesitas JDK 17 o superior, MySQL y MySQL Connector/J. Las pruebas de integración usan MySQL 8.4.
 
-Para una base nueva, ejecuta el esquema y prepara la cuenta de conexión siguiendo la guía. Para una instalación existente, aplica `003-plazos-alertas.sql` si todavía falta la configuración de plazos y `004-entidad-certificado.sql` para la institución emisora. Ambos scripts se pueden repetir y conservan los registros. No vuelvas a ejecutar el esquema inicial sobre tu base existente. [Guía de base de datos](database/README.md)
+Para una base nueva, ejecuta el esquema y prepara la cuenta de conexión siguiendo la guía. Para una instalación existente, aplica `003-plazos-alertas.sql` si todavía falta la configuración de plazos y `004-entidad-certificado.sql` para la institución emisora. `005-permiso-eliminar-curso.sql` concede a la cuenta de aplicación el permiso necesario para eliminar cursos sin uso; ajusta la cuenta y el host a tu instalación. Los scripts se pueden repetir. No vuelvas a ejecutar el esquema inicial sobre tu base existente. [Guía de base de datos](database/README.md)
 
 ### Desde IntelliJ o PowerShell
 

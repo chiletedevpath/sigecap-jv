@@ -26,6 +26,8 @@ El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participa
 
 ## Conexión local
 
+Para habilitar la eliminación controlada de cursos en una instalación existente, ejecuta `005-permiso-eliminar-curso.sql` con una cuenta administrativa. El ejemplo usa `sigecap_app`@`%`; ajusta ambos valores si tu cuenta es distinta. Solo añade DELETE sobre `curso`, sin modificar tablas ni claves foráneas. Docker concede este permiso al crear un volumen nuevo.
+
 Configura las [variables de conexión descritas en el README](../README.md#desde-intellij-o-powershell) en el proceso que inicia Java. La URL predeterminada es `jdbc:mysql://localhost:3306/sigecap_jv`.
 
 La cuenta de aplicación necesita estos permisos, iguales a los que configura `docker/002-permisos-app.sh` en una instalación nueva:
@@ -34,10 +36,13 @@ La cuenta de aplicación necesita estos permisos, iguales a los que configura `d
 | --- | --- |
 | `trabajador`, `curso`, `capacitacion`, `participacion`, `asistencia`, `resultado`, `certificado`, `notificacion`, `usuario`, `rol`, `permiso`, `rol_permiso` | SELECT, INSERT, UPDATE |
 | `rol_permiso` | DELETE, para revocar permisos |
+| `curso` | DELETE, solo para cursos sin capacitaciones asociadas |
 | `configuracion_alertas` | SELECT, UPDATE |
 | `vw_control_vigencias` | SELECT |
 
 Usa una cuenta administrativa separada para crear el esquema y aplicar migraciones. Docker es opcional si ya tienes MySQL instalado.
+
+La aplicación exige `capacitaciones.gestionar` y comprueba la sesión dentro de la transacción de eliminación. Bloquea el curso antes de comprobar su uso. La clave foránea `ON DELETE RESTRICT` sigue impidiendo eliminarlo si existe cualquier capacitación asociada. La cuenta MySQL tiene permiso de borrado sobre esa tabla; la restricción de relaciones sigue siendo responsabilidad del servidor.
 
 En IntelliJ selecciona **SIGECAP MySQL** y configura las variables en la configuración local de ejecución, sin incorporarlas al XML compartido. También puedes iniciar IntelliJ desde una consola donde ya estén definidas. Si falta el SDK, selecciona tu JDK instalado. La biblioteca del proyecto usa `com.mysql:mysql-connector-j:26.7.0`; IntelliJ puede resolverla desde Maven.
 
