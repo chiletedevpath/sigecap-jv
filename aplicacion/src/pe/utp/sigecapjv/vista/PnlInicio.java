@@ -16,8 +16,6 @@ public class PnlInicio extends JPanel {
         ADMINISTRADOR, RESPONSABLE_CAPACITACIONES, SUPERVISOR_OPERACIONES, TRABAJADOR
     }
 
-    private static final Color AZUL = new Color(28, 48, 71);
-    private static final Color AZUL_CLARO = new Color(46, 102, 158);
     private static final Color FONDO = new Color(245, 247, 249);
     private static final Color BLANCO = Color.WHITE;
     private static final Color TEXTO = new Color(42, 49, 57);

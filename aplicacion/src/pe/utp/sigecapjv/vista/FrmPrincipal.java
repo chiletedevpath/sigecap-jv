@@ -7,10 +7,6 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class FrmPrincipal extends JFrame {
-    public FrmPrincipal() {
-        this((SesionUsuario) null);
-    }
-
     public FrmPrincipal(SesionUsuario sesion) {
         this(new PersonalJdbcControlador(java.util.Objects.requireNonNull(sesion, "Debe iniciar sesión.")), sesion);
     }
@@ -18,21 +14,6 @@ public class FrmPrincipal extends JFrame {
     private FrmPrincipal(PersonalJdbcControlador personal, SesionUsuario sesion) {
         this(personal, new CapacitacionJdbcControlador(personal, sesion), new SeguimientoControlador(sesion),
                 new ReporteControlador(sesion), sesion);
-    }
-
-    public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones) {
-        this(personal, capacitaciones, null);
-    }
-
-    public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
-                        pe.utp.sigecapjv.controlador.SeguimientoControlador seguimiento) {
-        this(personal, capacitaciones, seguimiento, (ReporteControlador) null);
-    }
-
-    // Reportes consulta MySQL directamente; sin controlador el módulo queda deshabilitado.
-    public FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
-                        SeguimientoControlador seguimiento, ReporteControlador reportes) {
-        this(personal, capacitaciones, seguimiento, reportes, null);
     }
 
     private FrmPrincipal(PersonalControlador personal, CapacitacionControlador capacitaciones,
@@ -150,7 +131,7 @@ public class FrmPrincipal extends JFrame {
                 boton.setToolTipText(
                         java.util.Set.of("Personal", "Capacitaciones", "Usuarios", "Reportes").contains(nombre)
                                 ? "Sin acceso para su rol"
-                                : "Funcionalidad pendiente de implementación");
+                                : "Módulo no disponible para su sesión");
             }
             boton.addActionListener(e -> {
                 if (nombre.equals("Seguimiento")) vigencias.refrescar();

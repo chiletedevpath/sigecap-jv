@@ -55,7 +55,7 @@ Los módulos del alcance académico están implementados. La regresión comprueb
 
 Antes de presentar, debemos aplicar las migraciones en el equipo que se usará, preparar sus cuentas y recorrer con el grupo un caso completo, desde la asignación hasta el certificado y el reporte. Esa revisión confirma la instalación y la aceptación del grupo; las pruebas automáticas se ejecutan en una base separada.
 
-La entrega es una aplicación de escritorio para Operaciones. Las alertas son internas, las evidencias son archivos locales y no se integran servicios de SUCAMEC, APN ni mensajería externa. El empaquetado con Maven quedó aplazado; se puede ejecutar con IntelliJ, PowerShell o Docker.
+La entrega es una aplicación de escritorio para Operaciones. Las alertas son internas, las evidencias son archivos locales y no se integran servicios de SUCAMEC, APN ni mensajería externa. Se ejecuta con IntelliJ, PowerShell o Docker.
 
 ## Cómo ejecutarlo
 
@@ -141,4 +141,6 @@ Las pruebas cubren persistencia, asignación grupal, asistencia, resultados, cer
 
 Cada integrante trabaja en su rama y abre un pull request hacia `main`. Adrian revisa los cambios antes de integrarlos. Las modificaciones de clases compartidas y base de datos se coordinan con el equipo.
 
-El código está en `aplicacion/src/`, las pruebas en `aplicacion/test/` y el esquema y las migraciones en `database/`. Las credenciales, la configuración personal, los archivos generados y el contenido de `privado/` se mantienen fuera del repositorio.
+El código está en `aplicacion/src/`, las pruebas en `aplicacion/test/` y el esquema y las migraciones en `database/`. Los controladores en memoria se conservan para las pruebas sin MySQL; la aplicación inicia con login y controladores JDBC. La navegación de los cuatro perfiles se comprueba con `probar-mysql.ps1 -Ventanas`.
+
+Las credenciales, la configuración personal, los archivos generados y el contenido de `privado/` se mantienen fuera del repositorio.
