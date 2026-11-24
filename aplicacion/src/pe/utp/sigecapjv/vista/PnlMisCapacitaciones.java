@@ -270,7 +270,7 @@ public class PnlMisCapacitaciones extends JPanel {
                 } catch (Exception ex) {
                     modelo.setRowCount(0);
                     indicadores.values().forEach(l -> l.setText("—"));
-                    mensaje.setText("No se pudo consultar. Revise la conexión o inicie sesión nuevamente.");
+                    mensaje.setText(pe.utp.sigecapjv.dao.Jdbc.mensajeError(ex));
                 }
             }
         }.execute();

@@ -142,17 +142,29 @@ public class SeguimientoControlador {
     public Certificado registrarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento,
                                             String evidencia) {
         AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
-        return guardarCertificado(id, numero, emision, vencimiento, evidencia, false);
+        return guardarCertificado(id, numero, emision, vencimiento, evidencia, null, false);
     }
 
     public Certificado actualizarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento,
                                              String evidencia) {
         AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
-        return guardarCertificado(id, numero, emision, vencimiento, evidencia, true);
+        return guardarCertificado(id, numero, emision, vencimiento, evidencia, null, true);
+    }
+
+    public Certificado registrarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento,
+                                            String evidencia, String entidadEmisora) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
+        return guardarCertificado(id, numero, emision, vencimiento, evidencia, entidadEmisora, false);
+    }
+
+    public Certificado actualizarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento,
+                                             String evidencia, String entidadEmisora) {
+        AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
+        return guardarCertificado(id, numero, emision, vencimiento, evidencia, entidadEmisora, true);
     }
 
     private Certificado guardarCertificado(int id, String numero, LocalDate emision, LocalDate vencimiento,
-                                           String evidencia, boolean editar) {
+                                           String evidencia, String entidadEmisora, boolean editar) {
         return Jdbc.transaccion(c -> {
             Participacion participante = validarParticipacion(c, id, true);
             Resultado resultado = resultados.buscarPorParticipacion(c, id);
@@ -166,7 +178,8 @@ public class SeguimientoControlador {
             Certificado dato = new Certificado(
                     anterior == null ? 0 : anterior.getIdCertificado(), id,
                                                participante.getTrabajador().getIdTrabajador(), numero, emision,
-                                               vencimiento, evidencia);
+                                               vencimiento, evidencia,
+                    entidadEmisora == null && anterior != null ? anterior.getEntidadEmisora() : entidadEmisora);
             if (editar) dato.actualizar();
             else dato.registrar();
             if (emision.isBefore(participante.getCapacitacion().getFecha()))

@@ -19,7 +19,7 @@ public class PnlEvaluacion extends JPanel {
     private final JComboBox<Capacitacion> selector = new JComboBox<>();
     private final JComboBox<String> resultado = new JComboBox<>(new String[]{"APROBADO", "DESAPROBADO", "APTO", "NO_APTO"});
     private final JTextField nota = new JTextField(6), numero = new JTextField(15), emision = new JTextField(10),
-            vencimiento = new JTextField(10), evidencia = new JTextField(25);
+            vencimiento = new JTextField(10), evidencia = new JTextField(25), entidad = new JTextField(25);
     private final JButton guardar = new JButton("Guardar");
     private final JLabel mensaje = new JLabel("Seleccione una capacitación y un trabajador.");
     private final DefaultTableModel modelo;
@@ -44,7 +44,7 @@ public class PnlEvaluacion extends JPanel {
         JButton actualizar = new JButton("Actualizar"); filtros.add(actualizar);
         add(filtros, BorderLayout.NORTH);
         modelo = new DefaultTableModel(certificados
-                ? new String[]{"Trabajador", "N.° certificado", "Emisión", "Vencimiento", "Vigencia"}
+                ? new String[]{"Trabajador", "N.° certificado", "Emisión", "Vencimiento", "Vigencia", "Institución emisora"}
                 : new String[]{"Trabajador", "Resultado", "Calificación", "Fecha de registro"}, 0) {
             @Override public boolean isCellEditable(int fila, int columna) { return false; }
         };
@@ -62,6 +62,7 @@ public class PnlEvaluacion extends JPanel {
         JPanel campos = new JPanel(new GridLayout(0,2,12,8)); campos.setOpaque(false);
         if (certificados) {
             campo(campos,"N.° certificado",numero);
+            campo(campos,"Institución emisora (opcional)",entidad);
             campo(campos,"Emisión (AAAA-MM-DD)",emision);
             campo(campos,"Vencimiento (vacío: no aplica)",vencimiento);
             JPanel archivo = new JPanel(new BorderLayout(5,0)); archivo.setOpaque(false);
@@ -115,6 +116,7 @@ public class PnlEvaluacion extends JPanel {
         filas = List.of(); resultados = List.of(); documentos = List.of(); modelo.setRowCount(0);
         guardar.setEnabled(false);
         numero.setText(""); emision.setText(""); vencimiento.setText(""); evidencia.setText(""); nota.setText("");
+        entidad.setText("");
     }
 
     private void cargar() {
@@ -137,7 +139,8 @@ public class PnlEvaluacion extends JPanel {
                 Resultado r = resultados.get(i); Certificado c = documentos.get(i);
                 if (certificados) modelo.addRow(new Object[]{nombre, c == null ? "Sin registrar" : c.getNumero(),
                         c == null ? "" : c.getFechaEmision(), c == null ? "" : c.getFechaVencimiento() == null ? "No aplica" : c.getFechaVencimiento(),
-                        c == null ? "" : c.getEstadoVigencia()});
+                        c == null ? "" : c.getEstadoVigencia(),
+                        c == null || c.getEntidadEmisora() == null ? "Sin registrar" : c.getEntidadEmisora()});
                 else modelo.addRow(new Object[]{nombre, r == null ? "Sin registrar" : r.getCondicion(),
                         r == null || r.getCalificacion() == null ? "" : r.getCalificacion(), r == null ? "" : r.getFechaRegistro()});
             }
@@ -157,6 +160,7 @@ public class PnlEvaluacion extends JPanel {
             emision.setText(c == null ? LocalDate.now().toString() : c.getFechaEmision().toString());
             vencimiento.setText(c == null || c.getFechaVencimiento() == null ? "" : c.getFechaVencimiento().toString());
             evidencia.setText(c == null || c.getRutaEvidencia() == null ? "" : c.getRutaEvidencia());
+            entidad.setText(c == null || c.getEntidadEmisora() == null ? "" : c.getEntidadEmisora());
         } else {
             resultado.setSelectedItem(r == null ? "APROBADO" : r.getCondicion());
             nota.setText(r == null || r.getCalificacion() == null ? "" : r.getCalificacion().toPlainString());
@@ -172,8 +176,8 @@ public class PnlEvaluacion extends JPanel {
             if (certificados) {
                 LocalDate desde = LocalDate.parse(emision.getText().trim());
                 LocalDate hasta = vencimiento.getText().isBlank() ? null : LocalDate.parse(vencimiento.getText().trim());
-                if (documentos.get(i) == null) seguimiento.registrarCertificado(id,numero.getText(),desde,hasta,evidencia.getText());
-                else seguimiento.actualizarCertificado(id,numero.getText(),desde,hasta,evidencia.getText());
+                if (documentos.get(i) == null) seguimiento.registrarCertificado(id,numero.getText(),desde,hasta,evidencia.getText(),entidad.getText());
+                else seguimiento.actualizarCertificado(id,numero.getText(),desde,hasta,evidencia.getText(),entidad.getText());
             } else {
                 BigDecimal valor = nota.getText().isBlank() ? null : new BigDecimal(nota.getText().trim().replace(',', '.'));
                 if (resultados.get(i) == null) seguimiento.registrarResultado(id,(String) resultado.getSelectedItem(),valor);

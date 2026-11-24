@@ -17,7 +17,7 @@ public class CertificadoDAO {
                 return new Certificado(
                         r.getInt("idCertificado"), id, r.getInt("idTrabajador"), r.getString("numero"),
                         r.getObject("fechaEmision", LocalDate.class), r.getObject("fechaVencimiento", LocalDate.class),
-                        r.getString("rutaEvidencia"));
+                        r.getString("rutaEvidencia"), r.getString("entidadEmisora"));
             }
         }
     }
@@ -26,17 +26,17 @@ public class CertificadoDAO {
         return Jdbc.insertar(
                 c,
                 "INSERT INTO certificado(idParticipacion,idTrabajador,numero,fechaEmision,fechaVencimiento," +
-                        "rutaEvidencia,estadoVigencia) VALUES (?,?,?,?,?,?,NULL)",
+                        "rutaEvidencia,entidadEmisora,estadoVigencia) VALUES (?,?,?,?,?,?,?,NULL)",
                 dato.getIdParticipacion(), dato.getIdTrabajador(), dato.getNumero(), dato.getFechaEmision(),
-                dato.getFechaVencimiento(), dato.getRutaEvidencia());
+                dato.getFechaVencimiento(), dato.getRutaEvidencia(), dato.getEntidadEmisora());
     }
 
     public void actualizar(Connection c, Certificado dato) throws SQLException {
         Jdbc.actualizar(
                 c,
                 "UPDATE certificado SET numero=?,fechaEmision=?,fechaVencimiento=?,rutaEvidencia=?," +
-                        "estadoVigencia=NULL WHERE idCertificado=? AND idParticipacion=?",
+                        "entidadEmisora=?,estadoVigencia=NULL WHERE idCertificado=? AND idParticipacion=?",
                 dato.getNumero(), dato.getFechaEmision(), dato.getFechaVencimiento(), dato.getRutaEvidencia(),
-                dato.getIdCertificado(), dato.getIdParticipacion());
+                dato.getEntidadEmisora(), dato.getIdCertificado(), dato.getIdParticipacion());
     }
 }

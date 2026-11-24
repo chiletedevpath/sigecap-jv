@@ -83,7 +83,9 @@ public final class PruebaNavegacionMySql {
                         esperar(ventana[0]);
                         SwingUtilities.invokeAndWait(() -> {
                             comprobar(buscar(ventana[0],JLabel.class).stream().filter(Component::isShowing)
-                                    .noneMatch(l->l.getText()!=null && (l.getText().startsWith("No se pudo") || l.getText().startsWith("No se pudieron"))),"Carga sin errores: "+usuario+" / "+modulo);
+                                    .noneMatch(l->l.getText()!=null && (l.getText().startsWith("No se pudo")
+                                            || l.getText().startsWith("No se pudieron") || l.getText().startsWith("La base necesita")
+                                            || l.getText().startsWith("La cuenta de conexión") || l.getText().startsWith("Su sesión"))),"Carga sin errores: "+usuario+" / "+modulo);
                             BufferedImage render=new BufferedImage(ventana[0].getWidth(),ventana[0].getHeight(),BufferedImage.TYPE_INT_RGB);
                             Graphics2D g=render.createGraphics(); ventana[0].printAll(g); g.dispose();
                             try { ImageIO.write(render,"png",salida.resolve(usuario+"-"+modulo.replace(' ','-')+".png").toFile()); }

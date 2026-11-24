@@ -30,6 +30,7 @@ public class PruebaFlujo {
         return new Capacitacion(0, LocalDate.now().plusDays(2), LocalTime.of(9, 0), LocalTime.of(13, 0), "Presencial", null, curso);
     }
     public static void main(String[] args) throws Exception {
+        PruebaErroresMySql.verificar();
         PruebaSelectorParticipantes.verificar();
         PruebaAcceso.verificar();
         PruebaPermisosSwing.verificar();
@@ -111,12 +112,9 @@ public class PruebaFlujo {
         comprobar("ACTIVO".equals(gestion.listarCursos().get(0).getEstado()), "Curso protegido en consulta");
         gestion.listarParticipaciones().get(0).getTrabajador().setNombres("Cambio externo");
         comprobar("Persona".equals(gestion.listarParticipaciones().get(0).getTrabajador().getNombres()), "Participación protegida");
-        rechazar(t::consultarHistorial, "Historial explícitamente pendiente");
-        rechazar(t::consultarCapacitaciones, "Consulta explícitamente pendiente");
         for (Class<?> clase : new Class<?>[]{Trabajador.class, Curso.class, Capacitacion.class, Participacion.class}) {
             for (var atributo : clase.getDeclaredFields()) comprobar(Modifier.isPrivate(atributo.getModifiers()), "Encapsulamiento " + atributo);
         }
-        comprobar(Trabajador.class.getMethod("consultarHistorial").getReturnType() == void.class, "Firma UML historial");
         comprobar(Participacion.class.getMethod("actualizarEstado").getReturnType() == void.class, "Firma UML participación");
         Participacion directa = new Participacion(0, null, null, trabajador("00000005"), capacitacion(c));
         rechazar(directa::asignarTrabajador, "Sesión no programada");

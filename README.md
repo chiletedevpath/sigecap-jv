@@ -15,7 +15,7 @@ Los módulos trabajan con datos guardados en MySQL.
 | Capacitaciones | Registro de cursos, programación y modificación de sesiones, asignación individual o grupal, asistencia, resultados y certificados. |
 | Inicio | Resumen de capacitaciones y vencimientos según el perfil. |
 | Mis capacitaciones | Historial propio del trabajador, con fecha, horario, modalidad, resultado, certificado y vigencia. |
-| Seguimiento | Consulta de certificados y días restantes, con filtros por curso y estado de vigencia. |
+| Seguimiento | Consulta de certificados y días restantes, con filtros por trabajador o DNI, curso, institución emisora, estado y rango de vencimiento. |
 | Alertas | Avisos de asignación, reprogramación, cancelación, recordatorios y vencimientos. |
 | Reportes | Consulta del consolidado con filtros y exportación a PDF. |
 
@@ -37,6 +37,8 @@ Cuando cambia el curso, la fecha, el horario o la modalidad de una sesión, sus 
 
 El registro de resultados requiere asistencia. La nota es opcional y admite valores de 0 a 20. Para registrar un certificado debe existir un resultado favorable. La evidencia del certificado se conserva como una ruta a un archivo local.
 
+En Certificados se registra también la institución emisora, por ejemplo SUCAMEC o APN. Es un dato opcional: los registros antiguos muestran «Sin registrar» hasta que se complete. Seguimiento permite buscar por una parte del nombre de la institución o del trabajador, sin distinguir mayúsculas ni tildes. Los filtros se combinan y las fechas incluyen ambos extremos. Los certificados sin vencimiento aparecen cuando no se limita el rango de fechas.
+
 ### Vigencias y alertas
 
 Inicio, Historial, Seguimiento y Reportes calculan la vigencia con la fecha de MySQL y el plazo configurado. Un certificado pasa a vencido después de su fecha de vencimiento. Los certificados sin fecha de vencimiento figuran como NO_APLICA.
@@ -47,15 +49,13 @@ Los avisos de asignación y cambios de programación se guardan al realizar la o
 
 Los avisos se muestran dentro de SIGECAP. Las evidencias y los PDF exportados se gestionan como archivos locales.
 
-## Qué falta
+## Qué falta para la entrega
 
-- Completar Seguimiento con filtros por trabajador y rango de fechas de vencimiento. El criterio de entidad requiere precisar su significado y su relación con el modelo de datos antes de implementarlo.
-- Revisar con el grupo un caso completo en el equipo de presentación, desde la asignación hasta el certificado y el reporte, usando los cuatro perfiles.
-- Mejorar los mensajes cuando falte una actualización de la base o falle la conexión.
-- Comprobar un respaldo y su restauración en una base separada.
-- Contrastar las historias y limitaciones del informe con las funciones terminadas y registrar los resultados de aceptación.
+Los módulos del alcance académico están implementados. La regresión comprueba el flujo de capacitación, los cuatro perfiles, los filtros de seguimiento, la actualización del esquema y la restauración de un respaldo en otra instancia de MySQL.
 
-El empaquetado con Maven quedó aplazado. La ejecución disponible utiliza IntelliJ, los scripts PowerShell o Docker. La prioridad actual es cerrar las funciones y su validación con el grupo.
+Antes de presentar, debemos aplicar las migraciones en el equipo que se usará, preparar sus cuentas y recorrer con el grupo un caso completo, desde la asignación hasta el certificado y el reporte. Esa revisión confirma la instalación y la aceptación del grupo; las pruebas automáticas se ejecutan en una base separada.
+
+La entrega es una aplicación de escritorio para Operaciones. Las alertas son internas, las evidencias son archivos locales y no se integran servicios de SUCAMEC, APN ni mensajería externa. El empaquetado con Maven quedó aplazado; se puede ejecutar con IntelliJ, PowerShell o Docker.
 
 ## Cómo ejecutarlo
 
@@ -65,7 +65,7 @@ Ejecuta los comandos desde la raíz del repositorio.
 
 Necesitas JDK 17 o superior, MySQL y MySQL Connector/J. Las pruebas de integración usan MySQL 8.4.
 
-Para una base nueva, ejecuta el esquema y prepara la cuenta de conexión siguiendo la guía. Si ya tenías la base antes de incorporar los plazos configurables, aplica la migración de plazos y concede los permisos indicados antes de iniciar la versión actual. [Guía de base de datos](database/README.md)
+Para una base nueva, ejecuta el esquema y prepara la cuenta de conexión siguiendo la guía. Para una instalación existente, aplica `003-plazos-alertas.sql` si todavía falta la configuración de plazos y `004-entidad-certificado.sql` para la institución emisora. Ambos scripts se pueden repetir y conservan los registros. No vuelvas a ejecutar el esquema inicial sobre tu base existente. [Guía de base de datos](database/README.md)
 
 ### Desde IntelliJ o PowerShell
 
@@ -128,7 +128,7 @@ Para comprobar también el ingreso y la navegación de los cuatro perfiles, util
 .\aplicacion\probar-mysql.ps1 -Ventanas
 ```
 
-Las pruebas cubren persistencia, asignación grupal, asistencia, resultados, certificados, usuarios, permisos, cambio de contraseña, sesiones, historial, alertas, vigencias y reportes. Las capturas de revisión quedan en `aplicacion/out/revision-perfiles/`, una carpeta de salida excluida de Git.
+Las pruebas cubren persistencia, asignación grupal, asistencia, resultados, certificados e institución emisora, usuarios, permisos, cambio de contraseña, sesiones, historial, alertas, vigencias y reportes. Comprueban la migración desde la estructura anterior y su repetición. Al finalizar, restauran un respaldo en otro contenedor y comparan la estructura y los datos por SHA-256. Las capturas de revisión quedan en `aplicacion/out/revision-perfiles/`, una carpeta de salida excluida de Git.
 
 ## Trabajo en equipo
 

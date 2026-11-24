@@ -45,16 +45,6 @@ public class Trabajador {
         cargo = cargo.trim();
     }
 
-    // Las consultas con acceso a MySQL se realizan mediante HistorialControlador.
-    public void consultarHistorial() {
-        throw new UnsupportedOperationException("La consulta del historial todavía no está implementada.");
-    }
-
-    public void consultarCapacitaciones() {
-        throw new UnsupportedOperationException(
-                "La consulta de capacitaciones del trabajador todavía no está implementada.");
-    }
-
     public Trabajador copia() {
         return new Trabajador(idTrabajador, dni, nombres, apellidos, cargo, estado);
     }

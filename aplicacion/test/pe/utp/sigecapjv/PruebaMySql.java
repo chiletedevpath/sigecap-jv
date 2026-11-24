@@ -109,6 +109,7 @@ public class PruebaMySql {
                 int evaluada = gestion.listarParticipaciones().stream().filter(p -> "EVALUACION".equals(p.getCapacitacion().getCurso().getCodigo())).findFirst().orElseThrow().getIdParticipacion();
                 comprobar("APTO".equals(new SeguimientoControlador(admin).consultarResultado(evaluada).getCondicion()), "Resultado entre procesos");
                 comprobar("CERT-EVAL-EDITADO".equals(new SeguimientoControlador(admin).consultarCertificado(evaluada).getNumero()), "Certificado entre procesos");
+                comprobar("APN".equals(new SeguimientoControlador(admin).consultarCertificado(evaluada).getEntidadEmisora()), "Institución emisora entre procesos");
                 comprobar(gestion.listarCapacitaciones().stream().anyMatch(c -> "CERRADA".equals(c.getEstado())), "Persistencia del cierre");
                 int participacion = gestion.listarParticipaciones().get(0).getIdParticipacion();
                 comprobar("JUSTIFICADA".equals(new SeguimientoControlador(admin).consultarAsistencia(participacion).getCondicion()),

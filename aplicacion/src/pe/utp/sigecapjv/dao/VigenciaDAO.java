@@ -10,8 +10,9 @@ import java.util.List;
 public class VigenciaDAO {
     public List<Vigencia> consultar(Connection c) throws SQLException {
         String sql = """
-                SELECT idCurso, CONCAT(nombres,' ',apellidos) AS trabajador, nombreCurso,
+                SELECT idCurso, dni, CONCAT(nombres,' ',apellidos) AS trabajador, nombreCurso,
                        numeroCertificado, fechaVencimiento, diasRestantes,
+                       (SELECT ce.entidadEmisora FROM certificado ce WHERE ce.idCertificado=vw_control_vigencias.idCertificado) AS entidadEmisora,
                        CASE WHEN diasRestantes BETWEEN 0 AND (SELECT diasVencimiento FROM configuracion_alertas WHERE id=1) THEN 'PROXIMO_A_VENCER'
                             ELSE estadoActual END AS vigencia
                 FROM vw_control_vigencias
@@ -22,7 +23,8 @@ public class VigenciaDAO {
             while (r.next()) filas.add(new Vigencia(r.getInt("idCurso"), r.getString("trabajador"),
                     r.getString("nombreCurso"), r.getString("numeroCertificado"),
                     r.getObject("fechaVencimiento",LocalDate.class),
-                    r.getObject("diasRestantes",Integer.class), r.getString("vigencia")));
+                    r.getObject("diasRestantes",Integer.class), r.getString("vigencia"), r.getString("dni"),
+                    r.getString("entidadEmisora")));
         }
         return List.copyOf(filas);
     }

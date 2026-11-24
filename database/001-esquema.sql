@@ -197,6 +197,7 @@ CREATE TABLE certificado (
     idParticipacion INT NOT NULL,
     idTrabajador INT NOT NULL,
     numero VARCHAR(80) NOT NULL,
+    entidadEmisora VARCHAR(160) NULL,
     fechaEmision DATE NOT NULL,
     fechaVencimiento DATE NULL,
     rutaEvidencia VARCHAR(500) NULL,

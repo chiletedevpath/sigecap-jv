@@ -48,10 +48,15 @@ public final class PruebaPantallaEvaluacion {
             campo(documentos,"guardar",JButton.class).doClick();
             comprobar("CERT-EVAL".equals(s.consultarCertificado(id).getNumero()));
             campo(documentos,"emision",JTextField.class).setText(LocalDate.now().toString());
+            campo(documentos,"entidad",JTextField.class).setText("  APN  ");
             campo(documentos,"guardar",JButton.class).doClick();
             comprobar("CERT-EVAL-EDITADO".equals(s.consultarCertificado(id).getNumero()));
+            comprobar("APN".equals(s.consultarCertificado(id).getEntidadEmisora()));
             documentos.refrescar();
             comprobar(campo(documentos,"tabla",JTable.class).getValueAt(0,1).equals("CERT-EVAL-EDITADO"));
+            comprobar(campo(documentos,"tabla",JTable.class).getValueAt(0,5).equals("APN"));
+            campo(documentos,"tabla",JTable.class).setRowSelectionInterval(0,0);
+            comprobar(campo(documentos,"entidad",JTextField.class).getText().equals("APN"));
         });
         System.out.println("OK: "+total+" comprobaciones Swing de resultados/certificados con MySQL.");
     }

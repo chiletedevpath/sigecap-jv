@@ -29,9 +29,15 @@ public class PnlSeguimiento extends JPanel {
         @Override public String toString() { return nombre; }
     }
     private final JComboBox<OpcionCurso> curso = new JComboBox<>();
+    private final JTextField trabajador = new JTextField(18);
+    private final JTextField entidad = new JTextField(24);
+    private final JTextField desde = new JTextField(10);
+    private final JTextField hasta = new JTextField(10);
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/uuuu")
+            .withResolverStyle(java.time.format.ResolverStyle.STRICT);
     private final JLabel mensaje = new JLabel("Pulse Consultar para cargar las vigencias.");
     private final DefaultTableModel modelo = new DefaultTableModel(
-            new String[]{"Trabajador", "Curso", "Certificado", "Vencimiento", "Días restantes", "Estado"},0) {
+            new String[]{"Trabajador", "Curso", "Certificado", "Vencimiento", "Días restantes", "Estado", "Institución emisora", "DNI"},0) {
         @Override public boolean isCellEditable(int fila,int columna) { return false; }
     };
     private List<Vigencia> filas = List.of();
@@ -46,6 +52,10 @@ public class PnlSeguimiento extends JPanel {
         add(crearContenido(), BorderLayout.CENTER);
         estado.addActionListener(e -> filtrar());
         curso.addActionListener(e -> filtrar());
+        trabajador.addActionListener(e -> filtrar());
+        entidad.addActionListener(e -> filtrar());
+        desde.addActionListener(e -> filtrar());
+        hasta.addActionListener(e -> filtrar());
     }
 
     public void refrescar() {
@@ -72,7 +82,7 @@ public class PnlSeguimiento extends JPanel {
                     if(ex instanceof InterruptedException) Thread.currentThread().interrupt();
                     filas=List.of(); modelo.setRowCount(0);
                     curso.removeAllItems();
-                    mensaje.setText("No se pudieron cargar las vigencias. Verifique su sesión y vuelva a consultar.");
+                    mensaje.setText(pe.utp.sigecapjv.dao.Jdbc.mensajeError(ex));
                 }
             }
         }.execute();
@@ -80,15 +90,41 @@ public class PnlSeguimiento extends JPanel {
 
     private void filtrar() {
         modelo.setRowCount(0);
+        java.time.LocalDate inicio;
+        java.time.LocalDate fin;
+        try {
+            inicio = desde.getText().isBlank() ? null : java.time.LocalDate.parse(desde.getText().trim(), FECHA);
+            fin = hasta.getText().isBlank() ? null : java.time.LocalDate.parse(hasta.getText().trim(), FECHA);
+        } catch (java.time.format.DateTimeParseException ex) {
+            mensaje.setText("Ingrese fechas válidas con formato dd/MM/aaaa.");
+            return;
+        }
+        if (inicio != null && fin != null && inicio.isAfter(fin)) {
+            mensaje.setText("La fecha desde no puede ser posterior a la fecha hasta.");
+            return;
+        }
+        String busqueda = normalizar(trabajador.getText().trim());
+        String institucion = normalizar(entidad.getText().trim());
         OpcionCurso elegido=(OpcionCurso)curso.getSelectedItem();
         for(var fila:filas) {
             if(estado.getSelectedIndex()>0 && !estado.getSelectedItem().equals(fila.estado())) continue;
             if(elegido!=null && elegido.id()!=0 && elegido.id()!=fila.idCurso()) continue;
+            if (!normalizar(fila.trabajador() + " " + fila.dni()).contains(busqueda)) continue;
+            if (!normalizar(fila.entidadEmisora() == null ? "" : fila.entidadEmisora()).contains(institucion)) continue;
+            if ((inicio != null || fin != null) && fila.vencimiento() == null) continue;
+            if (inicio != null && fila.vencimiento().isBefore(inicio)) continue;
+            if (fin != null && fila.vencimiento().isAfter(fin)) continue;
             modelo.addRow(new Object[]{fila.trabajador(),fila.curso(),fila.certificado(),
                     fila.vencimiento()==null?"No aplica":fila.vencimiento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                    fila.diasRestantes()==null?"No aplica":fila.diasRestantes(),fila.estado()});
+                    fila.diasRestantes()==null?"No aplica":fila.diasRestantes(),fila.estado(),
+                    fila.entidadEmisora()==null?"Sin registrar":fila.entidadEmisora(),fila.dni()});
         }
         mensaje.setText(modelo.getRowCount()==0?"No hay certificados para los filtros seleccionados.":modelo.getRowCount()+" certificado(s).");
+    }
+
+    private static String normalizar(String texto) {
+        return java.text.Normalizer.normalize(texto, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase(java.util.Locale.ROOT);
     }
 
     private JPanel crearContenido() {
@@ -157,7 +193,31 @@ public class PnlSeguimiento extends JPanel {
 
         JButton consultar=botonSecundario("Consultar");
         consultar.addActionListener(e -> refrescar()); filtros.add(consultar);
-        panel.add(filtros, BorderLayout.NORTH);
+        JPanel fechas = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        fechas.setOpaque(false);
+        trabajador.setToolTipText("Nombre, apellido o DNI. Pulse Enter o Consultar.");
+        desde.setToolTipText("Vencimiento desde (dd/MM/aaaa), inclusive. Vacío: sin límite.");
+        hasta.setToolTipText("Vencimiento hasta (dd/MM/aaaa), inclusive. Vacío: sin límite.");
+        fechas.add(new JLabel("Trabajador / DNI:")); fechas.add(trabajador);
+        fechas.add(new JLabel("Desde:")); fechas.add(desde);
+        fechas.add(new JLabel("Hasta:")); fechas.add(hasta);
+        JButton limpiar = botonSecundario("Limpiar");
+        limpiar.addActionListener(e -> {
+            trabajador.setText(""); entidad.setText(""); desde.setText(""); hasta.setText("");
+            estado.setSelectedIndex(0);
+            if (curso.getItemCount() > 0) curso.setSelectedIndex(0);
+            filtrar();
+        });
+        fechas.add(limpiar);
+        JPanel instituciones = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        instituciones.setOpaque(false);
+        instituciones.add(new JLabel("Institución emisora:")); instituciones.add(entidad);
+        entidad.setToolTipText("Nombre completo o parcial de la institución. Pulse Enter o Consultar.");
+        JPanel cabeceraFiltros = new JPanel(new GridLayout(3, 1));
+        cabeceraFiltros.setOpaque(false);
+        cabeceraFiltros.add(filtros); cabeceraFiltros.add(fechas);
+        cabeceraFiltros.add(instituciones);
+        panel.add(cabeceraFiltros, BorderLayout.NORTH);
         panel.add(scrollTabla(), BorderLayout.CENTER);
         panel.add(mensaje, BorderLayout.SOUTH);
         return panel;
@@ -173,7 +233,7 @@ public class PnlSeguimiento extends JPanel {
     private JScrollPane scrollTabla() {
         JTable tabla = new JTable(modelo);
         tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        int[] anchos = {250, 200, 180, 120, 110, 170};
+        int[] anchos = {250, 200, 180, 120, 110, 170, 190, 100};
         for (int i=0; i<anchos.length; i++) tabla.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setRowHeight(31);

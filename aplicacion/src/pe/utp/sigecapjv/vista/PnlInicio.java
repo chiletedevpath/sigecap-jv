@@ -246,8 +246,7 @@ public class PnlInicio extends JPanel {
                 } catch(Exception ex) {
                     indicadoresAdmin.values().forEach(e->e.setText("—"));
                     tablasAdmin.values().forEach(t->t.setRowCount(0));
-                    Throwable causa=ex.getCause()==null?ex:ex.getCause();
-                    estado.setText(causa instanceof SecurityException ? "Sin acceso al resumen. Revise sus permisos o inicie sesión nuevamente." : "No se pudo cargar el resumen. Vuelva a Inicio para reintentar.");
+                    estado.setText(pe.utp.sigecapjv.dao.Jdbc.mensajeError(ex));
                 }
             }
         }.execute();
