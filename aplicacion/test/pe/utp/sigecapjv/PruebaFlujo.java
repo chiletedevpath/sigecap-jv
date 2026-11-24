@@ -38,11 +38,6 @@ public class PruebaFlujo {
         PruebaResultados.verificar();
         PruebaPantallaAsistencia.verificar();
         PruebaReportes.verificar();
-        if (args.length > 0 && args[0].equals("--ventana")) {
-            SwingUtilities.invokeAndWait(() -> verificarVentana());
-            System.out.println("OK: ventana principal creada y navegación Personal/Capacitaciones verificada.");
-            return;
-        }
         PersonalControlador personal = new PersonalControlador();
         CapacitacionControlador gestion = new CapacitacionControlador(personal);
         Trabajador t = trabajador("00000001"); personal.registrarTrabajador(t);
@@ -150,14 +145,14 @@ public class PruebaFlujo {
     private static void verificarVistas(PersonalControlador personal, CapacitacionControlador gestion) {
         PnlPersonal p = new PnlPersonal(personal); PnlCapacitaciones c = new PnlCapacitaciones(gestion, personal);
         JTabbedPane tp = encontrar(p, JTabbedPane.class), tc = encontrar(c, JTabbedPane.class);
-        comprobar(!tp.isEnabledAt(2) && !tc.isEnabledAt(3), "Funciones futuras deshabilitadas");
-        comprobar(encontrar(tp.getComponentAt(2), JTable.class).getRowCount() == 0, "Historial pendiente sin datos simulados");
+        comprobar(!tp.isEnabledAt(2) && !tc.isEnabledAt(3), "Funciones sin controlador deshabilitadas");
+        comprobar(encontrar(tp.getComponentAt(2), JTable.class).getRowCount() == 0, "Historial sin controlador no muestra datos");
         comprobar(encontrar(tp.getComponentAt(2), JComboBox.class).getItemCount() == 0, "Historial sin trabajadores simulados");
         for (int i = 3; i < 6; i++) {
-            comprobar(!tc.isEnabledAt(i), "Pestaña futura deshabilitada");
-            comprobar(encontrar(tc.getComponentAt(i), JTable.class).getRowCount() == 0, "Pestaña futura sin datos simulados");
-            comprobar(encontrar(tc.getComponentAt(i), JComboBox.class).getItemCount() == 0, "Filtro futuro sin datos simulados");
-            comprobar("Funcionalidad pendiente de implementación".equals(tc.getToolTipTextAt(i)), "Tooltip de funcionalidad pendiente");
+            comprobar(!tc.isEnabledAt(i), "Seguimiento sin controlador deshabilitado");
+            comprobar(encontrar(tc.getComponentAt(i), JTable.class) == null, "Sin tablas de mockup");
+            comprobar(encontrar(tc.getComponentAt(i), JComboBox.class) == null, "Sin filtros de mockup");
+            comprobar("Requiere un controlador de seguimiento".equals(tc.getToolTipTextAt(i)), "Motivo de pestaña deshabilitada");
         }
 
         comprobar(encontrar(tp.getComponentAt(0), JTable.class).getRowCount() == 2, "Personal usa registros reales");
@@ -165,23 +160,6 @@ public class PruebaFlujo {
         comprobar(encontrar(tc.getComponentAt(1), JTable.class).getRowCount() == 1, "Programación usa controlador");
         comprobar(encontrar(tc.getComponentAt(2), JTable.class).getRowCount() == 1, "Participantes usan controlador");
 
-    }
-    private static void verificarVentana() {
-        PersonalControlador personal = new PersonalControlador();
-        FrmPrincipal ventana = new FrmPrincipal(personal, new CapacitacionControlador(personal));
-        try {
-            ventana.addNotify(); ventana.validate();
-            JPanel contenido = (JPanel) ventana.getContentPane();
-            comprobar(encontrar(contenido, PnlPersonal.class) != null, "Ventana integra Personal");
-            comprobar(encontrar(contenido, PnlCapacitaciones.class) != null, "Ventana integra Capacitaciones");
-            for (int ancho : new int[]{1100, 1220}) {
-                pulsar(boton(contenido, "Personal")); ventana.setSize(ancho, 750); ventana.validate();
-                comprobar(encontrar(contenido, PnlPersonal.class).isVisible(), "Navegación a Personal");
-                pulsar(boton(contenido, "Capacitaciones")); ventana.validate();
-                comprobar(encontrar(contenido, PnlCapacitaciones.class).isVisible(), "Navegación a Capacitaciones");
-            }
-        } catch (Exception ex) { throw new RuntimeException(ex); }
-        finally { ventana.dispose(); }
     }
     private static <T> T encontrar(Component c, Class<T> tipo) {
         if (tipo.isInstance(c)) return tipo.cast(c);

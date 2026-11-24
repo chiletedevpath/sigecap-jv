@@ -7,7 +7,6 @@ import java.awt.*;
 
 public class PnlMisCapacitaciones extends JPanel {
 
-    private static final Color AZUL = new Color(28, 48, 71);
     private static final Color AZUL_CLARO = new Color(46, 102, 158);
     private static final Color FONDO = new Color(245, 247, 249);
     private static final Color BLANCO = Color.WHITE;

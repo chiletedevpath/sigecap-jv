@@ -1,10 +1,10 @@
 # MySQL y persistencia de SIGECAP J&V
 
-La aplicación funcional requiere Java 17 o superior y MySQL 8.4. Los mockups de la carpeta hermana no se conectan a la base.
+Esta guía describe el esquema, las migraciones, los permisos de conexión y los respaldos. La aplicación requiere Java 17 o superior y se valida con MySQL 8.4.
 
 ## Esquema
 
-`001-esquema.sql` conserva el diseño físico entregado: 12 tablas del diseño original, una tabla de configuración y la vista `vw_control_vigencias`. Ejecútalo una sola vez en una base nueva desde MySQL Workbench. Si ya creaste las tablas, no vuelvas a ejecutarlo: no es una migración incremental ni borra registros existentes.
+`001-esquema.sql` contiene el esquema actual: 12 tablas del diseño original, una tabla de configuración y la vista `vw_control_vigencias`. Incluye la institución emisora del certificado. Ejecútalo una sola vez en una base nueva desde MySQL Workbench. Para instalaciones existentes, utiliza las migraciones siguientes.
 
 ### Actualizar los plazos en una instalación existente
 
@@ -26,16 +26,18 @@ El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participa
 
 ## Conexión local
 
-La aplicación lee estas variables del proceso que la inicia:
+Configura las [variables de conexión descritas en el README](../README.md#desde-intellij-o-powershell) en el proceso que inicia Java. La URL predeterminada es `jdbc:mysql://localhost:3306/sigecap_jv`.
 
-| Variable | Uso |
+La cuenta de aplicación necesita estos permisos, iguales a los que configura `docker/002-permisos-app.sh` en una instalación nueva:
+
+| Objetos | Permisos |
 | --- | --- |
-| `SIGECAP_DB_URL` | URL JDBC; por defecto `jdbc:mysql://localhost:3306/sigecap_jv`. |
-| `SIGECAP_DB_USER` | Usuario MySQL de la aplicación. |
-| `SIGECAP_DB_PASSWORD` | Contraseña de ese usuario. No guardarla en Git. |
-| `SIGECAP_JDBC_JAR` | Ruta al JAR de Connector/J para el lanzador PowerShell, si no está en la caché Maven indicada abajo. |
+| `trabajador`, `curso`, `capacitacion`, `participacion`, `asistencia`, `resultado`, `certificado`, `notificacion`, `usuario`, `rol`, `permiso`, `rol_permiso` | SELECT, INSERT, UPDATE |
+| `rol_permiso` | DELETE, para revocar permisos |
+| `configuracion_alertas` | SELECT, UPDATE |
+| `vw_control_vigencias` | SELECT |
 
-Usa una cuenta de aplicación con permisos SELECT, INSERT y UPDATE sobre las siete tablas del flujo y sobre `usuario`, `rol`, `permiso` y `rol_permiso`. Para revocar permisos, añade DELETE únicamente sobre `rol_permiso`; no se necesita DELETE en las tablas de usuarios ni del flujo. Estas cuatro tablas ya forman parte del esquema; no hace falta recrearlo. La creación del esquema se hace con una cuenta administrativa separada. No se requiere acceso a Docker para trabajar con el MySQL que ya tienes en Workbench.
+Usa una cuenta administrativa separada para crear el esquema y aplicar migraciones. Docker es opcional si ya tienes MySQL instalado.
 
 En IntelliJ selecciona **SIGECAP MySQL** y configura las variables en la configuración local de ejecución, sin incorporarlas al XML compartido. También puedes iniciar IntelliJ desde una consola donde ya estén definidas. Si falta el SDK, selecciona tu JDK instalado. La biblioteca del proyecto usa `com.mysql:mysql-connector-j:26.7.0`; IntelliJ puede resolverla desde Maven.
 

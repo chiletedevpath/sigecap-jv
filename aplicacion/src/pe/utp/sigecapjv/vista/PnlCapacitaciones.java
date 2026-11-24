@@ -15,7 +15,6 @@ import java.awt.*;
 
 public class PnlCapacitaciones extends JPanel {
 
-    private static final Color AZUL = new Color(28, 48, 71);
     private static final Color AZUL_CLARO = new Color(46, 102, 158);
     private static final Color FONDO = new Color(245, 247, 249);
     private static final Color BLANCO = Color.WHITE;
@@ -104,12 +103,12 @@ public class PnlCapacitaciones extends JPanel {
         tabs.addTab("Cursos", crearCursos());
         tabs.addTab("Programación", crearProgramacion());
         tabs.addTab("Participantes", crearParticipantes());
-        tabs.addTab("Asistencia", asistencia == null ? crearAsistencia() : asistencia);
-        tabs.addTab("Resultados", resultados == null ? crearResultados() : resultados);
-        tabs.addTab("Certificados", certificados == null ? crearCertificados() : certificados);
+        tabs.addTab("Asistencia", asistencia == null ? crearPanelSinSeguimiento() : asistencia);
+        tabs.addTab("Resultados", resultados == null ? crearPanelSinSeguimiento() : resultados);
+        tabs.addTab("Certificados", certificados == null ? crearPanelSinSeguimiento() : certificados);
         for (int i = asistencia == null ? 3 : 6; i < 6; i++) {
             tabs.setEnabledAt(i, false);
-            tabs.setToolTipTextAt(i, "Funcionalidad pendiente de implementación");
+            tabs.setToolTipTextAt(i, "Requiere un controlador de seguimiento");
         }
 
         JPanel centro = new JPanel(new BorderLayout());
@@ -229,59 +228,10 @@ public class PnlCapacitaciones extends JPanel {
         return panel;
     }
 
-    // Paneles vacíos para las pruebas que no reciben un controlador de seguimiento.
-    private JPanel crearAsistencia() {
+    // Las pruebas de catálogo pueden construir la vista sin acceso a seguimiento.
+    private JPanel crearPanelSinSeguimiento() {
         JPanel panel = panelBase();
-
-        JPanel filtros = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        filtros.setOpaque(false);
-        filtros.add(new JLabel("Capacitación:"));
-        JComboBox<String> cap = new JComboBox<>();
-        cap.setPreferredSize(new Dimension(300, 36));
-        filtros.add(cap);
-
-        String[] columnas = {"Trabajador", "Asistencia", "Fecha de registro"};
-        Object[][] datos = new Object[0][columnas.length];
-
-        panel.add(filtros, BorderLayout.NORTH);
-        panel.add(scrollTabla(datos, columnas), BorderLayout.CENTER);
-        return panel;
-    }
-
-    private JPanel crearResultados() {
-        JPanel panel = panelBase();
-
-        JPanel filtros = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        filtros.setOpaque(false);
-        filtros.add(new JLabel("Capacitación:"));
-        JComboBox<String> cap = new JComboBox<>();
-        cap.setPreferredSize(new Dimension(300, 36));
-        filtros.add(cap);
-
-        String[] columnas = {"Trabajador", "Resultado", "Calificación"};
-        Object[][] datos = new Object[0][columnas.length];
-
-        panel.add(filtros, BorderLayout.NORTH);
-        panel.add(scrollTabla(datos, columnas), BorderLayout.CENTER);
-        return panel;
-    }
-
-    private JPanel crearCertificados() {
-        JPanel panel = panelBase();
-
-        JPanel filtros = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        filtros.setOpaque(false);
-        filtros.add(new JLabel("Trabajador:"));
-        JComboBox<String> trabajador = new JComboBox<>();
-        trabajador.setPreferredSize(new Dimension(280, 36));
-        filtros.add(trabajador);
-        filtros.add(botonPrimario("Registrar certificado"));
-
-        String[] columnas = {"Curso", "N.° certificado", "Emisión", "Vencimiento", "Estado"};
-        Object[][] datos = new Object[0][columnas.length];
-
-        panel.add(filtros, BorderLayout.NORTH);
-        panel.add(scrollTabla(datos, columnas), BorderLayout.CENTER);
+        panel.add(new JLabel("Seguimiento no disponible en esta vista."), BorderLayout.NORTH);
         return panel;
     }
 
