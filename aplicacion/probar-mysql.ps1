@@ -26,6 +26,17 @@ try {
         Start-Sleep -Seconds 2
     }
     if (-not $listo) { throw 'MySQL no terminó de inicializar el esquema.' }
+    # Simula la estructura anterior únicamente en este contenedor recién creado.
+    & docker exec $nombre sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -u root -D sigecap_jv -e "ALTER TABLE certificado DROP COLUMN entidadEmisora"'
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo preparar la prueba de migración.' }
+    $migracion = (Resolve-Path (Join-Path $PSScriptRoot '../database/004-entidad-certificado.sql')).Path
+    & docker cp $migracion "${nombre}:/tmp/migracion.sql"
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo copiar la migración.' }
+    foreach ($vez in 1..2) {
+        & docker exec $nombre sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -u root sigecap_jv < /tmp/migracion.sql'
+        if ($LASTEXITCODE -ne 0) { throw 'Falló la migración de institución emisora.' }
+    }
+    Write-Host 'OK: migración desde la estructura anterior y segunda ejecución sin errores.'
     $puerto = (& docker port $nombre '3306/tcp').Trim().Split(':')[-1]
     $env:SIGECAP_DB_URL = "jdbc:mysql://127.0.0.1:$puerto/sigecap_jv?sslMode=DISABLED&allowPublicKeyRetrieval=true"
     $env:SIGECAP_DB_USER = 'sigecap_test'
@@ -37,6 +48,7 @@ try {
     if ($Ventanas) {
         & (Join-Path $PSScriptRoot 'ejecutar.ps1') -JavaHome $JavaHome -ConnectorJar $ConnectorJar -ProbarMySql -Ventanas -ClasePrueba 'pe.utp.sigecapjv.PruebaNavegacionMySql'
     }
+    & (Join-Path $PSScriptRoot '../database/verificar-respaldo.ps1') -ContenedorOrigen $nombre
 } finally {
     & docker rm --force --volumes $nombre 2>$null | Out-Null
     foreach ($variable in $variables) { [Environment]::SetEnvironmentVariable($variable, $anteriores[$variable], 'Process') }

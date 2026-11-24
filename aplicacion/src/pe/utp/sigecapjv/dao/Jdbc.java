@@ -33,12 +33,28 @@ public final class Jdbc {
             }
         } catch (SQLException ex) {
             // No mostrar SQL, credenciales ni detalles internos en los diálogos.
-            String mensaje = ex.getErrorCode() == 1062 ? "Ya existe un registro con esos datos únicos (DNI, código, " +
-                    "asignación, usuario o correo)." : ex.getSQLState() != null && ex.getSQLState().startsWith(
-                    "23") ? "La operación incumple una relación o restricción de la base de datos." : "No se pudo " +
-                    "completar la operación en MySQL. Revise conexión, configuración y datos.";
-            throw new IllegalStateException(mensaje, ex);
+            throw new IllegalStateException(mensajeError(ex), ex);
         }
+    }
+
+    public static String mensajeError(Throwable error) {
+        for (Throwable causa = error; causa != null; causa = causa.getCause()) {
+            if (causa instanceof SecurityException) return "Su sesión o sus permisos cambiaron. Inicie sesión nuevamente.";
+            if (!(causa instanceof SQLException sql)) continue;
+            int codigo = sql.getErrorCode();
+            String estado = sql.getSQLState();
+            if (codigo == 1146 || codigo == 1054 || codigo == 1049 || "S0022".equals(estado) || "42S22".equals(estado))
+                return "La base necesita actualizar su estructura. Solicite aplicar el esquema o las migraciones de database/README.md.";
+            if (codigo == 1045 || codigo == 1044 || codigo == 1142 || codigo == 1143)
+                return "La cuenta de conexión MySQL no tiene acceso. Revise sus credenciales y permisos con el administrador.";
+            if (codigo == 1062)
+                return "Ya existe un registro con esos datos únicos (DNI, código, asignación, usuario o correo).";
+            if (estado != null && estado.startsWith("08"))
+                return "No se pudo conectar con MySQL. Verifique que el servicio esté iniciado y revise la configuración de conexión.";
+            if (estado != null && estado.startsWith("23"))
+                return "La operación incumple una relación o restricción de la base de datos.";
+        }
+        return "No se pudo completar la operación. Vuelva a consultar; si el problema continúa, contacte al administrador.";
     }
 
     public static int insertar(Connection c, String sql, Object... valores) throws SQLException {

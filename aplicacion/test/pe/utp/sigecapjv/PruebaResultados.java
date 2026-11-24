@@ -41,6 +41,9 @@ public final class PruebaResultados {
         rechazar(() -> new Certificado(0,1,1,"C",hoy,hoy.minusDays(1),null).registrar());
         rechazar(() -> new Certificado(0,1,1,"C",null,null,null).registrar());
         rechazar(() -> new Certificado(0,1,1,"C",hoy,null,"a".repeat(501)).registrar());
+        Certificado entidad = new Certificado(0,1,1,"C",hoy,null,null,"  SUCAMEC  ");
+        entidad.registrar(); comprobar("SUCAMEC".equals(entidad.getEntidadEmisora()));
+        rechazar(() -> new Certificado(0,1,1,"C",hoy,null,null,"a".repeat(161)).registrar());
         System.out.println("OK: " + total + " comprobaciones del modelo Resultado/Certificado.");
     }
 }

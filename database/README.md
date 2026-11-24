@@ -16,6 +16,12 @@ GRANT SELECT, UPDATE ON sigecap_jv.configuracion_alertas TO 'sigecap_app'@'%';
 
 En un volumen Docker existente aplica los mismos pasos al MySQL del puerto publicado. En volúmenes nuevos Compose ya crea la tabla y concede los permisos.
 
+### Actualizar la institución emisora
+
+Antes de usar esta versión con una base existente, ejecuta `004-entidad-certificado.sql` en Workbench, con una cuenta administrativa y conectado a la instancia que utiliza Java. Añade `certificado.entidadEmisora` como texto opcional de hasta 160 caracteres. Conserva los certificados y deja el dato vacío en los anteriores. Se puede repetir sin duplicar la columna. Las bases nuevas ya la incluyen en `001-esquema.sql`.
+
+No requiere permisos adicionales para la cuenta de aplicación si ya tiene SELECT, INSERT y UPDATE sobre `certificado`. Guarda un respaldo antes de actualizar una base con información que quieras conservar.
+
 El flujo implementado persiste `trabajador`, `curso`, `capacitacion`, `participacion`, `asistencia`, `resultado` y `certificado`. Usuarios, roles, permisos y notificaciones también están integrados. La vista obtiene el estado actual por fecha; las alertas preventivas usan el plazo guardado en configuracion_alertas (inicialmente 30 días). El estado de vigencia se calcula al consultar las fechas; `estadoVigencia` se guarda como NULL para evitar estados desactualizados.
 
 ## Conexión local
@@ -41,7 +47,7 @@ Para ejecutar desde PowerShell, situado en la raíz del repositorio y con las va
 
 Sustituye ambas rutas por las instaladas en tu equipo. `-JavaHome` es opcional si JAVA_HOME o PATH ya resuelven el JDK. `-ConnectorJar` es opcional si SIGECAP_JDBC_JAR está definida o si el JAR existe en `%USERPROFILE%\.m2\repository\com\mysql\mysql-connector-j\26.7.0\`.
 
-No se cambia silenciosamente a memoria cuando falla MySQL. El error se muestra al usuario; no se muestran credenciales ni consultas SQL. Las operaciones tienen tiempos de espera de conexión y lectura. Inicio, Historial, Mis capacitaciones y Seguimiento cargan sus consultas en segundo plano. Algunas pantallas todavía consultan de forma síncrona; una caída de la base puede bloquearlas brevemente hasta el tiempo de espera.
+Los errores distinguen entre servicio inaccesible, credenciales o permisos de MySQL y estructura pendiente de actualización. Los mensajes no incluyen credenciales ni consultas SQL. Las operaciones tienen tiempos de espera de conexión y lectura. Inicio, Historial, Mis capacitaciones y Seguimiento cargan sus consultas en segundo plano. Algunas pantallas todavía consultan de forma síncrona; una caída de la base puede bloquearlas brevemente hasta el tiempo de espera.
 
 ## Pruebas reproducibles
 
@@ -55,7 +61,20 @@ Desde la raíz del repositorio:
 .\aplicacion\probar-mysql.ps1
 ```
 
-El segundo comando crea un MySQL 8.4 aislado con puerto aleatorio enlazado solo a 127.0.0.1, credenciales aleatorias y el esquema adjunto. Comprueba CRUD, restricciones, estados, rollback, asignaciones concurrentes, edición de permisos, invalidación de sesiones y persistencia en una segunda JVM. Finalmente elimina exclusivamente su contenedor y volumen y restaura las variables del proceso. La imagen Docker puede permanecer como caché reutilizable.
+El segundo comando crea un MySQL 8.4 aislado con puerto aleatorio enlazado solo a 127.0.0.1, credenciales aleatorias y el esquema adjunto. Comprueba CRUD, restricciones, estados, rollback, asignaciones concurrentes, edición de permisos, invalidación de sesiones y persistencia en una segunda JVM. Simula la estructura anterior del certificado y aplica dos veces la migración de institución emisora. Finalmente restaura un respaldo en otra instancia, compara estructura y datos por SHA-256 y consulta la vista de vigencias. Elimina exclusivamente los contenedores, volúmenes y archivos temporales de esa prueba, y restaura las variables del proceso. La imagen Docker puede permanecer como caché reutilizable.
+
+### Respaldo de una instalación local
+
+Desde PowerShell, con las herramientas cliente de MySQL instaladas, crea una carpeta privada y exporta la base. Ajusta host, puerto y cuenta a la instancia que utiliza Java. `--password` solicita la clave por teclado; no la escribas en el comando.
+
+```powershell
+New-Item -ItemType Directory -Force .\privado\respaldos | Out-Null
+$respaldo = Join-Path (Resolve-Path .\privado\respaldos) ('sigecap-' + (Get-Date -Format yyyyMMdd-HHmmss) + '.sql')
+mysqldump --host=127.0.0.1 --port=3306 --user=root --password --single-transaction --no-tablespaces --set-gtid-purged=OFF --result-file="$respaldo" sigecap_jv
+if ($LASTEXITCODE -ne 0) { throw 'El respaldo no terminó correctamente.' }
+```
+
+Conserva también los archivos de evidencia: la base guarda sus rutas, no el contenido. Comprueba la restauración en otra instancia MySQL con una base vacía llamada `sigecap_jv`; no importes un respaldo de prueba sobre la instalación de trabajo. La comprobación automatizada de `verificar-respaldo.ps1` está reservada al contenedor desechable creado por `probar-mysql.ps1` y no sustituye el respaldo de los datos reales.
 
 `SIGECAP_DB_TEST=true` es una protección adicional del ejecutable de pruebas, no una autorización para probar sobre datos reales. Utiliza siempre el script aislado.
 

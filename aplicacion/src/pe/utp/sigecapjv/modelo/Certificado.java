@@ -12,9 +12,15 @@ public class Certificado {
     private final LocalDate fechaEmision;
     private final LocalDate fechaVencimiento;
     private String rutaEvidencia;
+    private String entidadEmisora;
 
     public Certificado(int idCertificado, int idParticipacion, int idTrabajador, String numero,
                        LocalDate emision, LocalDate vencimiento, String rutaEvidencia) {
+        this(idCertificado, idParticipacion, idTrabajador, numero, emision, vencimiento, rutaEvidencia, null);
+    }
+
+    public Certificado(int idCertificado, int idParticipacion, int idTrabajador, String numero,
+                       LocalDate emision, LocalDate vencimiento, String rutaEvidencia, String entidadEmisora) {
         this.idCertificado = idCertificado;
         this.idParticipacion = idParticipacion;
         this.idTrabajador = idTrabajador;
@@ -22,6 +28,7 @@ public class Certificado {
         this.fechaEmision = emision;
         this.fechaVencimiento = vencimiento;
         this.rutaEvidencia = rutaEvidencia;
+        this.entidadEmisora = entidadEmisora;
     }
 
     public void registrar() {
@@ -44,6 +51,9 @@ public class Certificado {
         rutaEvidencia = rutaEvidencia == null || rutaEvidencia.isBlank() ? null : rutaEvidencia.trim();
         if (rutaEvidencia != null && rutaEvidencia.length() > 500)
             throw new IllegalArgumentException("La ruta admite hasta 500 caracteres.");
+        entidadEmisora = entidadEmisora == null || entidadEmisora.isBlank() ? null : entidadEmisora.strip();
+        if (entidadEmisora != null && entidadEmisora.length() > 160)
+            throw new IllegalArgumentException("La institución emisora admite hasta 160 caracteres.");
     }
 
     public boolean validarFechas() {
@@ -93,6 +103,10 @@ public class Certificado {
 
     public String getRutaEvidencia() {
         return rutaEvidencia;
+    }
+
+    public String getEntidadEmisora() {
+        return entidadEmisora;
     }
 
     public String getEstadoVigencia() {

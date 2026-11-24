@@ -121,7 +121,7 @@ public final class PruebaHistorialMySql {
             });
             trabajador.close(); rechazar(control::consultarMisCapacitaciones);
             SwingUtilities.invokeAndWait(panel[0]::refrescar);
-            esperar(panel[0],"No se pudo consultar.");
+            esperar(panel[0],"Su sesión o sus permisos cambiaron.");
             SwingUtilities.invokeAndWait(()->comprobar(encontrar(panel[0],JTable.class).getRowCount()==0,"El error conservó filas anteriores."));
             System.out.println("OK: " + total + " comprobaciones MySQL y Swing de historial y aislamiento.");
         } finally { java.util.Arrays.fill(clave,'\0'); }
