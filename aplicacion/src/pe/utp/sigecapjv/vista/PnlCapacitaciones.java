@@ -143,8 +143,11 @@ public class PnlCapacitaciones extends JPanel {
         editar.addActionListener(e -> {
             int fila = tablaCursos.getSelectedRow();
             if (fila < 0) JOptionPane.showMessageDialog(this, "Seleccione un curso.");
-            else editarCurso(cursosVisibles.get(fila));
+            else editarCurso(cursosVisibles.get(tablaCursos.convertRowIndexToModel(fila)));
         });
+        JButton eliminar = botonSecundario("Eliminar curso");
+        acciones.add(eliminar);
+        eliminar.addActionListener(e -> eliminarCursoSeleccionado());
 
         JPanel buscador = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         buscar.setPreferredSize(new Dimension(240, 38));
@@ -153,14 +156,50 @@ public class PnlCapacitaciones extends JPanel {
         buscador.add(new JLabel("Buscar:"));
         buscador.add(buscar);
 
-        superior.add(buscador, BorderLayout.CENTER);
-        superior.add(acciones, BorderLayout.EAST);
+        superior.add(buscador, BorderLayout.NORTH);
+        superior.add(acciones, BorderLayout.SOUTH);
 
         String[] columnas = {"Código", "Curso", "Tipo", "Vigencia", "Estado"};
         tablaCursos = tablaVacia(columnas);
         panel.add(superior, BorderLayout.NORTH);
         panel.add(new JScrollPane(tablaCursos), BorderLayout.CENTER);
         return panel;
+    }
+
+    private void eliminarCursoSeleccionado() {
+        int fila = tablaCursos.getSelectedRow();
+        if (fila < 0) {
+            mostrarAvisoCurso("Seleccione un curso.", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        Curso elegido = cursosVisibles.get(tablaCursos.convertRowIndexToModel(fila));
+        if (!confirmarEliminacionCurso(elegido)) return;
+        try {
+            controlador.eliminarCurso(elegido.getIdCurso());
+        } catch (IllegalArgumentException | IllegalStateException | SecurityException ex) {
+            mostrarAvisoCurso(ex.getMessage(), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        try {
+            refrescar();
+            mostrarAvisoCurso("Curso eliminado correctamente.", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IllegalArgumentException | IllegalStateException | SecurityException ex) {
+            ((DefaultTableModel) tablaCursos.getModel()).setRowCount(0);
+            cursosVisibles = java.util.List.of();
+            mostrarAvisoCurso("El curso se eliminó, pero no se pudo actualizar el listado. Vuelva a consultar.",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    protected boolean confirmarEliminacionCurso(Curso curso) {
+        return JOptionPane.showConfirmDialog(this,
+                "¿Eliminar el curso " + curso.getCodigo() + " — " + curso.getNombre() + "?\n"
+                        + "Esta operación no se puede deshacer. Los cursos con capacitaciones deben conservarse.",
+                "Eliminar curso", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION;
+    }
+
+    protected void mostrarAvisoCurso(String mensaje, int tipo) {
+        JOptionPane.showMessageDialog(this, mensaje, "Cursos", tipo);
     }
 
     private JPanel crearProgramacion() {

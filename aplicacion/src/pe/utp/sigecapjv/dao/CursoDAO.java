@@ -10,6 +10,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CursoDAO {
+    public void eliminar(Connection c, int idCurso) throws SQLException {
+        buscar(c, idCurso, true);
+        String historial = "No se puede eliminar el curso porque tiene capacitaciones asociadas. "
+                + "Debe conservarse su historial; puede desactivarlo desde Editar curso.";
+        try (PreparedStatement p = c.prepareStatement("SELECT idCapacitacion FROM capacitacion WHERE idCurso=? LIMIT 1")) {
+            p.setInt(1, idCurso);
+            try (ResultSet r = p.executeQuery()) {
+                if (r.next()) throw new IllegalStateException(historial);
+            }
+        }
+        try (PreparedStatement p = c.prepareStatement("DELETE FROM curso WHERE idCurso=?")) {
+            p.setInt(1, idCurso);
+            if (p.executeUpdate() != 1) throw new IllegalArgumentException("El registro de curso no existe.");
+        } catch (SQLException ex) {
+            // La FK también protege frente a una programación concurrente.
+            if (ex.getErrorCode() == 1451) throw new IllegalStateException(historial, ex);
+            throw ex;
+        }
+    }
+
     public int insertar(Connection c, Curso dato) throws SQLException {
         return Jdbc.insertar(
                 c, "INSERT INTO curso (codigo,nombre,tipo,vigenciaMeses,estado) VALUES (?,?,?,?,?)",

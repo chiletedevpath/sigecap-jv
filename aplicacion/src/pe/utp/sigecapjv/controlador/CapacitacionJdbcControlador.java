@@ -67,6 +67,17 @@ public class CapacitacionJdbcControlador extends CapacitacionControlador {
     }
 
     @Override
+    public void eliminarCurso(int idCurso) {
+        if (sesion == null) throw new SecurityException("Debe iniciar sesión.");
+        if (idCurso <= 0) throw new IllegalArgumentException("Seleccione un curso válido.");
+        Jdbc.transaccion(c -> {
+            AccesoControlador.exigir(c, sesion, "capacitaciones", "gestionar");
+            cursos.eliminar(c, idCurso);
+            return null;
+        });
+    }
+
+    @Override
     public void actualizarCapacitacion(Capacitacion datos) {
         AccesoControlador.exigir(sesion, "capacitaciones", "gestionar");
         Validador.requerido(datos, "Capacitación");

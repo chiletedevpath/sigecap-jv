@@ -42,6 +42,11 @@ try {
     $env:SIGECAP_DB_USER = 'sigecap_test'
     $env:SIGECAP_DB_PASSWORD = $env:MYSQL_PASSWORD
     $env:SIGECAP_DB_TEST = 'true'
+    $permisos = (Resolve-Path (Join-Path $PSScriptRoot '../database/docker/002-permisos-app.sh')).Path
+    & docker cp $permisos "${nombre}:/tmp/permisos-app.sh"
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo copiar el script de permisos.' }
+    & docker exec --env SIGECAP_DB_PASSWORD $nombre bash /tmp/permisos-app.sh
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo preparar la cuenta con permisos mínimos.' }
     & (Join-Path $PSScriptRoot 'ejecutar.ps1') -JavaHome $JavaHome -ConnectorJar $ConnectorJar -ProbarMySql -ClasePrueba $clase
     # Nueva JVM y nuevas conexiones, sin reiniciar la base.
     & (Join-Path $PSScriptRoot 'ejecutar.ps1') -JavaHome $JavaHome -ConnectorJar $ConnectorJar -ProbarMySql -ClasePrueba $clase

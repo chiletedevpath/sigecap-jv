@@ -82,6 +82,12 @@ public final class PruebaNavegacionMySql {
                         if(modulo.equals("Cerrar sesión")) break;
                         esperar(ventana[0]);
                         SwingUtilities.invokeAndWait(() -> {
+                            if (modulo.equals("Capacitaciones")) {
+                                JButton eliminar = buscar(ventana[0],JButton.class).stream()
+                                        .filter(b -> "Eliminar curso".equals(b.getText())).findFirst().orElseThrow();
+                                comprobar(eliminar.isEnabled() == !usuario.equals("supervisor_prueba"),
+                                        "El botón Eliminar curso respeta el perfil " + usuario);
+                            }
                             comprobar(buscar(ventana[0],JLabel.class).stream().filter(Component::isShowing)
                                     .noneMatch(l->l.getText()!=null && (l.getText().startsWith("No se pudo")
                                             || l.getText().startsWith("No se pudieron") || l.getText().startsWith("La base necesita")

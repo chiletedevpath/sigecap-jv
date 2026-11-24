@@ -55,6 +55,15 @@ public class CapacitacionControlador {
         }
     }
 
+    public void eliminarCurso(int idCurso) {
+        if (idCurso <= 0) throw new IllegalArgumentException("Seleccione un curso válido.");
+        Curso curso = buscarCurso(idCurso);
+        if (capacitaciones.stream().anyMatch(c -> c.getCurso().getIdCurso() == idCurso))
+            throw new IllegalStateException("No se puede eliminar el curso porque tiene capacitaciones asociadas. "
+                    + "Debe conservarse su historial; puede desactivarlo desde Editar curso.");
+        cursos.remove(curso);
+    }
+
     private Curso buscarCurso(int id) {
         return cursos.stream().filter(c -> c.getIdCurso() == id).findFirst().orElseThrow(
                 () -> new IllegalArgumentException("El curso no está registrado."));
