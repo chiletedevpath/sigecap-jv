@@ -188,7 +188,7 @@ public class FrmLogin extends JFrame {
                 BorderFactory.createLineBorder(new Color(226, 230, 234), 1),
                 new EmptyBorder(38, 42, 36, 42)
         ));
-        formulario.setPreferredSize(new Dimension(390, 360));
+        formulario.setPreferredSize(new Dimension(390, 400));
 
         JLabel titulo = new JLabel("Inicio de sesión");
         titulo.setForeground(TEXTO);
@@ -239,6 +239,15 @@ public class FrmLogin extends JFrame {
         formulario.add(btnIngresar);
         formulario.add(Box.createVerticalStrut(12));
         formulario.add(btnSalir);
+        JButton recuperar = new JButton("¿Olvidó su contraseña?");
+        recuperar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        recuperar.setForeground(BOTON);
+        recuperar.setBorderPainted(false);
+        recuperar.setContentAreaFilled(false);
+        recuperar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        recuperar.addActionListener(e -> new DlgRecuperarContrasena(this, txtUsuario.getText()).setVisible(true));
+        formulario.add(Box.createVerticalStrut(8));
+        formulario.add(recuperar);
         inicial.setVisible(false);
         inicial.setToolTipText("Disponible únicamente si aún no existen usuarios en la base de datos.");
         inicial.addActionListener(e -> prepararAdministrador(inicial));

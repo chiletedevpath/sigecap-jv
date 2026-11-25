@@ -6,7 +6,7 @@ clave_sql=${SIGECAP_DB_PASSWORD//\'/\'\'}
 {
     printf "SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';\n"
     printf "CREATE USER 'sigecap_app'@'%%' IDENTIFIED BY '%s';\n" "$clave_sql"
-    for tabla in trabajador curso capacitacion participacion asistencia resultado certificado notificacion usuario rol permiso rol_permiso; do
+    for tabla in trabajador curso capacitacion participacion asistencia resultado certificado notificacion usuario rol permiso rol_permiso recuperacion_contrasena; do
         printf "GRANT SELECT, INSERT, UPDATE ON sigecap_jv.%s TO 'sigecap_app'@'%%';\n" "$tabla"
     done
     printf "GRANT SELECT, UPDATE ON sigecap_jv.configuracion_alertas TO 'sigecap_app'@'%%';\n"

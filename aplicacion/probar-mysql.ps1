@@ -37,6 +37,16 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Falló la migración de institución emisora.' }
     }
     Write-Host 'OK: migración desde la estructura anterior y segunda ejecución sin errores.'
+    # Esta instancia acaba de crearse: simula una base anterior a la recuperación.
+    & docker exec $nombre sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -u root sigecap_jv -e "DROP TABLE recuperacion_contrasena"'
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo preparar la migración de recuperación.' }
+    $recuperacion = (Resolve-Path (Join-Path $PSScriptRoot '../database/006-recuperacion-contrasena.sql')).Path
+    & docker cp $recuperacion "${nombre}:/tmp/recuperacion.sql"
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo copiar la migración de recuperación.' }
+    foreach ($vez in 1..2) {
+        & docker exec $nombre sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -u root sigecap_jv < /tmp/recuperacion.sql'
+        if ($LASTEXITCODE -ne 0) { throw 'Falló la migración de recuperación.' }
+    }
     $puerto = (& docker port $nombre '3306/tcp').Trim().Split(':')[-1]
     $env:SIGECAP_DB_URL = "jdbc:mysql://127.0.0.1:$puerto/sigecap_jv?sslMode=DISABLED&allowPublicKeyRetrieval=true"
     $env:SIGECAP_DB_USER = 'sigecap_test'

@@ -3,10 +3,10 @@ package pe.utp.sigecapjv.vista;
 import javax.swing.*;
 import java.awt.*;
 
-final class CampoContrasena {
+public final class CampoContrasena {
     private CampoContrasena() { }
 
-    static JPanel conVisibilidad(JPasswordField campo) {
+    public static JPanel conVisibilidad(JPasswordField campo) {
         char oculto = campo.getEchoChar();
         JToggleButton mostrar = new JToggleButton();
         mostrar.setIcon(new Icon() {
