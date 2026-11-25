@@ -38,6 +38,8 @@ services:
       SIGECAP_DB_URL: jdbc:mysql://db:3306/sigecap_jv
       SIGECAP_DB_USER: sigecap_app
       SIGECAP_DB_PASSWORD: ${SIGECAP_DB_PASSWORD}
+      SIGECAP_BREVO_API_KEY: ${SIGECAP_BREVO_API_KEY:-}
+      SIGECAP_CORREO_REMITENTE: ${SIGECAP_CORREO_REMITENTE:-}
       DISPLAY: ":0"
       WAYLAND_DISPLAY: wayland-0
       XDG_RUNTIME_DIR: /mnt/wslg/runtime-dir

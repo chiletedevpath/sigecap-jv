@@ -27,6 +27,10 @@ El administrador gestiona usuarios, roles y permisos. Con los permisos iniciales
 
 Todos los perfiles pueden cambiar su contraseña desde el menú. Deben ingresar la actual y confirmar la nueva, de entre 12 y 128 caracteres. Después vuelven al login. Los formularios incluyen un botón de ojo para mostrar u ocultar cada contraseña.
 
+Desde «¿Olvidó su contraseña?» se puede solicitar un código al correo registrado. Vence en diez minutos, permite cinco intentos y se usa una sola vez. Se admite un envío por minuto y hasta cinco por hora por cuenta. Al restablecer la contraseña, las sesiones anteriores dejan de ser válidas.
+
+Para enviar los códigos, configura `SIGECAP_BREVO_API_KEY` y `SIGECAP_CORREO_REMITENTE`. En Windows también se admite la clave cifrada para el usuario actual en `%LOCALAPPDATA%\SIGECAP\brevo-key.dpapi` y el remitente en `remitente.txt`, dentro de esa misma carpeta. No se incluyen claves en el repositorio. Esta configuración local corresponde a equipos de confianza; una distribución a terceros requiere mover el envío a un servicio de servidor.
+
 Los cambios de rol, permisos, contraseña o estado invalidan las sesiones anteriores cuando se comprueba su vigencia o se intenta realizar una operación protegida. El sistema exige conservar al menos un administrador activo.
 
 ### Capacitaciones y seguimiento
@@ -67,7 +71,7 @@ Ejecuta los comandos desde la raíz del repositorio.
 
 Necesitas JDK 17 o superior, MySQL y MySQL Connector/J. Las pruebas de integración usan MySQL 8.4.
 
-Para una base nueva, ejecuta el esquema y prepara la cuenta de conexión siguiendo la guía. Para una instalación existente, aplica `003-plazos-alertas.sql` si todavía falta la configuración de plazos y `004-entidad-certificado.sql` para la institución emisora. `005-permiso-eliminar-curso.sql` concede a la cuenta de aplicación el permiso necesario para eliminar cursos sin uso; ajusta la cuenta y el host a tu instalación. Los scripts se pueden repetir. No vuelvas a ejecutar el esquema inicial sobre tu base existente. [Guía de base de datos](database/README.md)
+Para una base nueva, ejecuta el esquema y prepara la cuenta de conexión siguiendo la guía. Para una instalación existente, aplica `003-plazos-alertas.sql` si todavía falta la configuración de plazos y `004-entidad-certificado.sql` para la institución emisora. `005-permiso-eliminar-curso.sql` concede a la cuenta de aplicación el permiso necesario para eliminar cursos sin uso; ajusta la cuenta y el host a tu instalación. Aplica también `006-recuperacion-contrasena.sql` para guardar los códigos de recuperación y sus límites. Los scripts se pueden repetir. No vuelvas a ejecutar el esquema inicial sobre tu base existente. [Guía de base de datos](database/README.md)
 
 ### Desde IntelliJ o PowerShell
 

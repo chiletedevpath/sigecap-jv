@@ -124,13 +124,14 @@ public class PruebaMySql {
                 probarCambiosDeSesion(personal, gestion, admin);
                 PruebaCuentaMySql.verificar();
                 PruebaEliminarCursosMySql.verificar();
+                PruebaRecuperacionMySql.verificar();
                 return;
             }
 
             try (Connection c = ConexionBD.obtenerConexion();
                  Statement s = c.createStatement()) {
                 try (ResultSet r = s.executeQuery("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_type='BASE TABLE'")) {
-                    r.next(); comprobar(r.getInt(1) == 13, "Trece tablas");
+                    r.next(); comprobar(r.getInt(1) == 14, "Catorce tablas");
                 }
                 try (ResultSet r = s.executeQuery("SELECT COUNT(*) FROM information_schema.views WHERE table_schema=DATABASE()")) {
                     r.next(); comprobar(r.getInt(1) == 1, "Una vista");

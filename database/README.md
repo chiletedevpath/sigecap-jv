@@ -99,3 +99,11 @@ La autenticación usa las cuentas de `usuario`, sus roles y permisos. El primer 
 Registrar un resultado marca la participación como COMPLETADA en la misma transacción, incluso si fue desaprobado. Resultados y certificados pueden registrarse o corregirse tras cerrar la capacitación. Las capacitaciones con seguimiento no se pueden reprogramar ni cancelar. Un resultado existente bloquea el cambio a inasistencia; un certificado existente bloquea el cambio a resultado desfavorable. El vencimiento se toma del documento recibido: vacío significa que no aplica. El día del vencimiento todavía es vigente.
 
 El acceso por rol se aplica en los controladores de la aplicación. Como es un cliente de escritorio con conexión JDBC directa, las credenciales de MySQL son de confianza y deben permanecer en el equipo autorizado; estos controles no sustituyen los permisos del servidor MySQL. La opción JVM `sigecap.pruebas` se activa únicamente en los scripts de pruebas para los controladores sin sesión; no se usa al iniciar normalmente.
+
+La recuperación por correo usa `recuperacion_contrasena`. En instalaciones existentes aplica `006-recuperacion-contrasena.sql`; no cambia las contraseñas ni los datos de los usuarios. La tabla guarda el hash del código, su vencimiento, los intentos y los límites de envío. Para la cuenta de aplicación concede `SELECT, INSERT, UPDATE` sobre esta tabla, ajustando usuario y host:
+
+```sql
+GRANT SELECT, INSERT, UPDATE ON sigecap_jv.recuperacion_contrasena TO 'sigecap_app'@'%';
+```
+
+Las instalaciones nuevas ya incluyen la tabla y Docker concede esos permisos al inicializar su volumen. La clave de Brevo se configura fuera de MySQL y nunca se guarda en esta tabla.
